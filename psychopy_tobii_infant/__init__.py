@@ -12,6 +12,157 @@ if PY3:
     import types
 
 
+class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
+
+    def __init__(self):
+        super().__init__()
+
+    def show_status(self,
+                    att_stim,
+                    enable_mouse=False,
+                    pos=[0, 0],
+                    size=[640, 480],
+                    units='pix'):
+        """Infant-friendly procedure to adjust the participant's position.
+
+        This is an implementation of show_status() in psychopy_tobii_controller. It
+        plays an interesting video to attract the participant's attention and
+        map the relative position of eyes to the track box. The experimenter can
+        thus inspect and adjust the position of the participant.
+
+        Args:
+            att_stim: the video to be played.
+            enable_mouse: use mouse clicks to leave the procedure?
+            pos: the position to draw the video.
+            size: the size of the video.
+            units: the units of parameters (see PsychoPy manual for more info).
+
+        Returns:
+            None
+        """
+        attention_grabber = visual.MovieStim3(
+            self.win,
+            att_stim,
+            pos=pos,
+            size=size,
+            units=units,
+            name=att_stim,
+            autoLog=False)
+
+        bgrect = visual.Rect(
+            self.win,
+            pos=(0, 0.4),
+            width=0.25,
+            height=0.2,
+            lineColor='white',
+            fillColor='black',
+            units='height',
+            autoLog=False)
+
+        leye = visual.Circle(
+            self.win,
+            size=0.02,
+            units='height',
+            lineColor=None,
+            fillColor='green',
+            autoLog=False)
+
+        reye = visual.Circle(
+            self.win,
+            size=0.02,
+            units='height',
+            lineColor=None,
+            fillColor='red',
+            autoLog=False)
+
+        zbar = visual.Rect(
+            self.win,
+            pos=(0, 0.28),
+            width=0.25,
+            height=0.03,
+            lineColor='green',
+            fillColor='green',
+            units='height',
+            autoLog=False)
+
+        zc = visual.Rect(
+            self.win,
+            pos=(0, 0.28),
+            width=0.01,
+            height=0.03,
+            lineColor='white',
+            fillColor='white',
+            units='height',
+            autoLog=False)
+
+        zpos = visual.Rect(
+            self.win,
+            pos=(0, 0.28),
+            width=0.009,
+            height=0.03,
+            lineColor='black',
+            fillColor='black',
+            units='height',
+            autoLog=False)
+
+        if self.eyetracker is None:
+            raise RuntimeError('Eyetracker is not found.')
+
+        if enable_mouse:
+            mouse = event.Mouse(visible=False, win=self.win)
+
+        self.gaze_data_status = None
+        self.eyetracker.subscribe_to(tobii_research.EYETRACKER_GAZE_DATA,
+                                    self.on_gaze_data_status)
+        att_timer = core.CountdownTimer(attention_grabber.duration)
+        playing = True
+        b_show_status = True
+        while b_show_status:
+            attention_grabber.play()
+            att_timer.reset()
+            while att_timer.getTime() > 0 and playing:
+                bgrect.draw()
+                zbar.draw()
+                zc.draw()
+                if self.gaze_data_status is not None:
+                    lp, lv, rp, rv = self.gaze_data_status
+                    if lv:
+                        leye.setPos(((lp[0] - 0.5) * 0.2,
+                                    ((lp[1] - 0.5) * 0.2 + 0.4)))
+                        leye.draw()
+                    if rv:
+                        reye.setPos(((rp[0] - 0.5) * 0.2,
+                                    ((rp[1] - 0.5) * 0.2 + 0.4)))
+                        reye.draw()
+                    if lv or rv:
+                        zpos.setPos(((((lp[2] * int(lv) + rp[2] * int(rv)) /
+                                    (int(lv) + int(rv))) - 0.5) * 0.125, 0.28))
+                        zpos.draw()
+
+                for key in event.getKeys():
+                    if key == 'escape' or key == 'space':
+                        b_show_status = False
+                        playing = False
+                        break
+
+                if enable_mouse and mouse.getPressed()[0]:
+                    b_show_status = False
+                    playing = False
+
+                attention_grabber.draw()
+                self.win.flip()
+            if b_show_status:
+                attention_grabber.loadMovie(att_stim)
+
+        attention_grabber.stop()
+        self.eyetracker.unsubscribe_from(tobii_research.EYETRACKER_GAZE_DATA)
+
+    def run_calibration(self):
+        self.update_calibration = types.MethodType()
+        super(infant_tobii_controller, self)
+
+
+
 def set_custom_calibration(self, func):
     """Set custom calibration function.
     
@@ -171,18 +322,16 @@ def infant_show_status(self,
 
 
 def infant_calibration(self,
-                       numkey_dict=None,
                        collect_key='space',
                        exit_key='return'):
-    """Customized calibration for infants.
+    """Five-point calibration for infants.
 
     An implementation of run_calibration() in psychopy_tobii_controller,
-    achieved by set_custom_calibration().
-
-    Args:
-        numkey_dict: keymap for manual calibration. Default to five-point
+    achieved by set_custom_calibration(). Default to five-point
             calibration, using 1~5 to present calibration stimulus and 0 to
             hide the target.
+
+    Args:
         collect_key: key to start collecting samples.
         exit_key: key to finish and leave the current calibration procedure.
 
@@ -190,21 +339,15 @@ def infant_calibration(self,
         None
     """
 
-    if not hasattr(self, 'infant_stims'):
-        raise (RuntimeError(
-            'use update_infant_stims() to define calibration targets before calling infant_calibration.'
-        ))
-
-    if numkey_dict is None:
-        # the keymap for target index
-        numkey_dict = {
-            'num_0': -1,
-            'num_1': 0,
-            'num_2': 1,
-            'num_3': 2,
-            'num_4': 3,
-            'num_5': 4
-        }
+    # the keymap for target index
+    numkey_dict = {
+        'num_0': -1,
+        'num_1': 0,
+        'num_2': 1,
+        'num_3': 2,
+        'num_4': 3,
+        'num_5': 4
+    }
 
     current_point_index = -1
     # prepare calibration stimuli
@@ -244,15 +387,6 @@ def infant_calibration(self,
             cali_targets[current_point_index].setSize(newsize, units='norm')
             cali_targets[current_point_index].draw()
         self.win.flip()
-
-
-def update_infant_stims(self, infant_stims):
-    """Provide stimuli for infant calibration
-
-    It is a quick but ugly workaround to use infant_calibration
-
-    """
-    setattr(self, 'infant_stims', infant_stims)
 
 
 def get_current_gaze_validity(self):
