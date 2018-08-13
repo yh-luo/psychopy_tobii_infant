@@ -72,7 +72,8 @@ controller = psychopy_tobii_controller.tobii_controller(win)
 controller.open_datafile('test_infant_calibration.tsv')
 
 # use infant calibration procedure
-controller.set_custom_calibration(psychopy_tobii_infant.infant_calibration(stims=CALISTIMS))
+controller.update_infant_stims
+controller.set_custom_calibration(psychopy_tobii_infant.infant_calibration)
 
 # show the status of eye tracker
 controller.infant_show_status("infant/elmo's ducks.mp4")

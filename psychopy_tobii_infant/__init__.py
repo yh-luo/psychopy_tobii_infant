@@ -171,7 +171,6 @@ def infant_show_status(self,
 
 
 def infant_calibration(self,
-                       stims=None,
                        numkey_dict=None,
                        collect_key='space',
                        exit_key='return'):
@@ -181,8 +180,6 @@ def infant_calibration(self,
     achieved by set_custom_calibration().
 
     Args:
-        stims: calibration stimuli (shouldn't be less than the number of
-        calibration points).
         numkey_dict: keymap for manual calibration. Default to five-point
             calibration, using 1~5 to present calibration stimulus and 0 to
             hide the target.
@@ -193,8 +190,10 @@ def infant_calibration(self,
         None
     """
 
-    if stims is None:
-        raise(RuntimeError('stims should not be None!'))
+    if not hasattr(self, 'infant_stims'):
+        raise (RuntimeError(
+            'use update_infant_stims() to define calibration targets before calling infant_calibration.'
+        ))
 
     if numkey_dict is None:
         # the keymap for target index
@@ -209,7 +208,7 @@ def infant_calibration(self,
 
     current_point_index = -1
     # prepare calibration stimuli
-    cali_targets = [visual.ImageStim(self.win, image=v) for v in stims]
+    cali_targets = [visual.ImageStim(self.win, image=v) for v in self.infant_stims]
     # randomization of calibration targets (to entartain the infants hopefully...)
     random.shuffle(cali_targets)
 
@@ -245,6 +244,15 @@ def infant_calibration(self,
             cali_targets[current_point_index].setSize(newsize, units='norm')
             cali_targets[current_point_index].draw()
         self.win.flip()
+
+
+def update_infant_stims(self, infant_stims):
+    """Provide stimuli for infant calibration
+
+    It is a quick but ugly workaround to use infant_calibration
+
+    """
+    self.infant_stims = infant_stims
 
 
 def get_current_gaze_validity(self):
@@ -317,6 +325,8 @@ def collect_lt(self, max_time, min_away, blink_dur=1):
 
 if PY3:
     psychopy_tobii_controller.tobii_controller.set_custom_calibration = set_custom_calibration
+    psychopy_tobii_controller.tobii_controller.update_infant_stims = types.MethodType(
+        psychopy_tobii_controller.tobii_controller, update_infant_stims)
     psychopy_tobii_controller.tobii_controller.get_current_gaze_validity = types.MethodType(
         get_current_gaze_validity, psychopy_tobii_controller.tobii_controller)
     psychopy_tobii_controller.tobii_controller.collect_lt = types.MethodType(
@@ -325,6 +335,9 @@ if PY3:
         infant_show_status, psychopy_tobii_controller.tobii_controller)
 
 else:
+    psychopy_tobii_controller.tobii_controller.update_infant_stims = types.MethodType(
+        psychopy_tobii_controller.tobii_controller, update_infant_stims,
+        psychopy_tobii_controller.tobii_controller)
     psychopy_tobii_controller.tobii_controller.get_current_gaze_validity = types.MethodType(
         get_current_gaze_validity, psychopy_tobii_controller.tobii_controller,
         psychopy_tobii_controller.tobii_controller)
