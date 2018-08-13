@@ -252,7 +252,7 @@ def update_infant_stims(self, infant_stims):
     It is a quick but ugly workaround to use infant_calibration
 
     """
-    self.infant_stims = infant_stims
+    setattr(self, 'infant_stims', infant_stims)
 
 
 def get_current_gaze_validity(self):

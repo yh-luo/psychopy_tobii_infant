@@ -72,7 +72,7 @@ controller = psychopy_tobii_controller.tobii_controller(win)
 controller.open_datafile('test_infant_calibration.tsv')
 
 # use infant calibration procedure
-controller.update_infant_stims
+controller.update_infant_stims(CALISTIMS)
 controller.set_custom_calibration(psychopy_tobii_infant.infant_calibration)
 
 # show the status of eye tracker
