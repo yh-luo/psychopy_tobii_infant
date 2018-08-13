@@ -171,7 +171,7 @@ def infant_show_status(self,
 
 
 def infant_calibration(self,
-                       stims,
+                       stims=None,
                        numkey_dict=None,
                        collect_key='space',
                        exit_key='return'):
@@ -181,8 +181,8 @@ def infant_calibration(self,
     achieved by set_custom_calibration().
 
     Args:
-        stims: calibration stimuli (should be the same number of calibration
-            point).
+        stims: calibration stimuli (shouldn't be less than the number of
+        calibration points).
         numkey_dict: keymap for manual calibration. Default to five-point
             calibration, using 1~5 to present calibration stimulus and 0 to
             hide the target.
@@ -192,6 +192,9 @@ def infant_calibration(self,
     Returns:
         None
     """
+
+    if stims is None:
+        raise(RuntimeError('stims should not be None!'))
 
     if numkey_dict is None:
         # the keymap for target index
