@@ -14,6 +14,8 @@ if PY3:
 
 class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
 
+    infant_stims = None
+
     # inherit the methods from tobii_controller
     def __init__(self):
         super().__init__()
@@ -21,18 +23,22 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
     def on_gaze_data_status(self, gaze_data):
         super().on_gaze_data_status(gaze_data)
 
-    def run_calibration(self, calibration_points, move_duration=1.5,
-            shuffle=True, start_key='space', decision_key='space',
-            text_color='white', enable_mouse=False):
-        super().run_calibration(calibration_points, move_duration=1.5,
-            shuffle=True, start_key='space', decision_key='space',
-            text_color='white', enable_mouse=False)
+    def run_calibration(self,
+                        calibration_points,
+                        start_key='space',
+                        decision_key='space',
+                        enable_mouse=False):
+        super().run_calibration(
+            calibration_points,
+            move_duration=1.5,
+            shuffle=True,
+            start_key='space',
+            decision_key='space',
+            text_color='white',
+            enable_mouse=False)
 
     def collect_calibration_data(self, p, cood='PsychoPy'):
         super().collect_calibration_data(p, cood='PsychoPy')
-
-    def update_calibration_default(self):
-        super().update_calibration_default()
 
     def subscribe(self):
         super().subscribe()
@@ -55,7 +61,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
     def close_datafile(self):
         super().close_datafile()
 
-    def record_event(self,event):
+    def record_event(self, event):
         super().record_event(event)
 
     def flush_data(self):
@@ -169,7 +175,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
 
         self.gaze_data_status = None
         self.eyetracker.subscribe_to(tobii_research.EYETRACKER_GAZE_DATA,
-                                    self.on_gaze_data_status)
+                                     self.on_gaze_data_status)
         att_timer = core.CountdownTimer(attention_grabber.duration)
         playing = True
         b_show_status = True
@@ -184,15 +190,16 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                     lp, lv, rp, rv = self.gaze_data_status
                     if lv:
                         leye.setPos(((lp[0] - 0.5) * 0.2,
-                                    ((lp[1] - 0.5) * 0.2 + 0.4)))
+                                     ((lp[1] - 0.5) * 0.2 + 0.4)))
                         leye.draw()
                     if rv:
                         reye.setPos(((rp[0] - 0.5) * 0.2,
-                                    ((rp[1] - 0.5) * 0.2 + 0.4)))
+                                     ((rp[1] - 0.5) * 0.2 + 0.4)))
                         reye.draw()
                     if lv or rv:
                         zpos.setPos(((((lp[2] * int(lv) + rp[2] * int(rv)) /
-                                    (int(lv) + int(rv))) - 0.5) * 0.125, 0.28))
+                                       (int(lv) + int(rv))) - 0.5) * 0.125,
+                                     0.28))
                         zpos.draw()
 
                 for key in event.getKeys():
@@ -213,173 +220,27 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         attention_grabber.stop()
         self.eyetracker.unsubscribe_from(tobii_research.EYETRACKER_GAZE_DATA)
 
-    def set_custom_calibration(self, func):
-        """Set custom calibration function.
-        
-        Because psychopy_tobii_controller was written in Python 2, the method
-        will be reassigned for Python 3 compatabillity. Users may not use this
-        function.
+    def run_infant_calibration(self,
+                               infant_stims,
+                               calibration_points,
+                               start_key='space',
+                               decision_key='space',
+                               enable_mouse=False):
+        self.infant_stims = infant_stims
+        self.run_calibration(
+            calibration_points,
+            start_key='space',
+            decision_key='space',
+            enable_mouse=False)
 
-        Args:
-            func: custom calibration function.
-
-        Returns:
-            None
-        """
-
-        self.update_calibration = types.MethodType(func, self)
-
-
-    def infant_show_status(self,
-                        att_stim,
-                        enable_mouse=False,
-                        pos=[0, 0],
-                        size=[640, 480],
-                        units='pix'):
-        """Infant-friendly procedure to adjust the participant's position.
-
-        This is an implementation of show_status() in psychopy_tobii_controller. It
-        plays an interesting video to attract the participant's attention and
-        map the relative position of eyes to the track box. The experimenter can
-        thus inspect and adjust the position of the participant.
-
-        Args:
-            att_stim: the video to be played.
-            enable_mouse: use mouse clicks to leave the procedure?
-            pos: the position to draw the video.
-            size: the size of the video.
-            units: the units of parameters (see PsychoPy manual for more info).
-
-        Returns:
-            None
-        """
-        attention_grabber = visual.MovieStim3(
-            self.win,
-            att_stim,
-            pos=pos,
-            size=size,
-            units=units,
-            name=att_stim,
-            autoLog=False)
-
-        bgrect = visual.Rect(
-            self.win,
-            pos=(0, 0.4),
-            width=0.25,
-            height=0.2,
-            lineColor='white',
-            fillColor='black',
-            units='height',
-            autoLog=False)
-
-        leye = visual.Circle(
-            self.win,
-            size=0.02,
-            units='height',
-            lineColor=None,
-            fillColor='green',
-            autoLog=False)
-
-        reye = visual.Circle(
-            self.win,
-            size=0.02,
-            units='height',
-            lineColor=None,
-            fillColor='red',
-            autoLog=False)
-
-        zbar = visual.Rect(
-            self.win,
-            pos=(0, 0.28),
-            width=0.25,
-            height=0.03,
-            lineColor='green',
-            fillColor='green',
-            units='height',
-            autoLog=False)
-
-        zc = visual.Rect(
-            self.win,
-            pos=(0, 0.28),
-            width=0.01,
-            height=0.03,
-            lineColor='white',
-            fillColor='white',
-            units='height',
-            autoLog=False)
-
-        zpos = visual.Rect(
-            self.win,
-            pos=(0, 0.28),
-            width=0.009,
-            height=0.03,
-            lineColor='black',
-            fillColor='black',
-            units='height',
-            autoLog=False)
-
-        if self.eyetracker is None:
-            raise RuntimeError('Eyetracker is not found.')
-
-        if enable_mouse:
-            mouse = event.Mouse(visible=False, win=self.win)
-
-        self.gaze_data_status = None
-        self.eyetracker.subscribe_to(tobii_research.EYETRACKER_GAZE_DATA,
-                                    self.on_gaze_data_status)
-        att_timer = core.CountdownTimer(attention_grabber.duration)
-        playing = True
-        b_show_status = True
-        while b_show_status:
-            attention_grabber.play()
-            att_timer.reset()
-            while att_timer.getTime() > 0 and playing:
-                bgrect.draw()
-                zbar.draw()
-                zc.draw()
-                if self.gaze_data_status is not None:
-                    lp, lv, rp, rv = self.gaze_data_status
-                    if lv:
-                        leye.setPos(((lp[0] - 0.5) * 0.2,
-                                    ((lp[1] - 0.5) * 0.2 + 0.4)))
-                        leye.draw()
-                    if rv:
-                        reye.setPos(((rp[0] - 0.5) * 0.2,
-                                    ((rp[1] - 0.5) * 0.2 + 0.4)))
-                        reye.draw()
-                    if lv or rv:
-                        zpos.setPos(((((lp[2] * int(lv) + rp[2] * int(rv)) /
-                                    (int(lv) + int(rv))) - 0.5) * 0.125, 0.28))
-                        zpos.draw()
-
-                for key in event.getKeys():
-                    if key == 'escape' or key == 'space':
-                        b_show_status = False
-                        playing = False
-                        break
-
-                if enable_mouse and mouse.getPressed()[0]:
-                    b_show_status = False
-                    playing = False
-
-                attention_grabber.draw()
-                self.win.flip()
-            if b_show_status:
-                attention_grabber.loadMovie(att_stim)
-
-        attention_grabber.stop()
-        self.eyetracker.unsubscribe_from(tobii_research.EYETRACKER_GAZE_DATA)
-
-
-    def infant_calibration(self,
-                        collect_key='space',
-                        exit_key='return'):
+    def update_calibration_default(self,
+                                   collect_key='space',
+                                   exit_key='return'):
         """Five-point calibration for infants.
 
         An implementation of run_calibration() in psychopy_tobii_controller,
-        achieved by set_custom_calibration(). Default to five-point
-                calibration, using 1~5 to present calibration stimulus and 0 to
-                hide the target.
+        Default to five-point calibration, using 1~5 to present calibration
+        stimulus and 0 to hide the target.
 
         Args:
             collect_key: key to start collecting samples.
@@ -401,7 +262,9 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
 
         current_point_index = -1
         # prepare calibration stimuli
-        cali_targets = [visual.ImageStim(self.win, image=v) for v in self.infant_stims]
+        cali_targets = [
+            visual.ImageStim(self.win, image=v) for v in self.infant_stims
+        ]
         # randomization of calibration targets (to entartain the infants hopefully...)
         random.shuffle(cali_targets)
 
@@ -434,10 +297,10 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                     self.original_calibration_points[current_point_index])
                 t = clock.getTime()
                 newsize = [2 - math.sin(2 * t) * e for e in [1, win_r]]
-                cali_targets[current_point_index].setSize(newsize, units='norm')
+                cali_targets[current_point_index].setSize(
+                    newsize, units='norm')
                 cali_targets[current_point_index].draw()
             self.win.flip()
-
 
     def get_current_gaze_validity(self):
         """Get gaze validity.
@@ -458,7 +321,6 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
             lv = self.gaze_data[-1][4]
             rv = self.gaze_data[-1][8]
             return (lv, rv)
-
 
     # Collect looking time
     def collect_lt(self, max_time, min_away, blink_dur=1):
@@ -497,7 +359,8 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                             break
                 else:
                     # calculate the correct looking time
-                    lt = max_time - trial_timer.getTime() - np.sum(away) - min_away
+                    lt = max_time - trial_timer.getTime() - np.sum(
+                        away) - min_away
                     # leave the trial when looking away
                     looking = False
                     return (round(lt, 3))
