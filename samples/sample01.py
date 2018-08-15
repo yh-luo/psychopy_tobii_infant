@@ -35,23 +35,6 @@ win = visual.Window(
     fullscr=True,
     allowGUI=False)
 
-
-def _unload(self):
-    try:
-        # remove textures from graphics card to prevent crash
-        self.clearTextures()
-    except Exception:
-        pass
-
-    if self._mov is not None:
-        self._mov.close()
-    self._mov = None
-    self._numpyFrame = None
-    if self._audioStream is not None:
-        self._audioStream.stop()
-    self._audioStream = None
-    self.status = FINISHED
-
 gaze = visual.Circle(
     win,
     size=0.02,

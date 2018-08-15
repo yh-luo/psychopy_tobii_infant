@@ -61,9 +61,6 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         if not (2 <= len(calibration_points) <= 9):
             raise ValueError('Calibration points must be 2~9')
 
-        if enable_mouse:
-            mouse = event.Mouse(visible=False, win=self.win)
-
         self.infant_stims = infant_stims
 
         img = Image.new('RGBA', tuple(self.win.size))
@@ -74,7 +71,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
             self.win,
             pos=(0, -self.win.size[1] / 4),
             color='white',
-            units='pix',
+            units='height',
             autoLog=False)
         remove_marker = visual.Circle(
             self.win,
@@ -84,50 +81,42 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
             lineWidth=1,
             units='height',
             autoLog=False)
-        if self.win.units == 'norm':  # fix oval
-            remove_marker.setSize(
-                [float(self.win.size[1]) / self.win.size[0], 1.0])
-            remove_marker.setSize(
-                [float(self.win.size[1]) / self.win.size[0], 1.0])
 
         self.calibration.enter_calibration_mode()
 
         self.original_calibration_points = calibration_points[:]
-        self.retry_points = list(range(len(
-            self.original_calibration_points)))  # set all points
+        # set all points
+        cp_num = len(self.original_calibration_points)
+        self.retry_points = [*range(cp_num)]
+
         in_calibration_loop = True
         while in_calibration_loop:
             self.calibration_points = []
-            for i in range(len(self.original_calibration_points)):
+            for i in range(cp_num):
                 if i in self.retry_points:
                     self.calibration_points.append(
                         self.original_calibration_points[i])
 
-            if (start_key is not None) or enable_mouse:
-                waitkey = True
-                if start_key is not None:
-                    if enable_mouse:
-                        result_msg.setText(
-                            'Press {} or click left button to start calibration'.
-                            format(start_key))
-                    else:
-                        result_msg.setText(
-                            'Press {} to start calibration'.format(start_key))
-                else:  # enable_mouse==True
+            event.clearEvents()
+            if start_key is None and not enable_mouse:
+                self.win.flip()
+            else:
+                if enable_mouse:
+                    mouse = event.Mouse(visible=False, win=self.win)
                     result_msg.setText(
-                        'Click left button to start calibration')
-                while waitkey:
-                    for key in event.getKeys():
-                        if key == start_key:
-                            waitkey = False
-
-                    if enable_mouse and mouse.getPressed()[0]:
-                        waitkey = False
-
+                                'Click left button to start calibration')
                     result_msg.draw()
                     self.win.flip()
-            else:
-                self.win.flip()
+                    while True:
+                        if mouse.getPressed()[0]:
+                            break
+                # start is not None and enable_mouse is False
+                else:
+                    result_msg.setText(
+                        'Press {} to start calibration'.format(start_key))
+                    result_msg.draw()
+                    self.win.flip()
+                    event.waitKeys(keyList=[start_key])
 
             self.update_calibration()
 
@@ -172,12 +161,16 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
 
             if enable_mouse:
                 result_msg.setText(
-                    'Accept/Retry: {} or right-click\nSelect recalibration points: 0-9 key or left-click\nAbort: esc'.
-                    format(decision_key))
+                    'Accept/Retry: right-click\n'
+                    'Recalibrate all points: 0\n'
+                    'Select recalibration points: 1-{p} key or left-click\n'
+                    'Abort: esc'.format(p=cp_num))
             else:
                 result_msg.setText(
-                    'Accept/Retry: {}\nSelect recalibration points: 0-9 key\nAbort: esc'.
-                    format(decision_key))
+                    'Accept/Retry: {k}\n'
+                    'Recalibrate all points: 0\n'
+                    'Select recalibration points: 1-{p} key\n'
+                    'Abort: esc'.format(k=decision_key, p=cp_num))
             result_img.setImage(img)
 
             waitkey = True
@@ -192,12 +185,12 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                     elif key in ['0', 'num_0']:
                         if len(self.retry_points) == 0:
                             self.retry_points = list(
-                                range(len(self.original_calibration_points)))
+                                range(cp_num))
                         else:
                             self.retry_points = []
                     elif key in self.key_index_dict:
                         key_index = self.key_index_dict[key]
-                        if key_index < len(self.original_calibration_points):
+                        if key_index < cp_num:
                             if key_index in self.retry_points:
                                 self.retry_points.remove(key_index)
                             else:
@@ -210,7 +203,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                     elif pressed[0]:  # left click
                         mouse_pos = mouse.getPos()
                         for key_index in range(
-                                len(self.original_calibration_points)):
+                                cp_num):
                             p = self.original_calibration_points[key_index]
                             if np.linalg.norm([
                                     mouse_pos[0] - p[0], mouse_pos[1] - p[1]
@@ -224,7 +217,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                 result_img.draw()
                 if len(self.retry_points) > 0:
                     for index in self.retry_points:
-                        if index > len(self.original_calibration_points):
+                        if index > cp_num:
                             self.retry_points.remove(index)
                         remove_marker.setPos(
                             self.original_calibration_points[index])
@@ -445,8 +438,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         """Five-point calibration for infants.
 
         An implementation of run_calibration() in psychopy_tobii_controller,
-        Default to five-point calibration, using 1~5 to present calibration
-        stimulus and 0 to hide the target.
+        Using 1~9 to present calibration stimulus and 0 to hide the target.
 
         Args:
             collect_key: key to start collecting samples.
@@ -463,7 +455,11 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
             'num_2': 1,
             'num_3': 2,
             'num_4': 3,
-            'num_5': 4
+            'num_5': 4,
+            'num_6': 5,
+            'num_7': 7,
+            'num_8': 8,
+            'num_9': 9
         }
 
         current_point_index = -1
