@@ -52,11 +52,6 @@ def _unload(self):
     self._audioStream = None
     self.status = FINISHED
 
-
-# Currently, there is a bug in MovieStim3 that makes it unable to stop
-# playing the video
-visual.MovieStim3._unload = _unload
-
 gaze = visual.Circle(
     win,
     size=0.02,
@@ -75,7 +70,7 @@ controller.show_status("infant/elmo's ducks.mp4")
 
 # the calibration points should not be shuffled, considering the stimulus will
 # be presented manually!
-ret = controller.run_infant_calibration(CALIPOINTS, CALISTIMS, start_key=None)
+ret = controller.run_calibration(CALIPOINTS, CALISTIMS, start_key=None)
 
 if ret == 'abort':
     core.quit()

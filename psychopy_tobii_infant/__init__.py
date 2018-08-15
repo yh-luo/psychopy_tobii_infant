@@ -3,9 +3,17 @@ import random
 import tobii_research
 import psychopy_tobii_controller
 import numpy as np
+import time
 
 from psychopy import visual, event, core
 from psychopy.constants import PY3
+
+try:
+    import Image
+    import ImageDraw
+except:
+    from PIL import Image
+    from PIL import ImageDraw
 
 # check python version
 if PY3:
@@ -18,24 +26,236 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
 
     # inherit the methods from tobii_controller
     def __init__(self, win, id=0):
-        super().__init__(win, id=0)
+        self.eyetracker_id = id
+        self.win = win
+        self.update_calibration = self.update_calibration_infant
+
+        eyetrackers = tobii_research.find_all_eyetrackers()
+
+        if len(eyetrackers) == 0:
+            raise RuntimeError('No Tobii eyetrackers')
+
+        try:
+            self.eyetracker = eyetrackers[self.eyetracker_id]
+        except:
+            raise ValueError(
+                'Invalid eyetracker ID {}\n({} eyetrackers found)'.format(
+                    self.eyetracker_id, len(eyetrackers)))
+
+        self.calibration = tobii_research.ScreenBasedCalibration(
+            self.eyetracker)
 
     def on_gaze_data_status(self, gaze_data):
         super().on_gaze_data_status(gaze_data)
 
     def run_calibration(self,
                         calibration_points,
+                        infant_stims,
                         start_key='space',
                         decision_key='space',
                         enable_mouse=False):
-        super().run_calibration(
-            calibration_points=calibration_points,
-            move_duration=1.5,
-            shuffle=False,
-            start_key=start_key,
-            decision_key=decision_key,
-            text_color='white',
-            enable_mouse=enable_mouse)
+
+        if self.eyetracker is None:
+            raise RuntimeError('Eyetracker is not found.')
+
+        if not (2 <= len(calibration_points) <= 9):
+            raise ValueError('Calibration points must be 2~9')
+
+        if enable_mouse:
+            mouse = event.Mouse(visible=False, win=self.win)
+
+        self.infant_stims = infant_stims
+
+        img = Image.new('RGBA', tuple(self.win.size))
+        img_draw = ImageDraw.Draw(img)
+
+        result_img = visual.SimpleImageStim(self.win, img, autoLog=False)
+        result_msg = visual.TextStim(
+            self.win,
+            pos=(0, -self.win.size[1] / 4),
+            color='white',
+            units='pix',
+            autoLog=False)
+        remove_marker = visual.Circle(
+            self.win,
+            radius=0.01,
+            fillColor='black',
+            lineColor='white',
+            lineWidth=1,
+            units='height',
+            autoLog=False)
+        if self.win.units == 'norm':  # fix oval
+            remove_marker.setSize(
+                [float(self.win.size[1]) / self.win.size[0], 1.0])
+            remove_marker.setSize(
+                [float(self.win.size[1]) / self.win.size[0], 1.0])
+
+        self.calibration.enter_calibration_mode()
+
+        self.original_calibration_points = calibration_points[:]
+        self.retry_points = list(range(len(
+            self.original_calibration_points)))  # set all points
+        in_calibration_loop = True
+        while in_calibration_loop:
+            self.calibration_points = []
+            for i in range(len(self.original_calibration_points)):
+                if i in self.retry_points:
+                    self.calibration_points.append(
+                        self.original_calibration_points[i])
+
+            if (start_key is not None) or enable_mouse:
+                waitkey = True
+                if start_key is not None:
+                    if enable_mouse:
+                        result_msg.setText(
+                            'Press {} or click left button to start calibration'.
+                            format(start_key))
+                    else:
+                        result_msg.setText(
+                            'Press {} to start calibration'.format(start_key))
+                else:  # enable_mouse==True
+                    result_msg.setText(
+                        'Click left button to start calibration')
+                while waitkey:
+                    for key in event.getKeys():
+                        if key == start_key:
+                            waitkey = False
+
+                    if enable_mouse and mouse.getPressed()[0]:
+                        waitkey = False
+
+                    result_msg.draw()
+                    self.win.flip()
+            else:
+                self.win.flip()
+
+            self.update_calibration()
+
+            calibration_result = self.calibration.compute_and_apply()
+
+            self.win.flip()
+
+            img_draw.rectangle(
+                ((0, 0), tuple(self.win.size)), fill=(0, 0, 0, 0))
+            if calibration_result.status == tobii_research.CALIBRATION_STATUS_FAILURE:
+                #computeCalibration failed.
+                pass
+            else:
+                if len(calibration_result.calibration_points) == 0:
+                    pass
+                else:
+                    for calibration_point in calibration_result.calibration_points:
+                        p = calibration_point.position_on_display_area
+                        for calibration_sample in calibration_point.calibration_samples:
+                            lp = calibration_sample.left_eye.position_on_display_area
+                            rp = calibration_sample.right_eye.position_on_display_area
+                            if calibration_sample.left_eye.validity == tobii_research.VALIDITY_VALID_AND_USED:
+                                img_draw.line(
+                                    ((p[0] * self.win.size[0],
+                                      p[1] * self.win.size[1]),
+                                     (lp[0] * self.win.size[0],
+                                      lp[1] * self.win.size[1])),
+                                    fill=(0, 255, 0, 255))
+                            if calibration_sample.right_eye.validity == tobii_research.VALIDITY_VALID_AND_USED:
+                                img_draw.line(
+                                    ((p[0] * self.win.size[0],
+                                      p[1] * self.win.size[1]),
+                                     (rp[0] * self.win.size[0],
+                                      rp[1] * self.win.size[1])),
+                                    fill=(255, 0, 0, 255))
+                        img_draw.ellipse(
+                            ((p[0] * self.win.size[0] - 3,
+                              p[1] * self.win.size[1] - 3),
+                             (p[0] * self.win.size[0] + 3,
+                              p[1] * self.win.size[1] + 3)),
+                            outline=(0, 0, 0, 255))
+
+            if enable_mouse:
+                result_msg.setText(
+                    'Accept/Retry: {} or right-click\nSelect recalibration points: 0-9 key or left-click\nAbort: esc'.
+                    format(decision_key))
+            else:
+                result_msg.setText(
+                    'Accept/Retry: {}\nSelect recalibration points: 0-9 key\nAbort: esc'.
+                    format(decision_key))
+            result_img.setImage(img)
+
+            waitkey = True
+            self.retry_points = []
+            if enable_mouse:
+                mouse.setVisible(True)
+            event.clearEvents()
+            while waitkey:
+                for key in event.getKeys():
+                    if key in [decision_key, 'escape']:
+                        waitkey = False
+                    elif key in ['0', 'num_0']:
+                        if len(self.retry_points) == 0:
+                            self.retry_points = list(
+                                range(len(self.original_calibration_points)))
+                        else:
+                            self.retry_points = []
+                    elif key in self.key_index_dict:
+                        key_index = self.key_index_dict[key]
+                        if key_index < len(self.original_calibration_points):
+                            if key_index in self.retry_points:
+                                self.retry_points.remove(key_index)
+                            else:
+                                self.retry_points.append(key_index)
+                if enable_mouse:
+                    pressed = mouse.getPressed()
+                    if pressed[2]:  # right click
+                        key = decision_key
+                        waitkey = False
+                    elif pressed[0]:  # left click
+                        mouse_pos = mouse.getPos()
+                        for key_index in range(
+                                len(self.original_calibration_points)):
+                            p = self.original_calibration_points[key_index]
+                            if np.linalg.norm([
+                                    mouse_pos[0] - p[0], mouse_pos[1] - p[1]
+                            ]) < self.calibration_target_dot.radius * 5:
+                                if key_index in self.retry_points:
+                                    self.retry_points.remove(key_index)
+                                else:
+                                    self.retry_points.append(key_index)
+                                time.sleep(0.2)
+                                break
+                result_img.draw()
+                if len(self.retry_points) > 0:
+                    for index in self.retry_points:
+                        if index > len(self.original_calibration_points):
+                            self.retry_points.remove(index)
+                        remove_marker.setPos(
+                            self.original_calibration_points[index])
+                        remove_marker.draw()
+                result_msg.draw()
+                self.win.flip()
+
+            if key == decision_key:
+                if len(self.retry_points) == 0:
+                    retval = 'accept'
+                    in_calibration_loop = False
+                else:  #retry
+                    for point_index in self.retry_points:
+                        x, y = self.get_tobii_pos(
+                            self.original_calibration_points[point_index])
+                        self.calibration.discard_data(x, y)
+            elif key == 'escape':
+                retval = 'abort'
+                in_calibration_loop = False
+            else:
+                raise RuntimeError('Calibration: Invalid key')
+
+            if enable_mouse:
+                mouse.setVisible(False)
+
+        self.calibration.leave_calibration_mode()
+
+        if enable_mouse:
+            mouse.setVisible(False)
+
+        return retval
 
     def collect_calibration_data(self, p, cood='PsychoPy'):
         super().collect_calibration_data(p, cood='PsychoPy')
@@ -50,10 +270,10 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         super().on_gaze_data(gaze_data)
 
     def get_current_gaze_position(self):
-        super().get_current_gaze_position()
+        return super().get_current_gaze_position()
 
     def get_current_pupil_size(self):
-        super().get_current_pupil_size()
+        return super().get_current_pupil_size()
 
     def open_datafile(self, filename, embed_events=False):
         super().open_datafile(filename, embed_events=False)
@@ -68,16 +288,16 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         super().flush_data()
 
     def get_psychopy_pos(self, p):
-        super().get_psychopy_pos(p)
+        return super().get_psychopy_pos(p)
 
     def get_tobii_pos(self, p):
-        super().get_tobii_pos(p)
+        return super().get_tobii_pos(p)
 
     def convert_tobii_record(self, record, start_time):
-        super().convert_tobii_record(record, start_time)
+        return super().convert_tobii_record(record, start_time)
 
     def interpolate_gaze_data(self, record1, record2, t):
-        super().interpolate_gaze_data(record1, record2, t)
+        return super().interpolate_gaze_data(record1, record2, t)
 
     def show_status(self,
                     att_stim,
@@ -220,22 +440,8 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         attention_grabber.stop()
         self.eyetracker.unsubscribe_from(tobii_research.EYETRACKER_GAZE_DATA)
 
-    def run_infant_calibration(self,
-                               calibration_points,
-                               infant_stims,
-                               start_key='space',
-                               decision_key='space',
-                               enable_mouse=False):
-        self.infant_stims = infant_stims
-        self.run_calibration(
-            calibration_points=calibration_points,
-            start_key=start_key,
-            decision_key=decision_key,
-            enable_mouse=enable_mouse)
-
-    def update_calibration_default(self,
-                                   collect_key='space',
-                                   exit_key='return'):
+    def update_calibration_infant(self, collect_key='space',
+                                  exit_key='return'):
         """Five-point calibration for infants.
 
         An implementation of run_calibration() in psychopy_tobii_controller,
@@ -273,6 +479,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         # fix_oval
         win_r = self.win.size[0] / self.win.size[1]
         clock = core.Clock()
+        event.clearEvents()
         while in_calibration:
             # get keys
             keys = event.getKeys()
