@@ -6,7 +6,6 @@ import numpy as np
 import time
 
 from psychopy import visual, event, core
-from psychopy.constants import PY3
 
 try:
     import Image
@@ -20,14 +19,10 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
 
     infant_stims = None
 
-    # inherit the methods from tobii_controller
     def __init__(self, win, id=0):
         self.eyetracker_id = id
         self.win = win
-        # save original units of Window
-        self.units_old = self.win.units
-        # change the units to height
-        self.win.setUnits('height', log=False)
+
         self.update_calibration = self.update_calibration_infant
 
         eyetrackers = tobii_research.find_all_eyetrackers()
@@ -61,6 +56,10 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         if not (2 <= len(calibration_points) <= 9):
             raise ValueError('Calibration points must be 2~9')
 
+        # save original units of Window
+        units_old = self.win.units
+        # change the units to height
+        self.win.setUnits('height', log=False)
         self.infant_stims = infant_stims
 
         img = Image.new('RGBA', tuple(self.win.size))
@@ -245,8 +244,10 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         if enable_mouse:
             mouse.setVisible(False)
 
+        self.win.setUnits(units_old, log=False)
         return retval
 
+    # inherit the methods from tobii_controller
     def collect_calibration_data(self, p, cood='PsychoPy'):
         super().collect_calibration_data(p, cood='PsychoPy')
 
