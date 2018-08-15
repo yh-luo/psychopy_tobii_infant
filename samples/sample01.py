@@ -1,13 +1,12 @@
 # Calibration
-
-import psychopy_tobii_controller
-import psychopy_tobii_infant
 import numpy as np
 import os
 
 from psychopy import visual, event, core, prefs
 prefs.general['audioLib'] = ['sounddevice']
 from psychopy.constants import FINISHED
+
+from psychopy_tobii_infant import infant_tobii_controller
 
 ###############################################################################
 # Constants
@@ -67,20 +66,16 @@ gaze = visual.Circle(
     autoLog=False)
 
 # initialize tobii_controller to communicate with the eyetracker
-controller = psychopy_tobii_controller.tobii_controller(win)
+controller = infant_tobii_controller(win)
 # Open a data file to save gaze data
 controller.open_datafile('test_infant_calibration.tsv')
 
-# use infant calibration procedure
-controller.update_infant_stims(CALISTIMS)
-controller.set_custom_calibration(psychopy_tobii_infant.infant_calibration)
-
 # show the status of eye tracker
-controller.infant_show_status("infant/elmo's ducks.mp4")
+controller.show_status("infant/elmo's ducks.mp4")
 
 # the calibration points should not be shuffled, considering the stimulus will
 # be presented manually!
-ret = controller.run_calibration(CALIPOINTS, start_key=None, shuffle=False)
+ret = controller.run_infant_calibration(CALIPOINTS, CALISTIMS, start_key=None)
 
 if ret == 'abort':
     core.quit()

@@ -29,13 +29,13 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                         decision_key='space',
                         enable_mouse=False):
         super().run_calibration(
-            calibration_points,
+            calibration_points=calibration_points,
             move_duration=1.5,
-            shuffle=True,
-            start_key='space',
-            decision_key='space',
+            shuffle=False,
+            start_key=start_key,
+            decision_key=decision_key,
             text_color='white',
-            enable_mouse=False)
+            enable_mouse=enable_mouse)
 
     def collect_calibration_data(self, p, cood='PsychoPy'):
         super().collect_calibration_data(p, cood='PsychoPy')
@@ -221,17 +221,17 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         self.eyetracker.unsubscribe_from(tobii_research.EYETRACKER_GAZE_DATA)
 
     def run_infant_calibration(self,
-                               infant_stims,
                                calibration_points,
+                               infant_stims,
                                start_key='space',
                                decision_key='space',
                                enable_mouse=False):
         self.infant_stims = infant_stims
         self.run_calibration(
-            calibration_points,
-            start_key='space',
-            decision_key='space',
-            enable_mouse=False)
+            calibration_points=calibration_points,
+            start_key=start_key,
+            decision_key=decision_key,
+            enable_mouse=enable_mouse)
 
     def update_calibration_default(self,
                                    collect_key='space',
