@@ -15,10 +15,6 @@ except:
     from PIL import Image
     from PIL import ImageDraw
 
-# check python version
-if PY3:
-    import types
-
 
 class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
 
@@ -28,6 +24,10 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
     def __init__(self, win, id=0):
         self.eyetracker_id = id
         self.win = win
+        # save original units of Window
+        self.units_old = self.win.units
+        # change the units to height
+        self.win.setUnits('height', log=False)
         self.update_calibration = self.update_calibration_infant
 
         eyetrackers = tobii_research.find_all_eyetrackers()
@@ -104,7 +104,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                 if enable_mouse:
                     mouse = event.Mouse(visible=False, win=self.win)
                     result_msg.setText(
-                                'Click left button to start calibration')
+                        'Click left button to start calibration')
                     result_msg.draw()
                     self.win.flip()
                     while True:
@@ -166,28 +166,26 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                     'Select recalibration points: 1-{p} key or left-click\n'
                     'Abort: esc'.format(p=cp_num))
             else:
-                result_msg.setText(
-                    'Accept/Retry: {k}\n'
-                    'Recalibrate all points: 0\n'
-                    'Select recalibration points: 1-{p} key\n'
-                    'Abort: esc'.format(k=decision_key, p=cp_num))
+                result_msg.setText('Accept/Retry: {k}\n'
+                                   'Recalibrate all points: 0\n'
+                                   'Select recalibration points: 1-{p} key\n'
+                                   'Abort: esc'.format(
+                                       k=decision_key, p=cp_num))
             result_img.setImage(img)
 
             waitkey = True
             self.retry_points = []
             if enable_mouse:
                 mouse.setVisible(True)
+
             event.clearEvents()
             while waitkey:
                 for key in event.getKeys():
                     if key in [decision_key, 'escape']:
                         waitkey = False
+                        break
                     elif key in ['0', 'num_0']:
-                        if len(self.retry_points) == 0:
-                            self.retry_points = list(
-                                range(cp_num))
-                        else:
-                            self.retry_points = []
+                        self.retry_points = [*range(cp_num)]
                     elif key in self.key_index_dict:
                         key_index = self.key_index_dict[key]
                         if key_index < cp_num:
@@ -202,12 +200,11 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                         waitkey = False
                     elif pressed[0]:  # left click
                         mouse_pos = mouse.getPos()
-                        for key_index in range(
-                                cp_num):
+                        for key_index in range(cp_num):
                             p = self.original_calibration_points[key_index]
                             if np.linalg.norm([
                                     mouse_pos[0] - p[0], mouse_pos[1] - p[1]
-                            ]) < self.calibration_target_dot.radius * 5:
+                            ]) < 0.01:
                                 if key_index in self.retry_points:
                                     self.retry_points.remove(key_index)
                                 else:
