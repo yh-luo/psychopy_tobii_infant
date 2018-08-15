@@ -16,8 +16,43 @@ except:
 
 
 class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
+    """Tobii controller for PsychoPy.
+
+    psychopy_tobii_controller and tobii_research are required for this module.
+
+    Args:
+        win: psychopy.visual.Window object.
+        id: the id of eyetracker.
+
+    Attributes:
+        infant_stims: the stimuli to be used in calibration. Users should
+            define it with run_calibration().
+        numkey_dict: the keymap to index calibration target.
+        eyetracker_id: the id of eyetracker.
+        win: psychopy.visual.Window object.
+        update_calibration: the used calibration procedure.
+        eyetracker: the used eyetracker.
+        calibration: the calibration procedure from tobii_research.
+        original_calibration_points: calibration points defined by users in
+            run_calibration().
+        retry_points: recalibration points defined by users in calibration.
+        calibration_points: the current calibration point
+    """
 
     infant_stims = None
+    # the keymap for target index
+    numkey_dict = {
+        'num_0': -1,
+        'num_1': 0,
+        'num_2': 1,
+        'num_3': 2,
+        'num_4': 3,
+        'num_5': 4,
+        'num_6': 5,
+        'num_7': 7,
+        'num_8': 8,
+        'num_9': 9
+    }
 
     def __init__(self, win, id=0):
         self.eyetracker_id = id
@@ -39,9 +74,6 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
 
         self.calibration = tobii_research.ScreenBasedCalibration(
             self.eyetracker)
-
-    def on_gaze_data_status(self, gaze_data):
-        super().on_gaze_data_status(gaze_data)
 
     def run_calibration(self,
                         calibration_points,
@@ -181,8 +213,8 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                         break
                     elif key in ['0', 'num_0']:
                         self.retry_points = [*range(cp_num)]
-                    elif key in self.key_index_dict:
-                        key_index = self.key_index_dict[key]
+                    elif key in self.numkey_dict:
+                        key_index = self.numkey_dict[key]
                         if key_index < cp_num:
                             if key_index in self.retry_points:
                                 self.retry_points.remove(key_index)
@@ -241,49 +273,6 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
             mouse.setVisible(False)
 
         return retval
-
-    # inherit the methods from tobii_controller
-    def collect_calibration_data(self, p, cood='PsychoPy'):
-        super().collect_calibration_data(p, cood='PsychoPy')
-
-    def subscribe(self):
-        super().subscribe()
-
-    def unsubscribe(self):
-        super().unsubscribe()
-
-    def on_gaze_data(self, gaze_data):
-        super().on_gaze_data(gaze_data)
-
-    def get_current_gaze_position(self):
-        return super().get_current_gaze_position()
-
-    def get_current_pupil_size(self):
-        return super().get_current_pupil_size()
-
-    def open_datafile(self, filename, embed_events=False):
-        super().open_datafile(filename, embed_events=False)
-
-    def close_datafile(self):
-        super().close_datafile()
-
-    def record_event(self, event):
-        super().record_event(event)
-
-    def flush_data(self):
-        super().flush_data()
-
-    def get_psychopy_pos(self, p):
-        return super().get_psychopy_pos(p)
-
-    def get_tobii_pos(self, p):
-        return super().get_tobii_pos(p)
-
-    def convert_tobii_record(self, record, start_time):
-        return super().convert_tobii_record(record, start_time)
-
-    def interpolate_gaze_data(self, record1, record2, t):
-        return super().interpolate_gaze_data(record1, record2, t)
 
     def show_status(self,
                     att_stim,
@@ -441,20 +430,6 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
             None
         """
 
-        # the keymap for target index
-        numkey_dict = {
-            'num_0': -1,
-            'num_1': 0,
-            'num_2': 1,
-            'num_3': 2,
-            'num_4': 3,
-            'num_5': 4,
-            'num_6': 5,
-            'num_7': 7,
-            'num_8': 8,
-            'num_9': 9
-        }
-
         current_point_index = -1
         # prepare calibration stimuli
         cali_targets = [
@@ -475,8 +450,8 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
             # get keys
             keys = event.getKeys()
             for key in keys:
-                if key in numkey_dict:
-                    current_point_index = numkey_dict[key]
+                if key in self.numkey_dict:
+                    current_point_index = self.numkey_dict[key]
                 elif key == collect_key:
                     # collect samples when space is pressed
                     if current_point_index in self.retry_points:
@@ -565,3 +540,49 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         else:
             lt = max_time - np.sum(away)
             return (round(lt, 3))
+
+    # inherit the methods from tobii_controller
+    def on_gaze_data_status(self, gaze_data):
+        super().on_gaze_data_status(gaze_data)
+
+    def collect_calibration_data(self, p, cood='PsychoPy'):
+        super().collect_calibration_data(p, cood='PsychoPy')
+
+    def subscribe(self):
+        super().subscribe()
+
+    def unsubscribe(self):
+        super().unsubscribe()
+
+    def on_gaze_data(self, gaze_data):
+        super().on_gaze_data(gaze_data)
+
+    def get_current_gaze_position(self):
+        return super().get_current_gaze_position()
+
+    def get_current_pupil_size(self):
+        return super().get_current_pupil_size()
+
+    def open_datafile(self, filename, embed_events=False):
+        super().open_datafile(filename, embed_events=False)
+
+    def close_datafile(self):
+        super().close_datafile()
+
+    def record_event(self, event):
+        super().record_event(event)
+
+    def flush_data(self):
+        super().flush_data()
+
+    def get_psychopy_pos(self, p):
+        return super().get_psychopy_pos(p)
+
+    def get_tobii_pos(self, p):
+        return super().get_tobii_pos(p)
+
+    def convert_tobii_record(self, record, start_time):
+        return super().convert_tobii_record(record, start_time)
+
+    def interpolate_gaze_data(self, record1, record2, t):
+        return super().interpolate_gaze_data(record1, record2, t)
