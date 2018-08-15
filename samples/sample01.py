@@ -37,7 +37,6 @@ win = visual.Window(
 gaze = visual.Circle(
     win,
     size=0.02,
-    units='height',
     lineColor=None,
     fillColor='white',
     autoLog=False)

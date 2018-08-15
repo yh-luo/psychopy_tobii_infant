@@ -414,11 +414,12 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                     break
 
             # draw calibration target
-            if 0 <= current_point_index <= 4:
+            if current_point_index in self.retry_points:
                 self.targets[current_point_index].setPos(
                     self.original_calibration_points[current_point_index])
                 t = clock.getTime()
-                newsize = [(math.sin(t)**2 + 0.2) * e for e in self.target_original_size]
+                newsize = [(math.sin(t)**2 + 0.2) * e
+                           for e in self.target_original_size]
                 self.targets[current_point_index].setSize(newsize)
                 self.targets[current_point_index].draw()
             self.win.flip()
