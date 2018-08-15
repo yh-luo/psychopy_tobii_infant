@@ -17,8 +17,8 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
     infant_stims = None
 
     # inherit the methods from tobii_controller
-    def __init__(self):
-        super().__init__()
+    def __init__(self, win, id=0):
+        super().__init__(win, id=0)
 
     def on_gaze_data_status(self, gaze_data):
         super().on_gaze_data_status(gaze_data)
