@@ -56,10 +56,6 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         if not (2 <= len(calibration_points) <= 9):
             raise ValueError('Calibration points must be 2~9')
 
-        # save original units of Window
-        units_old = self.win.units
-        # change the units to height
-        self.win.setUnits('height', log=False)
         self.infant_stims = infant_stims
 
         img = Image.new('RGBA', tuple(self.win.size))
@@ -70,7 +66,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
             self.win,
             pos=(0, -self.win.size[1] / 4),
             color='white',
-            units='height',
+            units='pix',
             autoLog=False)
         remove_marker = visual.Circle(
             self.win,
@@ -78,7 +74,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
             fillColor='black',
             lineColor='white',
             lineWidth=1,
-            units='height',
+            units='pix',
             autoLog=False)
 
         self.calibration.enter_calibration_mode()
@@ -244,7 +240,6 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         if enable_mouse:
             mouse.setVisible(False)
 
-        self.win.setUnits(units_old, log=False)
         return retval
 
     # inherit the methods from tobii_controller
@@ -463,15 +458,17 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         current_point_index = -1
         # prepare calibration stimuli
         cali_targets = [
-            visual.ImageStim(self.win, image=v) for v in self.infant_stims
+            visual.ImageStim(self.win, image=v, autoLog=False)
+            for v in self.infant_stims
         ]
         # randomization of calibration targets (to entartain the infants hopefully...)
         random.shuffle(cali_targets)
 
         # start calibration
         in_calibration = True
-        # fix_oval
-        win_r = self.win.size[0] / self.win.size[1]
+        # get original size of stimuli
+        old_size = cali_targets[0].size
+
         clock = core.Clock()
         event.clearEvents()
         while in_calibration:
@@ -497,9 +494,8 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                 cali_targets[current_point_index].setPos(
                     self.original_calibration_points[current_point_index])
                 t = clock.getTime()
-                newsize = [2 - math.sin(2 * t) * e for e in [1, win_r]]
-                cali_targets[current_point_index].setSize(
-                    newsize, units='norm')
+                newsize = [(math.sin(t)**2 + 0.2) * e for e in old_size]
+                cali_targets[current_point_index].setSize(newsize)
                 cali_targets[current_point_index].draw()
             self.win.flip()
 

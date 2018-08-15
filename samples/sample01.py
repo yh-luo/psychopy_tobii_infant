@@ -51,8 +51,6 @@ controller.open_datafile('test_infant_calibration.tsv')
 # show the status of eye tracker
 controller.show_status("infant/elmo's ducks.mp4")
 
-# the calibration points should not be shuffled, considering the stimulus will
-# be presented manually!
 ret = controller.run_calibration(CALIPOINTS, CALISTIMS, start_key=None)
 
 if ret == 'abort':
