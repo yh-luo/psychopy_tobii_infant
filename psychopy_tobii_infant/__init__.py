@@ -25,7 +25,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         id: the id of eyetracker.
 
     Attributes:
-        infant_stims: the stimuli to be used in calibration. Users should
+        infant_stims: the stimuli to be used in calibration. The user should
             define it with run_calibration().
         numkey_dict: the keymap to index calibration target.
         eyetracker_id: the id of eyetracker.
@@ -33,10 +33,14 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         update_calibration: the used calibration procedure.
         eyetracker: the used eyetracker.
         calibration: the calibration procedure from tobii_research.
-        original_calibration_points: calibration points defined by users in
+        targets: the stimuli in calibration.
+        target_original_size: the original size of the targets. It assumes that
+            all the targets are of the same size.
+        original_calibration_points: calibration points defined by The user in
             run_calibration().
-        retry_points: recalibration points defined by users in calibration.
-        calibration_points: the current calibration point
+        retry_points: recalibration points defined by The user in calibration.
+        calibration_points: the current calibration point.
+        gaze_data_status: the current gaze position, used by show_status().
     """
 
     infant_stims = None
@@ -78,9 +82,27 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
     def run_calibration(self,
                         calibration_points,
                         infant_stims,
-                        start_key='space',
+                        start_key=None,
                         decision_key='space'):
+        """Run calibration
 
+        The experimenter should manually show the stimulus and collect data
+        when the subject is paying attention to the stimulus.
+        The stimulus will change its size according to time, in order to
+        attract the infant. The experimenter may press the `start_key` to start
+        the procedure. To finish and leave the procedure, press the
+        `decision_key`.
+
+        Args:
+            calibration_points: list of position of the calibration points.
+            infant_stims: list of images to attract the infant.
+            start_key: the key to start the procedure. If None, directly
+            proceed to the calibration procedure.
+            decision_key: the key to leave the procedure.
+
+        Returns:
+            retval: the state of calibration
+        """
         if self.eyetracker is None:
             raise RuntimeError('Eyetracker is not found.')
 
@@ -377,14 +399,18 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
 
     def update_calibration_infant(self, collect_key='space',
                                   exit_key='return'):
-        """Five-point calibration for infants.
+        """The calibration procedure designed for infants.
 
         An implementation of run_calibration() in psychopy_tobii_controller,
         Using 1~9 to present calibration stimulus and 0 to hide the target.
 
         Args:
-            collect_key: key to start collecting samples.
-            exit_key: key to finish and leave the current calibration procedure.
+            collect_key: the key to start collecting samples.
+            exit_key: the key to finish and leave the current calibration 
+                procedure. It should not be confused with `decision_key`, which
+                is used to leave the whole calibration process. `exit_key` is
+                used to leave the current calibration, the user may recalibrate
+                or accept the results afterwards.
 
         Returns:
             None
@@ -428,10 +454,11 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         """Get gaze validity.
 
         Get current gaze validity provided by Tobii eye tracker as a tuple of
-        (left_validity, right_validity). Users may not call this function.
+        (left_validity, right_validity). The user may not call this function.
 
         Args:
             None
+
         Returns:
             lv: validity of left-eye gaze point
             rv: validity of right-eye gaze point
@@ -457,7 +484,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
             blink_dur: the tolerable duration of missing data in seconds.
 
         Returns:
-            the looking time in the trial.
+            lt: The looking time in the trial.
         """
 
         trial_timer = core.CountdownTimer(max_time)
