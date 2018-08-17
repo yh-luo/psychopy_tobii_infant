@@ -488,42 +488,46 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         """
 
         trial_timer = core.Clock()
-        away = []
+        absence_timer = core.Clock()
         away_time = []
 
         looking = True
         trial_timer.reset()
+        absence_timer.reset()
         while trial_timer.getTime() <= max_time:
-            current_gaze = self.gaze_data[-1]
-            t, lv, rv = current_gaze[0], current_gaze[4], current_gaze[8] 
+            lv, rv = self.gaze_data[-1][4], self.gaze_data[-1][8]
 
             if any((lv, rv)):
-                looking = True
-            else:
-                looking = False
-                away.append(t)
-
-            if len(away) > 0:
-                missing_dur = max(away) - min(away)
-                if looking:
-                    if missing_dur <= blink_dur:
-                        # if the loss is less than blink_dur,
-                        # it's probabliy a blink
+                # if the last sample is missing
+                if not looking:
+                    away_dur = absence_timer.getTime()
+                    # if missing samples are larger than the threshold of termination
+                    if away_dur >= min_away:
+                        away_time.append(away_dur)
+                        lt = trial_timer.getTime() - np.sum(away_time)
+                        # stop the trial
+                        return(round(lt, 3))
+                    # if missing samples are larger than blink duration
+                    elif away_dur >= blink_dur:
+                        away_time.append(away_dur)
+                    # if missing samples are tolerable
+                    else:
                         pass
-                    elif missing_dur <= min_away:
-                        # save the looking away time for further calculation
-                        away_time.append(missing_dur)
-                    away = []
+                looking = True
+                absence_timer.reset()
+            else:
+                if absence_timer >= min_away:
+                    away_dur = absence_timer.getTime()
+                    away_time.append(away_dur)
+                    lt = trial_timer.getTime() - np.sum(away_time)
+                    # terminate the trial
+                    return(round(lt, 3))
                 else:
-                    if missing_dur >= min_away:
-                        # calculate the correct looking time
-                        lt = trial_timer.getTime() - np.sum(
-                            away_time) - missing_dur
-                        # leave the trial
-                        return (round(lt, 3))
+                    pass
+                looking = False
 
             self.win.flip()
-        # if the loop is completed, return the maximum looking time
+        # if the loop is completed, return the looking time
         else:
             lt = max_time - np.sum(away_time)
             return (round(lt, 3))
