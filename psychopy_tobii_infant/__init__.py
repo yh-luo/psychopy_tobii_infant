@@ -494,7 +494,8 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         looking = True
         trial_timer.reset()
         while trial_timer.getTime() <= max_time:
-            t, lv, rv = self.get_current_gaze_validity()
+            current_gaze = self.gaze_data[-1]
+            t, lv, rv = current_gaze[0], current_gaze[4], current_gaze[8] 
 
             if any((lv, rv)):
                 looking = True
