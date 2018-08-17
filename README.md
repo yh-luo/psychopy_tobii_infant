@@ -47,7 +47,8 @@ Currently tested on Python 3.5.6
 
 ### Dependency
 
-- [PsychoPy](psychopy_tobii_controller)  
+- [PsychoPy 1.90.x](http://www.psychopy.org/)
+    Currently tested on v1.90.3
 - [tobii_research](https://pypi.python.org/pypi/tobii-research)  
 - [psychopy_tobii_controller](https://github.com/hsogo/psychopy_tobii_controller) by Hiroyuki Sogo
 
