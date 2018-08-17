@@ -464,11 +464,12 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         """
 
         if len(self.gaze_data) == 0:
-            return (np.nan, np.nan)
+            return ([np.nan, np.nan, np.nan])
         else:
+            t = self.gaze_data[-1][0]
             lv = self.gaze_data[-1][4]
             rv = self.gaze_data[-1][8]
-            return (lv, rv)
+            return ([t, lv, rv])
 
     # Collect looking time
     def collect_lt(self, max_time, min_away, blink_dur=1):
@@ -486,37 +487,44 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
             lt: The looking time in the trial.
         """
 
-        trial_timer = core.CountdownTimer(max_time)
-        absence_timer = core.CountdownTimer(min_away)
+        trial_timer = core.Clock()
         away = []
+        away_time = []
+
         looking = True
         trial_timer.reset()
-        while trial_timer.getTime() > 0 and looking:
-            lv, rv = self.get_current_gaze_validity()
+        while trial_timer.getTime() <= max_time:
+            t, lv, rv = self.get_current_gaze_validity()
 
-            if not any((lv, rv)):
-                # consecutive invalid samples will be counted
-                absence_timer.reset()
-                while absence_timer.getTime() > 0:
-                    if any((lv, rv)):
-                        # if the loss is less than blink_dur, it's probabliy a blink
-                        if absence_timer.getTime() >= (min_away - blink_dur):
-                            break
-                        # save the looking away time for looking time calculation
-                        else:
-                            away.append(min_away - absence_timer.getTime())
-                            break
+            if any((lv, rv)):
+                looking = True
+            else:
+                looking = False
+                away.append(t)
+
+            if len(away) > 0:
+                missing_dur = max(away) - min(away)
+                if looking:
+                    if missing_dur <= blink_dur:
+                        # if the loss is less than blink_dur,
+                        # it's probabliy a blink
+                        pass
+                    elif missing_dur <= min_away:
+                        # save the looking away time for further calculation
+                        away_time.append(missing_dur)
+                    away = []
                 else:
-                    # calculate the correct looking time
-                    lt = max_time - trial_timer.getTime() - np.sum(
-                        away) - min_away
-                    # leave the trial when looking away
-                    looking = False
-                    return (round(lt, 3))
+                    if missing_dur >= min_away:
+                        # calculate the correct looking time
+                        lt = trial_timer.getTime() - np.sum(
+                            away_time) - missing_dur
+                        # leave the trial
+                        return (round(lt, 3))
+
             self.win.flip()
         # if the loop is completed, return the maximum looking time
         else:
-            lt = max_time - np.sum(away)
+            lt = max_time - np.sum(away_time)
             return (round(lt, 3))
 
     # inherit the methods from tobii_controller
