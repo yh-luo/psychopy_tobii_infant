@@ -1,4 +1,3 @@
-# Collect looking time automatically
 import random
 import os
 
@@ -28,6 +27,8 @@ CALISTIMS = [
 # Demo
 ###############################################################################
 # create a Window to control the monitor
+# It is assumed that the profile of the monitor is know. Thus, stimuli in
+# show_status are in 'height' units.
 win = visual.Window(
     size=[1280, 1024],
     monitor='tobii',
@@ -53,10 +54,10 @@ alltar = [tar_1, tar_2]
 
 # initialize tobii_controller to communicate with the eyetracker
 controller = infant_tobii_controller(win)
-# Open a data file to save gaze data
+# Open a file to save the eyetracking data
 controller.open_datafile('test_infant_calibration.tsv')
 
-# show the status of eye tracker
+# show the relative position of the subject to the eyetracker
 controller.show_status("infant/elmo's ducks.mp4")
 
 ret = controller.run_calibration(CALIPOINTS, CALISTIMS, start_key=None)
@@ -65,11 +66,12 @@ if ret == 'abort':
     core.quit()
 
 controller.subscribe()
-# wait a bit for the eyetracker to record
+# wait a bit for the eyetracker to turn on
 core.wait(0.5)
 # start
 random.shuffle(alltar)
 for target in alltar:
+    # Draw the stimuli in each frames
     target.setAutoDraw(True)
     stim_on = win.flip()
     # collect looking time
@@ -79,7 +81,9 @@ for target in alltar:
     print('Looking time in {tar}:{lt}\nStim duration:{dur}'.format(
         tar=target.name, lt=lt, dur=stim_off - stim_on))
 
+# stop recording
 controller.unsubscribe()
+# close the file
 controller.close_datafile()
 
 win.close()
