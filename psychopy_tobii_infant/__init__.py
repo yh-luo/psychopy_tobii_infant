@@ -516,7 +516,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                 looking = True
                 absence_timer.reset()
             else:
-                if absence_timer >= min_away:
+                if absence_timer.getTime() >= min_away:
                     away_dur = absence_timer.getTime()
                     away_time.append(away_dur)
                     lt = trial_timer.getTime() - np.sum(away_time)
