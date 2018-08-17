@@ -52,9 +52,9 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         'num_4': 3,
         'num_5': 4,
         'num_6': 5,
-        'num_7': 7,
-        'num_8': 8,
-        'num_9': 9
+        'num_7': 6,
+        'num_8': 7,
+        'num_9': 8
     }
 
     def __init__(self, win, id=0):
@@ -213,18 +213,19 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                 for key in event.getKeys():
                     if key in [decision_key, 'escape']:
                         waitkey = False
-                    elif key in ['0', 'num_0']:
-                        if len(self.retry_points) == cp_num:
-                            self.retry_points = []
-                        else:
-                            self.retry_points = [*range(cp_num)]
                     elif key in self.numkey_dict:
-                        key_index = self.numkey_dict[key]
-                        if key_index < cp_num:
-                            if key_index in self.retry_points:
-                                self.retry_points.remove(key_index)
+                        if key in ['0', 'num_0']:
+                            if len(self.retry_points) == cp_num:
+                                self.retry_points = []
                             else:
-                                self.retry_points.append(key_index)
+                                self.retry_points = [*range(cp_num)]
+                        else:
+                            key_index = self.numkey_dict[key]
+                            if key_index < cp_num:
+                                if key_index in self.retry_points:
+                                    self.retry_points.remove(key_index)
+                                else:
+                                    self.retry_points.append(key_index)
 
                 result_img.draw()
                 if len(self.retry_points) > 0:
@@ -431,8 +432,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                     if current_point_index in self.retry_points:
                         self.collect_calibration_data(
                             self.calibration_points[current_point_index])
-                        # deactivate the target after colleting samples
-                        current_point_index = -1
+                        self.win.flip()
                 elif key == exit_key:
                     # exit calibration when return is presssed
                     in_calibration = False
@@ -449,27 +449,6 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                 self.targets[current_point_index].draw()
             self.win.flip()
 
-    def get_current_gaze_validity(self):
-        """Get gaze validity.
-
-        Get current gaze validity provided by Tobii eye tracker as a tuple of
-        (left_validity, right_validity). The user may not call this function.
-
-        Args:
-            None
-
-        Returns:
-            lv: validity of left-eye gaze point
-            rv: validity of right-eye gaze point
-        """
-
-        if len(self.gaze_data) == 0:
-            return ([np.nan, np.nan, np.nan])
-        else:
-            t = self.gaze_data[-1][0]
-            lv = self.gaze_data[-1][4]
-            rv = self.gaze_data[-1][8]
-            return ([t, lv, rv])
 
     # Collect looking time
     def collect_lt(self, max_time, min_away, blink_dur=1):

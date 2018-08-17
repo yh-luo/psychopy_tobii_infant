@@ -72,6 +72,7 @@ for target in alltar:
     stim_on = win.flip()
     # collect looking time
     lt = controller.collect_lt(10, 2)
+    target.setAutoDraw(False)
     stim_off = win.flip()
     print('Looking time in {tar}:{lt}\nStim duration:{dur}'.format(
         tar=target.name, lt=lt, dur=stim_off - stim_on))
