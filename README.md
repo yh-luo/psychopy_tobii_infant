@@ -4,7 +4,7 @@ Create infant-friendly eyetracking experiments with PsychoPy and psychopy_tobii_
 
 ## Who it's for
 
-This package was mostly based on psychopy_toii_controller, with some some modifications to make life easier for anyone who works with infants and children.
+This package was mostly based on [psychopy_tobii_controller](https://github.com/hsogo/psychopy_tobii_controller), with some some modifications to make life easier for anyone who works with infants and children.
 
 ### Cautions
 
