@@ -68,7 +68,7 @@ controller.subscribe()
 # start
 random.shuffle(alltar)
 for target in alltar:
-    target.draw()
+    target.setAutoDraw(True)
     stim_on = win.flip()
     # collect looking time
     lt = controller.collect_lt(10, 2)

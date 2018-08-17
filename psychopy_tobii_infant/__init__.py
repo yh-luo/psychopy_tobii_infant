@@ -492,23 +492,19 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         looking = True
         trial_timer.reset()
         while trial_timer.getTime() > 0 and looking:
-            not_looking = False
             lv, rv = self.get_current_gaze_validity()
+
             if not any((lv, rv)):
-                not_looking = True
-            if not_looking:
                 # consecutive invalid samples will be counted
                 absence_timer.reset()
                 while absence_timer.getTime() > 0:
                     if any((lv, rv)):
                         # if the loss is less than blink_dur, it's probabliy a blink
                         if absence_timer.getTime() >= (min_away - blink_dur):
-                            not_looking = False
                             break
                         # save the looking away time for looking time calculation
                         else:
                             away.append(min_away - absence_timer.getTime())
-                            not_looking = False
                             break
                 else:
                     # calculate the correct looking time
@@ -517,6 +513,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                     # leave the trial when looking away
                     looking = False
                     return (round(lt, 3))
+            self.win.flip()
         # if the loop is completed, return the maximum looking time
         else:
             lt = max_time - np.sum(away)
