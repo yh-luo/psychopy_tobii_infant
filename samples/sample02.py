@@ -1,5 +1,5 @@
-# Calibration
-import numpy as np
+# Collect looking time automatically
+import random
 import os
 
 from psychopy import visual, event, core, prefs
@@ -10,6 +10,8 @@ from psychopy_tobii_infant import infant_tobii_controller
 ###############################################################################
 # Constants
 ###############################################################################
+random.seed()
+
 DIR = os.path.dirname(__file__)
 # users should know the display well.
 DISPSIZE = (34, 27)
@@ -34,12 +36,20 @@ win = visual.Window(
     fullscr=True,
     allowGUI=False)
 
-gaze = visual.Circle(
+# prepare the experiment stimuli
+tar_1 = visual.ImageStim(
     win,
-    size=0.02,
-    lineColor=None,
-    fillColor='white',
-    autoLog=False)
+    'infant/checkboard_big.png',
+    size=[1280, 1024],
+    units='pix',
+    name='big')
+tar_2 = visual.ImageStim(
+    win,
+    'infant/checkboard_small.png',
+    size=[1280, 1024],
+    units='pix',
+    name='small')
+alltar = [tar_1, tar_2]
 
 # initialize tobii_controller to communicate with the eyetracker
 controller = infant_tobii_controller(win)
@@ -55,19 +65,16 @@ if ret == 'abort':
     core.quit()
 
 controller.subscribe()
-running = True
-while running:
-    currentGazePosition = controller.get_current_gaze_position()
-    if np.nan not in currentGazePosition:
-        gaze.setPos(currentGazePosition[0:2])
-
-    keys = event.getKeys()
-    for key in keys:
-        if key == 'space':
-            running = False
-
-    gaze.draw()
-    win.flip()
+# start
+random.shuffle(alltar)
+for target in alltar:
+    target.draw()
+    stim_on = win.flip()
+    # collect looking time
+    lt = controller.collect_lt(10, 2)
+    stim_off = win.flip()
+    print('Looking time in {tar}:{lt}\nStim duration:{dur}'.format(
+        tar=target.name, lt=lt, dur=stim_off - stim_on))
 
 controller.unsubscribe()
 controller.close_datafile()

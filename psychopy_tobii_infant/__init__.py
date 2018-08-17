@@ -3,7 +3,6 @@ import random
 import tobii_research
 import psychopy_tobii_controller
 import numpy as np
-import time
 
 from psychopy import visual, event, core
 
