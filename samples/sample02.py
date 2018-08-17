@@ -39,13 +39,13 @@ win = visual.Window(
 # prepare the experiment stimuli
 tar_1 = visual.ImageStim(
     win,
-    'infant/checkboard_big.png',
+    'stim/checkboard_big.png',
     size=[1280, 1024],
     units='pix',
     name='big')
 tar_2 = visual.ImageStim(
     win,
-    'infant/checkboard_small.png',
+    'stim/checkboard_small.png',
     size=[1280, 1024],
     units='pix',
     name='small')

@@ -1,4 +1,5 @@
 .vscode/
 *.pyc
-infant/
 *.tsv
+*.png
+*.mp4
