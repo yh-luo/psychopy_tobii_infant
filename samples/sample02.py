@@ -65,6 +65,8 @@ if ret == 'abort':
     core.quit()
 
 controller.subscribe()
+# wait a bit for the eyetracker to record
+core.wait(0.5)
 # start
 random.shuffle(alltar)
 for target in alltar:

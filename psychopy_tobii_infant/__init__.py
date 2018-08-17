@@ -209,6 +209,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
 
             waitkey = True
             self.retry_points = []
+
             while waitkey:
                 for key in event.getKeys():
                     if key in [decision_key, 'escape']:
@@ -427,13 +428,15 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
             for key in keys:
                 if key in self.numkey_dict:
                     current_point_index = self.numkey_dict[key]
-                elif key == collect_key:
+                    break # prevent index out of range
+
+                if key == collect_key:
                     # collect samples when space is pressed
                     if current_point_index in self.retry_points:
                         self.collect_calibration_data(
                             self.calibration_points[current_point_index])
-                        self.win.flip()
-                elif key == exit_key:
+                        current_point_index = -1
+                if key == exit_key:
                     # exit calibration when return is presssed
                     in_calibration = False
                     break
@@ -473,6 +476,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         looking = True
         trial_timer.reset()
         absence_timer.reset()
+
         while trial_timer.getTime() <= max_time:
             lv, rv = self.gaze_data[-1][4], self.gaze_data[-1][8]
 
