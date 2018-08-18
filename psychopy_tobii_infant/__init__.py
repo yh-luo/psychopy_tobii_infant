@@ -428,7 +428,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
             for key in keys:
                 if key in self.numkey_dict:
                     current_point_index = self.numkey_dict[key]
-                    break # prevent index out of range
+                    break  # prevent index out of range
 
                 if key == collect_key:
                     # collect samples when space is pressed
@@ -451,7 +451,6 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                 self.targets[current_point_index].setSize(newsize)
                 self.targets[current_point_index].draw()
             self.win.flip()
-
 
     # Collect looking time
     def collect_lt(self, max_time, min_away, blink_dur=1):
@@ -489,7 +488,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                         away_time.append(away_dur)
                         lt = trial_timer.getTime() - np.sum(away_time)
                         # stop the trial
-                        return(round(lt, 3))
+                        return (round(lt, 3))
                     # if missing samples are larger than blink duration
                     elif away_dur >= blink_dur:
                         away_time.append(away_dur)
@@ -504,7 +503,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                     away_time.append(away_dur)
                     lt = trial_timer.getTime() - np.sum(away_time)
                     # terminate the trial
-                    return(round(lt, 3))
+                    return (round(lt, 3))
                 else:
                     pass
                 looking = False
@@ -512,6 +511,72 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
             self.win.flip()
         # if the loop is completed, return the looking time
         else:
+            lt = max_time - np.sum(away_time)
+            return (round(lt, 3))
+
+    def collect_lt_mov(self, movie, max_time, min_away, blink_dur=1):
+        """Collect looking time data and playing video
+
+        Collect and calculate looking time in runtime. Also end the trial
+        automatically when the participant look away.
+
+        Args:
+            movie: the video to play.
+            max_time: maximum looking time in seconds.
+            min_away: minimum duration to stop in seconds.
+            blink_dur: the tolerable duration of missing data in seconds.
+
+        Returns:
+            lt: The looking time in the trial.
+        """
+
+        trial_timer = core.Clock()
+        absence_timer = core.Clock()
+        away_time = []
+
+        movie.play()
+        looking = True
+        trial_timer.reset()
+        absence_timer.reset()
+        while trial_timer.getTime() <= max_time:
+            lv, rv = self.gaze_data[-1][4], self.gaze_data[-1][8]
+
+            if any((lv, rv)):
+                # if the last sample is missing
+                if not looking:
+                    away_dur = absence_timer.getTime()
+                    # if missing samples are larger than the threshold of termination
+                    if away_dur >= min_away:
+                        away_time.append(away_dur)
+                        lt = trial_timer.getTime() - np.sum(away_time)
+                        # stop the trial
+                        movie.stop()
+                        return (round(lt, 3))
+                    # if missing samples are larger than blink duration
+                    elif away_dur >= blink_dur:
+                        away_time.append(away_dur)
+                    # if missing samples are tolerable
+                    else:
+                        pass
+                looking = True
+                absence_timer.reset()
+            else:
+                if absence_timer.getTime() >= min_away:
+                    away_dur = absence_timer.getTime()
+                    away_time.append(away_dur)
+                    lt = trial_timer.getTime() - np.sum(away_time)
+                    # terminate the trial
+                    movie.stop()
+                    return (round(lt, 3))
+                else:
+                    pass
+                looking = False
+
+            movie.draw()
+            self.win.flip()
+        # if the loop is completed, return the looking time
+        else:
+            movie.stop()
             lt = max_time - np.sum(away_time)
             return (round(lt, 3))
 
