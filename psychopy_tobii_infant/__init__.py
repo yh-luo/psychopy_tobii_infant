@@ -108,6 +108,13 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         if not (2 <= len(calibration_points) <= 9):
             raise ValueError('Calibration points must be 2~9')
 
+        else:
+            self.numkey_dict = {
+                k: v
+                for k, v in self.numkey_dict.items()
+                if v < len(calibration_points)
+            }
+
         # prepare calibration stimuli
         self.targets = [
             visual.ImageStim(self.win, image=v, autoLog=False)
@@ -428,15 +435,14 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
             for key in keys:
                 if key in self.numkey_dict:
                     current_point_index = self.numkey_dict[key]
-                    break  # prevent index out of range
 
-                if key == collect_key:
+                elif key == collect_key:
                     # collect samples when space is pressed
                     if current_point_index in self.retry_points:
                         self.collect_calibration_data(
-                            self.calibration_points[current_point_index])
+                            self.original_calibration_points[current_point_index])
                         current_point_index = -1
-                if key == exit_key:
+                elif key == exit_key:
                     # exit calibration when return is presssed
                     in_calibration = False
                     break
