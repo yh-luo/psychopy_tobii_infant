@@ -53,16 +53,28 @@ if ret == 'abort':
 
 # prepare the video
 movie = visual.MovieStim3(
-    win, 'infant/v1_h_r.mp4', size=[600, 600], units='pix', loop=True)
-movie.setAutoDraw(True)
+    win,
+    'infant/v1_h_r.mp4',
+    size=[600, 600],
+    units='pix',
+    loop=True,
+    name='infant/v1_h_r.mp4')
 
 controller.subscribe()
 # wait a bit for the eyetracker to turn on
 core.wait(0.5)
 
 # start
+# it's the requisite to use collect_lt_mov:
+# let the monitor draw the movie automatically
+movie.setAutoDraw(True)
 lt = controller.collect_lt_mov(movie, 10, 2)
 print('Looking time: %.3fs' % lt)
+# when finish, remove the movie
+movie.setAutoDraw(False)
+# reload the video if it will be used again
+movie.loadMovie(movie.name)
+
 # stop recording
 controller.unsubscribe()
 # close the file
