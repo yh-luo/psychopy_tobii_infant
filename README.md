@@ -12,6 +12,16 @@ This package was mostly based on [psychopy_tobii_controller](https://github.com/
 - This project is under development.
 - Test the scripts thoroughly before jumping into data collection!
 
+### TODO
+
+- Support PsychoPy 3
+- Support Builder
+- Add documentations
+
+## Author
+
+Yu-Han Luo
+
 ## Installation
 
 ### Use git
@@ -35,10 +45,6 @@ This package was mostly based on [psychopy_tobii_controller](https://github.com/
     pip install .
     ```
 
-## Author
-
-Yu-Han Luo
-
 ## Requirements
 
 ### Python 3.5.x
@@ -52,6 +58,10 @@ Currently tested on Python 3.5.6
 - [tobii_research](https://pypi.python.org/pypi/tobii-research)  
 - [psychopy_tobii_controller](https://github.com/hsogo/psychopy_tobii_controller) by Hiroyuki Sogo
 
+## Releases
+
+**v0.1**: released on GitHub, 2018/08/18
+
 ## Examples
 
 ### demo1_calibration.py
@@ -63,7 +73,13 @@ Currently tested on Python 3.5.6
 
 1. Show the relative position of the subject to the eyetracker.
 2. Run five-points calibration
-3. Collect looking time data based on the eyetracker
+3. Collect looking time data based on the eyetracker (static image)
+
+### demo3_collect_looking_time_with_video.py
+
+1. Show the relative position of the subject to the eyetracker.
+2. Run five-points calibration
+3. Collect looking time data based on the eyetracker (video)
 
 ## License
 
