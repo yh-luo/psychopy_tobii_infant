@@ -2,6 +2,25 @@
 
 Create infant-friendly eyetracking experiments with PsychoPy and psychopy_tobii_controller.
 
+
+- [psychopy_tobii_infant](#psychopytobiiinfant)
+    - [Who it's for](#who-its-for)
+        - [Cautions](#cautions)
+        - [TODO](#todo)
+    - [Author](#author)
+    - [Installation](#installation)
+        - [Use git](#use-git)
+        - [Download the ZIP file](#download-the-zip-file)
+    - [Requirements](#requirements)
+        - [Python 3.5.x](#python-35x)
+        - [Dependency](#dependency)
+    - [Releases](#releases)
+    - [Examples](#examples)
+        - [demo1_calibration.py](#demo1calibrationpy)
+        - [demo2_collect_looking_time.py](#demo2collectlookingtimepy)
+        - [demo3_collect_looking_time_with_video.py](#demo3collectlookingtimewithvideopy)
+    - [License](#license)
+
 ## Who it's for
 
 This package was mostly based on [psychopy_tobii_controller](https://github.com/hsogo/psychopy_tobii_controller), with some some modifications to make life easier for anyone who works with infants and children.
