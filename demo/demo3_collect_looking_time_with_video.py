@@ -61,8 +61,8 @@ controller.subscribe()
 core.wait(0.5)
 
 # start
-controller.collect_lt_mov(movie, 10, 2)
-
+lt = controller.collect_lt_mov(movie, 10, 2)
+print('Looking time: %.3fs' % lt)
 # stop recording
 controller.unsubscribe()
 # close the file
