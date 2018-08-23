@@ -591,7 +591,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         super().on_gaze_data_status(gaze_data)
 
     def collect_calibration_data(self, p, cood='PsychoPy'):
-        super().collect_calibration_data(p, cood='PsychoPy')
+        super().collect_calibration_data(p, cood=cood)
 
     def subscribe(self):
         super().subscribe()
@@ -609,7 +609,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         return super().get_current_pupil_size()
 
     def open_datafile(self, filename, embed_events=False):
-        super().open_datafile(filename, embed_events=False)
+        super().open_datafile(filename, embed_events=embed_events)
 
     def close_datafile(self):
         super().close_datafile()
