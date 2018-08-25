@@ -145,7 +145,10 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         self.original_calibration_points = calibration_points[:]
         # set all points
         cp_num = len(self.original_calibration_points)
-        self.retry_points = [*range(cp_num)]
+        try:
+            self.retry_points = [*range(cp_num)]
+        except:
+            self.retry_points = list(range(cp_num))
 
         in_calibration_loop = True
         event.clearEvents()
@@ -226,7 +229,10 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                             if len(self.retry_points) == cp_num:
                                 self.retry_points = []
                             else:
-                                self.retry_points = [*range(cp_num)]
+                                try:
+                                    self.retry_points = [*range(cp_num)]
+                                except:
+                                    self.retry_points = list(range(cp_num))
                         else:
                             key_index = self.numkey_dict[key]
                             if key_index < cp_num:
