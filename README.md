@@ -2,7 +2,7 @@
 
 Create infant-friendly eyetracking experiments with PsychoPy and Tobii eyetrackers.
 
-## Who it's for
+## What it's for
 
 This package was based on [psychopy_tobii_controller](https://github.com/hsogo/psychopy_tobii_controller), with some some modifications for developmental research.
 
@@ -16,7 +16,6 @@ This package was based on [psychopy_tobii_controller](https://github.com/hsogo/p
 
 - Support PsychoPy 3
 - Support Builder
-- Add documentations
 
 ## Author
 
@@ -52,7 +51,7 @@ Currently tested on Python 3.5.6
 
 ### v0.1
 
-## Examples
+## Demo
 
 ### demo1_calibration.py
 
