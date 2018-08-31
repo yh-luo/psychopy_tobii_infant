@@ -5,6 +5,7 @@ import psychopy_tobii_controller
 import numpy as np
 
 from psychopy import visual, event, core
+from psychopy.tools.monitorunittools import deg2cm, deg2pix, pix2cm, pix2deg, cm2pix
 
 try:
     import Image
@@ -380,12 +381,14 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                 if self.gaze_data_status is not None:
                     lp, lv, rp, rv = self.gaze_data_status
                     if lv:
-                        leye.setPos(((lp[0] - 0.5) * 0.2,
-                                     ((lp[1] - 0.5) * 0.2 + 0.4)))
+                        lx, ly = self.get_psychopy_pos_from_trackbox(
+                            (lp[0], lp[1]), units='height')
+                        leye.setPos((lx * 0.25, ly * 0.2 + 0.4))
                         leye.draw()
                     if rv:
-                        reye.setPos(((rp[0] - 0.5) * 0.2,
-                                     ((rp[1] - 0.5) * 0.2 + 0.4)))
+                        rx, ry = self.get_psychopy_pos_from_trackbox(
+                            (rp[0], rp[1]), units='height')
+                        reye.setPos((rx * 0.25, ry * 0.2 + 0.4))
                         reye.draw()
                     if lv or rv:
                         zpos.setPos(((((lp[2] * int(lv) + rp[2] * int(rv)) /
@@ -420,7 +423,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
 
         Args:
             collect_key: the key to start collecting samples.
-            exit_key: the key to finish and leave the current calibration 
+            exit_key: the key to finish and leave the current calibration
                 procedure. It should not be confused with `decision_key`, which
                 is used to leave the whole calibration process. `exit_key` is
                 used to leave the current calibration, the user may recalibrate
@@ -593,19 +596,105 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
             lt = max_time - np.sum(away_time)
             return (round(lt, 3))
 
+    def get_psychopy_pos(self, p):
+        """
+        Convert Tobii ADCS coordinates to PsychoPy coordinates.
+
+        :param p: Position (x, y)
+        """
+
+        if self.win.units == 'norm':
+            return (2 * p[0] - 1, -2 * p[1] + 1)
+        elif self.win.units == 'height':
+            return ((p[0] - 0.5) * (self.win.size[0] / self.win.size[1]),
+                    -p[1] + 0.5)
+        elif self.win.units in ['pix', 'cm', 'deg', 'degFlat', 'degFlatPos']:
+            p_pix = ((p[0] - 0.5) * self.win.size[0],
+                     (-p[1] + 0.5) * self.win.size[1])
+            if self.win.units == 'pix':
+                return p_pix
+            elif self.win.units == 'cm':
+                return (pix2cm(p_pix[0], self.win.monitor),
+                        pix2cm(p_pix[1], self.win.monitor))
+            elif self.win.units == 'deg':
+                return (pix2deg(p_pix[0], self.win.monitor),
+                        pix2deg(p_pix[1], self.win.monitor))
+            else:
+                return (pix2deg(
+                    np.array(p_pix), self.win.monitor, correctFlat=True))
+        else:
+            raise ValueError('unit ({}) is not supported.'.format(
+                self.win.units))
+
+    def get_tobii_pos(self, p):
+        """
+        Convert PsychoPy coordinates to Tobii ADCS coordinates.
+
+        :param p: Position (x, y)
+        """
+
+        if self.win.units == 'norm':
+            return ((p[0] + 1) / 2, (p[1] - 1) / -2)
+        elif self.win.units == 'height':
+            return (p[0] * (self.win.size[1] / self.win.size[0]) + 0.5,
+                    -p[1] + 0.5)
+        elif self.win.units == 'pix':
+            return self.pix2tobii(p)
+        elif self.win.units in ['cm', 'deg', 'degFlat', 'degFlatPos']:
+            if self.win.units == 'cm':
+                p_pix = (cm2pix(p[0], self.win.monitor),
+                         cm2pix(p[1], self.win.monitor))
+            elif self.win.units == 'deg':
+                p_pix = (deg2pix(p[0], self.win.monitor),
+                         deg2pix(p[1], self.win.monitor))
+            elif self.win.units in ['degFlat', 'degFlatPos']:
+                p_pix = (deg2pix(
+                    np.array(p), self.win.monitor, correctFlat=True))
+
+            return self.pix2tobii(p_pix)
+        else:
+            raise ValueError('unit ({}) is not supported'.format(
+                self.win.units))
+
+    def pix2tobii(self, p):
+        return (p[0] / self.win.size[0] + 0.5, -p[1] / self.win.size[1] + 0.5)
+
+    def get_psychopy_pos_from_trackbox(self, p, units=None):
+        """
+        Convert Tobii TBCS coordinates to PsychoPy coordinates.
+
+        :param p: Position (x, y)
+        """
+
+        if units is None:
+            units = self.win.units
+
+        if units == 'norm':
+            return (-2 * p[0] + 1, -2 * p[1] + 1)
+        elif units == 'height':
+            return ((-p[0] + 0.5) * (self.win.size[0] / self.win.size[1]),
+                    -p[1] + 0.5)
+        elif units in ['pix', 'cm', 'deg', 'degFlat', 'degFlatPos']:
+            p_pix = ((-2 * p[0] + 1) * self.win.size[0] / 2,
+                     (-2 * p[1] + 1) * self.win.size[1] / 2)
+            if units == 'pix':
+                return p_pix
+            elif units == 'cm':
+                return (pix2cm(p_pix[0], self.win.monitor),
+                        pix2cm(p_pix[1], self.win.monitor))
+            elif units == 'deg':
+                return (pix2deg(p_pix[0], self.win.monitor),
+                        pix2deg(p_pix[1], self.win.monitor))
+            else:
+                return (pix2deg(
+                    np.array(p_pix), self.win.monitor, correctFlat=True))
+        else:
+            raise ValueError('unit ({}) is not supported.'.format(
+                self.win.units))
+
     # inherit the methods from tobii_controller
     def on_gaze_data_status(self, gaze_data):
-        """
-        Callback function used by
-        :func:`~psychopy_tobii_controller.tobii_controller.show_status`
-        
-        Usually, users don't have to call this method.
-        """
-        lp = gaze_data.left_eye.gaze_origin.position_in_track_box_coordinates
-        lv = gaze_data.left_eye.gaze_origin.validity
-        rp = gaze_data.right_eye.gaze_origin.position_in_track_box_coordinates
-        rv = gaze_data.right_eye.gaze_origin.validity
-        self.gaze_data_status = (lp, lv, rp, rv)
+        super().on_gaze_data_status(gaze_data)
 
     def collect_calibration_data(self, p, cood='PsychoPy'):
         super().collect_calibration_data(p, cood=cood)
@@ -636,12 +725,6 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
 
     def flush_data(self):
         super().flush_data()
-
-    def get_psychopy_pos(self, p):
-        return super().get_psychopy_pos(p)
-
-    def get_tobii_pos(self, p):
-        return super().get_tobii_pos(p)
 
     def convert_tobii_record(self, record, start_time):
         return super().convert_tobii_record(record, start_time)
