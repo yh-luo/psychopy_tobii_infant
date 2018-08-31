@@ -605,8 +605,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         lv = gaze_data.left_eye.gaze_origin.validity
         rp = gaze_data.right_eye.gaze_origin.position_in_track_box_coordinates
         rv = gaze_data.right_eye.gaze_origin.validity
-        self.gaze_data_status = (self.get_psychopy_pos(lp), lv,
-                                 self.get_psychopy_pos(rp), rv)
+        self.gaze_data_status = (lp, lv, rp, rv)
 
     def collect_calibration_data(self, p, cood='PsychoPy'):
         super().collect_calibration_data(p, cood=cood)
