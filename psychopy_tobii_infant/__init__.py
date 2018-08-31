@@ -146,10 +146,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         self.original_calibration_points = calibration_points[:]
         # set all points
         cp_num = len(self.original_calibration_points)
-        try:
-            self.retry_points = [*range(cp_num)]
-        except:
-            self.retry_points = list(range(cp_num))
+        self.retry_points = list(range(cp_num))
 
         in_calibration_loop = True
         event.clearEvents()
@@ -230,10 +227,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                             if len(self.retry_points) == cp_num:
                                 self.retry_points = []
                             else:
-                                try:
-                                    self.retry_points = [*range(cp_num)]
-                                except:
-                                    self.retry_points = list(range(cp_num))
+                                self.retry_points = list(range(cp_num))
                         else:
                             key_index = self.numkey_dict[key]
                             if key_index < cp_num:
@@ -597,10 +591,13 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
             return (round(lt, 3))
 
     def get_psychopy_pos(self, p):
-        """
-        Convert Tobii ADCS coordinates to PsychoPy coordinates.
+        """Convert Tobii ADCS coordinates to PsychoPy coordinates.
 
-        :param p: Position (x, y)
+        Args:
+            p: Gaze position (x, y) in Tobii ADCS.
+
+        Returns:
+            Gaze position in PsychoPy coordinate systems.
         """
 
         if self.win.units == 'norm':
@@ -627,10 +624,13 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                 self.win.units))
 
     def get_tobii_pos(self, p):
-        """
-        Convert PsychoPy coordinates to Tobii ADCS coordinates.
+        """Convert PsychoPy coordinates to Tobii ADCS coordinates.
 
-        :param p: Position (x, y)
+        Args:
+            p: Gaze position (x, y) in PsychoPy coordinate systems.
+
+        Returns:
+            Gaze position in Tobii ADCS.
         """
 
         if self.win.units == 'norm':
@@ -657,13 +657,29 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                 self.win.units))
 
     def pix2tobii(self, p):
+        """Convert PsychoPy pixel coordinates to Tobii ADCS.
+
+            Called by get_tobii_pos.
+
+        Args:
+            p: Gaze position (x, y) in pix.
+
+        Returns:
+            Gaze position in Tobii ADCS.
+        """
         return (p[0] / self.win.size[0] + 0.5, -p[1] / self.win.size[1] + 0.5)
 
     def get_psychopy_pos_from_trackbox(self, p, units=None):
-        """
-        Convert Tobii TBCS coordinates to PsychoPy coordinates.
+        """Convert Tobii TBCS coordinates to PsychoPy coordinates.
 
-        :param p: Position (x, y)
+            Called by show_status.
+
+        Args:
+            p: Gaze position (x, y) in Tobii TBCS.
+            units: The PsychoPy coordinate system to use.
+
+        Returns:
+            Gaze position in PsychoPy coordinate systems.
         """
 
         if units is None:

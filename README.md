@@ -1,35 +1,16 @@
 # psychopy_tobii_infant
 
-Create infant-friendly eyetracking experiments with PsychoPy and psychopy_tobii_controller.
-
-
-- [psychopy_tobii_infant](#psychopytobiiinfant)
-    - [Who it's for](#who-its-for)
-        - [Cautions](#cautions)
-        - [TODO](#todo)
-    - [Author](#author)
-    - [Installation](#installation)
-        - [Use git](#use-git)
-        - [Download the ZIP file](#download-the-zip-file)
-    - [Requirements](#requirements)
-        - [Python 3.5.x](#python-35x)
-        - [Dependency](#dependency)
-    - [Releases](#releases)
-    - [Examples](#examples)
-        - [demo1_calibration.py](#demo1calibrationpy)
-        - [demo2_collect_looking_time.py](#demo2collectlookingtimepy)
-        - [demo3_collect_looking_time_with_video.py](#demo3collectlookingtimewithvideopy)
-    - [License](#license)
+Create infant-friendly eyetracking experiments with PsychoPy and Tobii eyetrackers.
 
 ## Who it's for
 
-This package was mostly based on [psychopy_tobii_controller](https://github.com/hsogo/psychopy_tobii_controller), with some some modifications to make life easier for anyone who works with infants and children.
+This package was based on [psychopy_tobii_controller](https://github.com/hsogo/psychopy_tobii_controller), with some some modifications for developmental research.
 
 ### Cautions
 
 - This project is unofficial.
 - This project is under development.
-- Test the scripts thoroughly before jumping into data collection!
+- Test the scripts thoroughly before jump into data collection!
 
 ### TODO
 
@@ -43,22 +24,8 @@ Yu-Han Luo
 
 ## Installation
 
-### Use git
-
-1. Clone this folder
-    ```bash
-    git clone https://github.com/yh-luo/psychopy_tobii_infant.git
-    ```
+1. Clone or download this folder
 2. Navigate to the folder
-3. install the package with `pip`
-    ```python
-    pip install .
-    ```
-
-### Download the ZIP file
-
-1. Download this folder (the green button)
-2. Unzip the file and navigate to the folder
 3. Install the package with `pip`
     ```python
     pip install .
@@ -79,7 +46,11 @@ Currently tested on Python 3.5.6
 
 ## Releases
 
-**v0.1**: released on GitHub, 2018/08/18
+### v0.2
+
+- Fix the coordinate systems
+
+### v0.1
 
 ## Examples
 
