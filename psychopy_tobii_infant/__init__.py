@@ -441,7 +441,8 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                     # collect samples when space is pressed
                     if current_point_index in self.retry_points:
                         self.collect_calibration_data(
-                            self.original_calibration_points[current_point_index])
+                            self.original_calibration_points[
+                                current_point_index])
                         current_point_index = -1
                 elif key == exit_key:
                     # exit calibration when return is presssed
@@ -589,7 +590,18 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
 
     # inherit the methods from tobii_controller
     def on_gaze_data_status(self, gaze_data):
-        super().on_gaze_data_status(gaze_data)
+        """
+        Callback function used by
+        :func:`~psychopy_tobii_controller.tobii_controller.show_status`
+        
+        Usually, users don't have to call this method.
+        """
+        lp = gaze_data.left_eye.gaze_origin.position_in_track_box_coordinates
+        lv = gaze_data.left_eye.gaze_origin.validity
+        rp = gaze_data.right_eye.gaze_origin.position_in_track_box_coordinates
+        rv = gaze_data.right_eye.gaze_origin.validity
+        self.gaze_data_status = (self.get_psychopy_pos(lp), lv,
+                                 self.get_psychopy_pos(rp), rv)
 
     def collect_calibration_data(self, p, cood='PsychoPy'):
         super().collect_calibration_data(p, cood=cood)
