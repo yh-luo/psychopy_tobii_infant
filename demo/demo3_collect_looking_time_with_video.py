@@ -44,7 +44,7 @@ controller = infant_tobii_controller(win)
 controller.open_datafile('test_infant_calibration.tsv')
 
 # show the relative position of the subject to the eyetracker
-controller.show_status("infant/elmo's ducks.mp4")
+controller.show_status("infant/seal-clip.mp4")
 
 ret = controller.run_calibration(CALIPOINTS, CALISTIMS, start_key=None)
 
@@ -54,11 +54,11 @@ if ret == 'abort':
 # prepare the video
 movie = visual.MovieStim3(
     win,
-    'infant/v1_h_r.mp4',
+    'infant/seal-clip.mp4',
     size=[600, 600],
     units='pix',
     loop=True,
-    name='infant/v1_h_r.mp4')
+    name='infant/seal-clip.mp4')
 
 controller.subscribe()
 # wait a bit for the eyetracker to turn on

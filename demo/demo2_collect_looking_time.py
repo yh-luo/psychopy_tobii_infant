@@ -58,7 +58,7 @@ controller = infant_tobii_controller(win)
 controller.open_datafile('test_infant_calibration.tsv')
 
 # show the relative position of the subject to the eyetracker
-controller.show_status("infant/elmo's ducks.mp4")
+controller.show_status("infant/seal-clip.mp4")
 
 ret = controller.run_calibration(CALIPOINTS, CALISTIMS, start_key=None)
 

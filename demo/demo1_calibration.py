@@ -49,26 +49,38 @@ controller = infant_tobii_controller(win)
 controller.open_datafile('test_infant_calibration.tsv')
 
 # show the relative position of the subject to the eyetracker
-controller.show_status("infant/elmo's ducks.mp4")
+controller.show_status("infant/seal-clip.mp4")
 
 ret = controller.run_calibration(CALIPOINTS, CALISTIMS, start_key=None)
 
 if ret == 'abort':
     core.quit()
 
+marker = visual.Rect(win,width=1,height=1)
+
+# Start recording.
 controller.subscribe()
-running = True
-while running:
+
+waitkey = True
+while waitkey:
+    # Get the latest gaze position data.
     currentGazePosition = controller.get_current_gaze_position()
-    if np.nan not in currentGazePosition:
-        gaze.setPos(currentGazePosition[0:2])
-
+    
+    # Gaze position is a tuple of four values (lx, ly, rx, ry).
+    # The value is numpy.nan if Tobii failed to detect gaze position.
+    if not np.nan in currentGazePosition:
+        marker.setPos(currentGazePosition[0:2])
+        marker.setLineColor('white')
+    else:
+        marker.setLineColor('red')
     keys = event.getKeys()
-    for key in keys:
-        if key == 'space':
-            running = False
-
-    gaze.draw()
+    if 'space' in keys:
+        waitkey=False
+    elif len(keys)>=1:
+        # Record the first key name to the data file.
+        controller.record_event(keys[0])
+    
+    marker.draw()
     win.flip()
 
 # stop recording

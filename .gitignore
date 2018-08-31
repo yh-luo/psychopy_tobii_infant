@@ -1,5 +1,3 @@
-.vscode/
+/.vscode
 *.pyc
 *.tsv
-*.png
-*.mp4
