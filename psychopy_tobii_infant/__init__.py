@@ -6,6 +6,7 @@ import numpy as np
 
 from psychopy import visual, event, core
 from psychopy.tools.monitorunittools import deg2cm, deg2pix, pix2cm, pix2deg, cm2pix
+from psychopy.constants import FINISHED
 
 try:
     import Image
@@ -283,11 +284,13 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
             enable_mouse: use mouse clicks to leave the procedure?
             pos: the position to draw the video.
             size: the size of the video.
-            units: the units of parameters (see PsychoPy manual for more info).
+            units: the units of the video (see PsychoPy manual for more info).
 
         Returns:
             None
         """
+        # to fix the audio
+        visual.MovieStim3._unload = _unload
         attention_grabber = visual.MovieStim3(
             self.win,
             att_stim,
@@ -747,3 +750,24 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
 
     def interpolate_gaze_data(self, record1, record2, t):
         return super().interpolate_gaze_data(record1, record2, t)
+
+def _unload(self):
+    """Stop MovieStim3
+
+    Fix the problem of audio stream in PsychoPy < v3.0
+
+    """
+    try:
+        # remove textures from graphics card to prevent crash
+        self.clearTextures()
+    except Exception:
+        pass
+
+    if self._mov is not None:
+        self._mov.close()
+    self._mov = None
+    self._numpyFrame = None
+    if self._audioStream is not None:
+        self._audioStream.stop()
+    self._audioStream = None
+    self.status = FINISHED
