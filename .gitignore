@@ -1,3 +1,7 @@
+# editor
 /.vscode
+# cache
 *.pyc
+/__pycache__
+# output files
 *.tsv

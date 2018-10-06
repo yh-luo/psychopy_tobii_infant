@@ -31,9 +31,9 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         numkey_dict: the keymap to index calibration target.
         eyetracker_id: the id of eyetracker.
         win: psychopy.visual.Window object.
-        update_calibration: the used calibration procedure.
         eyetracker: the used eyetracker.
         calibration: the calibration procedure from tobii_research.
+        update_calibration: the used calibration procedure.
         targets: the stimuli in calibration.
         target_original_size: the original size of the targets. It assumes that
             all the targets are of the same size.
@@ -63,8 +63,6 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         self.eyetracker_id = id
         self.win = win
 
-        self.update_calibration = self.update_calibration_infant
-
         eyetrackers = tobii_research.find_all_eyetrackers()
 
         if len(eyetrackers) == 0:
@@ -79,6 +77,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
 
         self.calibration = tobii_research.ScreenBasedCalibration(
             self.eyetracker)
+        self.update_calibration = self.update_calibration_infant
 
     def run_calibration(self,
                         calibration_points,
@@ -711,15 +710,51 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
             raise ValueError('unit ({}) is not supported.'.format(
                 self.win.units))
 
-    # inherit the methods from tobii_controller
     def on_gaze_data_status(self, gaze_data):
-        super().on_gaze_data_status(gaze_data)
+        """Get gaze position in Tobii TBCS coordinates
 
-    def collect_calibration_data(self, p, cood='PsychoPy'):
-        super().collect_calibration_data(p, cood=cood)
+            Callback function for the SDK. Called by show_status.
+
+        Args:
+            gaze_data: provided by tobii_research.EYETRACKER_GAZE_DATA
+
+        Returns:
+            None
+        """
+
+        lp = gaze_data.left_eye.gaze_origin.position_in_track_box_coordinates
+        lv = gaze_data.left_eye.gaze_origin.validity
+        rp = gaze_data.right_eye.gaze_origin.position_in_track_box_coordinates
+        rv = gaze_data.right_eye.gaze_origin.validity
+        self.gaze_data_status = (lp, lv, rp, rv)
+
+    def start_recording(self):
+        """Start recording
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        self.gaze_data = []
+        self.event_data = []
+        self.recording = True
+        self.eyetracker.subscribe_to(tobii_research.EYETRACKER_GAZE_DATA,
+                                     self.on_gaze_data)
 
     def subscribe(self):
-        super().subscribe()
+        """Start recording (deprecated).
+
+            Use start_recording instead.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        self.start_recording()
 
     def unsubscribe(self):
         super().unsubscribe()
@@ -750,6 +785,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
 
     def interpolate_gaze_data(self, record1, record2, t):
         return super().interpolate_gaze_data(record1, record2, t)
+
 
 def _unload(self):
     """Stop MovieStim3
