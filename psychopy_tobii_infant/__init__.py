@@ -743,6 +743,19 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         self.eyetracker.subscribe_to(tobii_research.EYETRACKER_GAZE_DATA,
                                      self.on_gaze_data)
 
+    def stop_recording(self):
+        """Stop recording.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        self.eyetracker.unsubscribe_from(tobii_research.EYETRACKER_GAZE_DATA)
+        self.recording = False
+        self.flush_data()
+
     def subscribe(self):
         """Start recording (deprecated).
 
@@ -757,7 +770,15 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         self.start_recording()
 
     def unsubscribe(self):
-        super().unsubscribe()
+        """Stop recording (deprecated).
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        self.stop_recording()
 
     def on_gaze_data(self, gaze_data):
         super().on_gaze_data(gaze_data)
