@@ -3,6 +3,8 @@ import random
 import tobii_research
 import psychopy_tobii_controller
 import numpy as np
+import datetime
+
 
 from psychopy import visual, event, core
 from psychopy.tools.monitorunittools import deg2cm, deg2pix, pix2cm, pix2deg, cm2pix
@@ -781,7 +783,23 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
         self.stop_recording()
 
     def on_gaze_data(self, gaze_data):
-        super().on_gaze_data(gaze_data)
+        """
+        Callback function used by
+        :func:`~psychopy_tobii_controller.tobii_controller.subscribe`
+
+        Usually, users don't have to call this method.
+        """
+        t = gaze_data.system_time_stamp
+        lx = gaze_data.left_eye.gaze_point.position_on_display_area[0]
+        ly = gaze_data.left_eye.gaze_point.position_on_display_area[1]
+        lp = gaze_data.left_eye.pupil.diameter
+        lv = gaze_data.left_eye.gaze_point.validity
+        rx = gaze_data.right_eye.gaze_point.position_on_display_area[0]
+        ry = gaze_data.right_eye.gaze_point.position_on_display_area[1]
+        rp = gaze_data.right_eye.pupil.diameter
+        rv = gaze_data.right_eye.gaze_point.validity
+
+        self.gaze_data.append((t,lx,ly,lp,lv,rx,ry,rp,rv))
 
     def get_current_gaze_position(self):
         return super().get_current_gaze_position()
@@ -789,17 +807,138 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
     def get_current_pupil_size(self):
         return super().get_current_pupil_size()
 
-    def open_datafile(self, filename, embed_events=False):
-        super().open_datafile(filename, embed_events=embed_events)
+    def open_datafile(self, filename='tobii_file.csv', embed_events=False):
+        """Open a file for gaze data.
+
+        Args:
+            filename: the name of the file.
+            embed_events: whether to include the event code in the same file.
+
+        Returns:
+            None
+        """
+        try:
+            self.close_datafile()
+        except AttributeError:
+            pass
+
+        self.datafile = open(filename,'w')
+        self.datafile.write('Recording date:\t'+datetime.datetime.now().strftime('%Y/%m/%d')+'\n')
+        self.datafile.write('Recording time:\t'+datetime.datetime.now().strftime('%H:%M:%S')+'\n')
+        self.datafile.write('Recording resolution:\t%d x %d\n' % tuple(self.win.size))
+        if embed_events:
+            self.datafile.write('Event recording mode:\tEmbedded\n\n')
+        else:
+            self.datafile.write('Event recording mode:\tSeparated\n\n')
 
     def close_datafile(self):
-        super().close_datafile()
+        """
+        Write data to the data file and close the data file.
+        """
+        try:
+            self.flush_data()
+        except AttributeError:
+            raise AttributeError('No file instance to write.')
+
+        self.datafile.close()
 
     def record_event(self, event):
         super().record_event(event)
 
     def flush_data(self):
-        super().flush_data()
+        """Write data to the data file.
+
+            Note: This method do nothing during recording.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+
+        if len(self.gaze_data)==0:
+            return
+
+        if self.recording:
+            return
+
+        self.datafile.write('Session Start\n')
+
+        if self.embed_events:
+            self.datafile.write('\t'.join(['TimeStamp',
+                                           'GazePointXLeft',
+                                           'GazePointYLeft',
+                                           'PupilLeft',
+                                           'ValidityLeft',
+                                           'GazePointXRight',
+                                           'GazePointYRight',
+                                           'PupilRight',
+                                           'ValidityRight',
+                                           'GazePointX',
+                                           'GazePointY',
+                                           'Event'])+'\n')
+        else:
+            self.datafile.write('\t'.join(['TimeStamp',
+                                           'GazePointXLeft',
+                                           'GazePointYLeft',
+                                           'PupilLeft',
+                                           'ValidityLeft',
+                                           'GazePointXRight',
+                                           'GazePointYRight',
+                                           'PupilRight',
+                                           'ValidityRight',
+                                           'GazePointX',
+                                           'GazePointY'])+'\n')
+
+        format_string = '%.1f\t%.4f\t%.4f\t%.4f\t%d\t%.4f\t%.4f\t%.4f\t%d\t%.4f\t%.4f'
+
+        timestamp_start = self.gaze_data[0][0]
+        num_output_events = 0
+
+        if self.embed_events:
+            for i in range(len(self.gaze_data)):
+                if num_output_events < len(self.event_data) and self.event_data[num_output_events][0] < self.gaze_data[i][0]:
+                    event_t = self.event_data[num_output_events][0]
+                    event_text = self.event_data[num_output_events][1]
+
+                    if i>0:
+                        output_data = self.convert_tobii_record(
+                            self.interpolate_gaze_data(self.gaze_data[i-1], self.gaze_data[i], event_t),
+                            timestamp_start)
+                    else:
+                        output_data = ((event_t-timestamp_start)/1000.0, np.nan, np.nan, np.nan, 0,
+                                       np.nan, np.nan, np.nan, 0, np.nan, np.nan)
+
+                    self.datafile.write(format_string % output_data)
+                    self.datafile.write('\t%s\n' % (event_text))
+
+                    num_output_events += 1
+
+                self.datafile.write(format_string % self.convert_tobii_record(self.gaze_data[i], timestamp_start))
+                self.datafile.write('\t\n')
+
+            # flush remaining events
+            if num_output_events < len(self.event_data):
+                for e_i in range(num_output_events, len(self.event_data)):
+                    event_t = self.event_data[e_i][0]
+                    event_text = self.event_data[e_i][1]
+
+                    output_data = ((event_t-timestamp_start)/1000.0, np.nan, np.nan, np.nan, 0,
+                                   np.nan, np.nan, np.nan, 0, np.nan, np.nan)
+                    self.datafile.write(format_string % output_data)
+                    self.datafile.write('\t%s\n' % (event_text))
+        else:
+            for i in range(len(self.gaze_data)):
+                self.datafile.write(format_string % self.convert_tobii_record(self.gaze_data[i], timestamp_start))
+                self.datafile.write('\n')
+
+            self.datafile.write('TimeStamp\tEvent\n')
+            for e in self.event_data:
+                self.datafile.write('%.1f\t%s\n' % ((e[0]-timestamp_start)/1000.0, e[1]))
+
+        self.datafile.write('Session End\n\n')
+        self.datafile.flush()
 
     def convert_tobii_record(self, record, start_time):
         return super().convert_tobii_record(record, start_time)
