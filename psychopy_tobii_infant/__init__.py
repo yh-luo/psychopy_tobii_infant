@@ -834,7 +834,7 @@ class infant_tobii_controller(psychopy_tobii_controller.tobii_controller):
                 self.gaze_data[-1][3],  #lp
                 self.gaze_data[-1][7])  #rp
 
-    def open_datafile(self, filename='tobii_file.csv', embed_events=False):
+    def open_datafile(self, filename='tobii_file.tsv', embed_events=False):
         """Open a file for gaze data.
 
         Args:
