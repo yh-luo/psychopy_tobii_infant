@@ -76,7 +76,7 @@ class infant_tobii_controller:
                     self.eyetracker_id, len(eyetrackers)))
 
         self.calibration = tr.ScreenBasedCalibration(self.eyetracker)
-        self.update_calibration = self.update_calibration_infant
+        self.update_calibration = self._update_calibration_infant
 
     def run_calibration(self,
                         calibration_points,
@@ -251,7 +251,7 @@ class infant_tobii_controller:
                     in_calibration_loop = False
                 else:  # retry
                     for point_index in self.retry_points:
-                        x, y = self.get_tobii_pos(
+                        x, y = self._get_tobii_pos(
                             self.original_calibration_points[point_index])
                         self.calibration.discard_data(x, y)
             elif key == 'escape':
@@ -362,7 +362,7 @@ class infant_tobii_controller:
 
         self.gaze_data_status = None
         self.eyetracker.subscribe_to(tr.EYETRACKER_GAZE_DATA,
-                                     self.on_gaze_data_status)
+                                     self._on_gaze_data_status, as_dictionary=True)
         att_timer = core.CountdownTimer(attention_grabber.duration)
         playing = True
         b_show_status = True
@@ -376,12 +376,12 @@ class infant_tobii_controller:
                 if self.gaze_data_status is not None:
                     lp, lv, rp, rv = self.gaze_data_status
                     if lv:
-                        lx, ly = self.get_psychopy_pos_from_trackbox(
+                        lx, ly = self._get_psychopy_pos_from_trackbox(
                             (lp[0], lp[1]), units='height')
                         leye.setPos((lx * 0.25, ly * 0.2 + 0.4))
                         leye.draw()
                     if rv:
-                        rx, ry = self.get_psychopy_pos_from_trackbox(
+                        rx, ry = self._get_psychopy_pos_from_trackbox(
                             (rp[0], rp[1]), units='height')
                         reye.setPos((rx * 0.25, ry * 0.2 + 0.4))
                         reye.draw()
@@ -409,7 +409,7 @@ class infant_tobii_controller:
         attention_grabber.stop()
         self.eyetracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA)
 
-    def update_calibration_infant(self, collect_key='space',
+    def _update_calibration_infant(self, collect_key='space',
                                   exit_key='return'):
         """The calibration procedure designed for infants.
 
@@ -443,7 +443,7 @@ class infant_tobii_controller:
                 elif key == collect_key:
                     # collect samples when space is pressed
                     if current_point_index in self.retry_points:
-                        self.collect_calibration_data(
+                        self._collect_calibration_data(
                             self.original_calibration_points[
                                 current_point_index])
                         current_point_index = -1
@@ -591,7 +591,7 @@ class infant_tobii_controller:
             lt = max_time - np.sum(away_time)
             return (round(lt, 3))
 
-    def get_psychopy_pos(self, p):
+    def _get_psychopy_pos(self, p):
         """Convert Tobii ADCS coordinates to PsychoPy coordinates.
 
         Args:
@@ -624,7 +624,7 @@ class infant_tobii_controller:
             raise ValueError('unit ({}) is not supported.'.format(
                 self.win.units))
 
-    def get_tobii_pos(self, p):
+    def _get_tobii_pos(self, p):
         """Convert PsychoPy coordinates to Tobii ADCS coordinates.
 
         Args:
@@ -640,7 +640,7 @@ class infant_tobii_controller:
             return (p[0] * (self.win.size[1] / self.win.size[0]) + 0.5,
                     -p[1] + 0.5)
         elif self.win.units == 'pix':
-            return self.pix2tobii(p)
+            return self._pix2tobii(p)
         elif self.win.units in ['cm', 'deg', 'degFlat', 'degFlatPos']:
             if self.win.units == 'cm':
                 p_pix = (cm2pix(p[0], self.win.monitor),
@@ -652,15 +652,15 @@ class infant_tobii_controller:
                 p_pix = (deg2pix(
                     np.array(p), self.win.monitor, correctFlat=True))
 
-            return self.pix2tobii(p_pix)
+            return self._pix2tobii(p_pix)
         else:
             raise ValueError('unit ({}) is not supported'.format(
                 self.win.units))
 
-    def pix2tobii(self, p):
+    def _pix2tobii(self, p):
         """Convert PsychoPy pixel coordinates to Tobii ADCS.
 
-            Called by get_tobii_pos.
+            Called by _get_tobii_pos.
 
         Args:
             p: Gaze position (x, y) in pix.
@@ -670,7 +670,7 @@ class infant_tobii_controller:
         """
         return (p[0] / self.win.size[0] + 0.5, -p[1] / self.win.size[1] + 0.5)
 
-    def get_psychopy_pos_from_trackbox(self, p, units=None):
+    def _get_psychopy_pos_from_trackbox(self, p, units=None):
         """Convert Tobii TBCS coordinates to PsychoPy coordinates.
 
             Called by show_status.
@@ -709,7 +709,7 @@ class infant_tobii_controller:
             raise ValueError('unit ({}) is not supported.'.format(
                 self.win.units))
 
-    def on_gaze_data_status(self, gaze_data):
+    def _on_gaze_data_status(self, gaze_data):
         """Get gaze position in Tobii TBCS coordinates.
 
             Callback function for the SDK, used by show_status.
@@ -739,10 +739,10 @@ class infant_tobii_controller:
         """
         self.gaze_data = []
         self.event_data = []
-        self.recording = True
         self.eyetracker.subscribe_to(tr.EYETRACKER_GAZE_DATA,
-                                     self.on_gaze_data)
-
+                                     self._on_gaze_data, as_dictionary=True)
+        core.wait(1) # wait a bit for the eye tracker to get ready
+        self.recording = True
     def stop_recording(self):
         """Stop recording.
 
@@ -778,7 +778,7 @@ class infant_tobii_controller:
         """
         self.stop_recording()
 
-    def on_gaze_data(self, gaze_data):
+    def _on_gaze_data(self, gaze_data):
         """Callback function used by Tobii SDK.
 
             Users should not use this method on most occasions.
@@ -789,17 +789,7 @@ class infant_tobii_controller:
         Returns:
             None
         """
-        t = gaze_data.system_time_stamp
-        lx = gaze_data.left_eye.gaze_point.position_on_display_area[0]
-        ly = gaze_data.left_eye.gaze_point.position_on_display_area[1]
-        lp = gaze_data.left_eye.pupil.diameter
-        lv = gaze_data.left_eye.gaze_point.validity
-        rx = gaze_data.right_eye.gaze_point.position_on_display_area[0]
-        ry = gaze_data.right_eye.gaze_point.position_on_display_area[1]
-        rp = gaze_data.right_eye.pupil.diameter
-        rv = gaze_data.right_eye.gaze_point.validity
-
-        self.gaze_data.append((t, lx, ly, lp, lv, rx, ry, rp, rv))
+        self.gaze_data.append(gaze_data)
 
     def get_current_gaze_position(self):
         """Get the newest gaze position.
@@ -814,8 +804,8 @@ class infant_tobii_controller:
         if len(self.gaze_data) == 0:
             return (np.nan, np.nan, np.nan, np.nan)
         else:
-            lxy = self.get_psychopy_pos(self.gaze_data[-1][1:3])
-            rxy = self.get_psychopy_pos(self.gaze_data[-1][5:7])
+            lxy = self._get_psychopy_pos(self.gaze_data[-1][1:3])
+            rxy = self._get_psychopy_pos(self.gaze_data[-1][5:7])
             return (lxy[0], lxy[1], rxy[0], rxy[1])
 
     def get_current_pupil_size(self):
@@ -859,6 +849,7 @@ class infant_tobii_controller:
                             '\n')
         self.datafile.write(
             'Recording resolution:\t%d x %d\n' % tuple(self.win.size))
+        self.embed_events = embed_events
         if embed_events:
             self.datafile.write('Event recording mode:\tEmbedded\n\n')
         else:
@@ -908,7 +899,8 @@ class infant_tobii_controller:
             None
         """
 
-        if len(self.gaze_data) == 0:
+        if not self.gaze_data:
+            # do nothing when there's no data
             return
 
         if self.recording:
@@ -996,8 +988,8 @@ class infant_tobii_controller:
         :param start_time: Tobii's timestamp when recording was started.
         """
 
-        lxy = self.get_psychopy_pos(record[1:3])
-        rxy = self.get_psychopy_pos(record[5:7])
+        lxy = self._get_psychopy_pos(record[1:3])
+        rxy = self._get_psychopy_pos(record[5:7])
 
         if record[4] == 0 and record[8] == 0:  #not detected
             ave = (np.nan, np.nan)
@@ -1051,7 +1043,7 @@ class infant_tobii_controller:
 
         return (t, ) + ldata + rdata
 
-    def collect_calibration_data(self, p):
+    def _collect_calibration_data(self, p):
         """
         Callback function used by
         :func:`~psychopy_tobii_controller.tobii_controller.run_calibration`
@@ -1059,8 +1051,8 @@ class infant_tobii_controller:
         Usually, users don't have to call this method.
         """
 
-        if self.calibration.collect_data(*self.get_tobii_pos(p)) != tr.CALIBRATION_STATUS_SUCCESS:
-            self.calibration.collect_data(*self.get_tobii_pos(p))
+        if self.calibration.collect_data(*self._get_tobii_pos(p)) != tr.CALIBRATION_STATUS_SUCCESS:
+            self.calibration.collect_data(*self._get_tobii_pos(p))
 
 
 def _unload(self):
