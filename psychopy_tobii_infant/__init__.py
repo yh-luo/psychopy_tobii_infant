@@ -376,8 +376,8 @@ class infant_tobii_controller:
                 zbar.draw()
                 zc.draw()
                 gaze_data = copy.copy(self.gaze_data[-1])
-                lv = gaze_data['left_gaze_point_validity']
-                rv = gaze_data['right_gaze_point_validity']
+                lv = bool(gaze_data['left_gaze_point_validity'])
+                rv = bool(gaze_data['right_gaze_point_validity'])
                 if lv:
                     lx, ly, lz = gaze_data[
                         'left_gaze_origin_in_trackbox_coordinate_system']
