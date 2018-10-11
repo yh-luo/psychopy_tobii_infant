@@ -78,6 +78,7 @@ class infant_tobii_controller:
 
         self.calibration = tr.ScreenBasedCalibration(self.eyetracker)
         self.update_calibration = self._update_calibration_infant
+        self.gaze_data = None
 
     def run_calibration(self,
                         calibration_points,
