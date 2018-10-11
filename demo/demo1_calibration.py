@@ -45,21 +45,20 @@ gaze = visual.Circle(
 
 # initialize tobii_controller to communicate with the eyetracker
 controller = infant_tobii_controller(win)
-# Open a file to save the eyetracking data
-controller.open_datafile('test_infant_calibration.tsv')
 
 # show the relative position of the subject to the eyetracker
 controller.show_status("infant/seal-clip.mp4")
 
-ret = controller.run_calibration(CALIPOINTS, CALISTIMS, start_key=None)
+success = controller.run_calibration(CALIPOINTS, CALISTIMS, start_key=None)
 
-if ret == 'abort':
+if not success:
+    win.close()
     core.quit()
 
-marker = visual.Rect(win,width=1,height=1)
+marker = visual.Rect(win, width=1, height=1)
 
 # Start recording.
-controller.subscribe()
+controller.start_recording('demo1-test.tsv')
 
 waitkey = True
 while waitkey:
@@ -68,8 +67,8 @@ while waitkey:
     
     # Gaze position is a tuple of four values (lx, ly, rx, ry).
     # The value is numpy.nan if Tobii failed to detect gaze position.
-    if not np.nan in currentGazePosition:
-        marker.setPos(currentGazePosition[0:2])
+    if np.nan not in currentGazePosition[0]:
+        marker.setPos(currentGazePosition[0])
         marker.setLineColor('white')
     else:
         marker.setLineColor('red')

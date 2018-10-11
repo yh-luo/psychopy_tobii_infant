@@ -1,5 +1,4 @@
 import math
-import random
 import tobii_research as tr
 import numpy as np
 import datetime
@@ -288,34 +287,46 @@ class infant_tobii_controller:
         Returns:
             None
         """
-        self.datafile.write('\t'.join([
-            'TimeStamp', 'GazePointXLeft', 'GazePointYLeft', 'ValidityLeft',
-            'GazePointXRight', 'GazePointYRight', 'ValidityRight',
-            'GazePointX', 'GazePointY', 'PupilSizeLeft', 'PupilValidityLeft',
-            'PupilSizeRight', 'PupilValidityRight', 'Event'
-        ]) + '\n')
+        if self.embed_event:
+            self.datafile.write('\t'.join([
+                'TimeStamp', 'GazePointXLeft', 'GazePointYLeft',
+                'ValidityLeft', 'GazePointXRight', 'GazePointYRight',
+                'ValidityRight', 'GazePointX', 'GazePointY', 'PupilSizeLeft',
+                'PupilValidityLeft', 'PupilSizeRight', 'PupilValidityRight',
+                'Event'
+            ]) + '\n')
+        else:
+            self.datafile.write('\t'.join([
+                'TimeStamp', 'GazePointXLeft', 'GazePointYLeft',
+                'ValidityLeft', 'GazePointXRight', 'GazePointYRight',
+                'ValidityRight', 'GazePointX', 'GazePointY', 'PupilSizeLeft',
+                'PupilValidityLeft', 'PupilSizeRight', 'PupilValidityRight'
+            ]) + '\n')
         self._flush_to_file()
 
-    def _write_event(self, record):
+    def _write_event(self, record=None):
         """Write events to the data file.
 
         Args:
-            record: reformed gaze data
-
+            record: reformed gaze data. Defaults to None
         Returns:
             None
         """
-        if self.event_data:
+
+        # else:
+        # check record
+        if record is None:
+            print('record not found. Write the events separately')
+            self.embed_event = False
+        else:
             for event in self.event_data:
                 if event[0] <= record[0]:
                     self.datafile.write('%s\n' % event[1])
-                    # remove the old events
+                    # remove the old event
                     self.event_data.remove(event)
                     break
             else:
-                self.datafile.write('\n')  # do nothing when no events to write
-        else:
-            self.datafile.write('\n')  # do nothing when no events to write
+                self.datafile.write('\n')
 
     def _write_record(self, record):
         """Write the Tobii output to the data file.
@@ -397,9 +408,13 @@ class infant_tobii_controller:
             output = self._convert_tobii_record(gaze_data)
             self._write_record(output)
             # if there's a corresponding event, write it.
-            # if no events are found, simply write \n
-            self._write_event(output)
-
+            if self.event_data and self.embed_event:
+                self._write_event(output)
+        else:
+            # write the remained events in the end of data
+            for event in self.event_data:
+                    self.datafile.write('%.1f\t%s\n' % (event[0], event[1]))
+        self.datafile.write('Session End\n')
         self._flush_to_file()
 
     def _collect_calibration_data(self, p):
@@ -438,7 +453,7 @@ class infant_tobii_controller:
             decision_key: the key to leave the procedure.
 
         Returns:
-            retval: the state of calibration
+            retval: the status of calibration
         """
         if self.eyetracker is None:
             raise RuntimeError('Eyetracker is not found.')
@@ -489,8 +504,8 @@ class infant_tobii_controller:
         event.clearEvents()
         while in_calibration_loop:
 
-            # randomization of calibration targets (to entartain the infants hopefully...)
-            random.shuffle(self.targets)
+            # randomization of calibration targets
+            np.random.shuffle(self.targets)
             self.calibration_points = [
                 self.original_calibration_points[x] for x in self.retry_points
             ]
@@ -585,7 +600,7 @@ class infant_tobii_controller:
 
             if key == decision_key:
                 if len(self.retry_points) == 0:
-                    retval = 'accept'
+                    retval = True
                     in_calibration_loop = False
                 else:  # retry
                     for point_index in self.retry_points:
@@ -593,7 +608,7 @@ class infant_tobii_controller:
                             self.original_calibration_points[point_index])
                         self.calibration.discard_data(x, y)
             elif key == 'escape':
-                retval = 'abort'
+                retval = False
                 in_calibration_loop = False
             else:
                 raise RuntimeError('Calibration: Invalid key')
@@ -712,8 +727,8 @@ class infant_tobii_controller:
                 zbar.draw()
                 zc.draw()
                 gaze_data = self.gaze_data[-1]
-                lv = bool(gaze_data['left_gaze_point_validity'])
-                rv = bool(gaze_data['right_gaze_point_validity'])
+                lv = gaze_data['left_gaze_point_validity']
+                rv = gaze_data['right_gaze_point_validity']
                 lx, ly, lz = gaze_data[
                     'left_gaze_origin_in_trackbox_coordinate_system']
                 rx, ry, rz = gaze_data[
@@ -777,8 +792,8 @@ class infant_tobii_controller:
 
         while trial_timer.getTime() <= max_time:
             gaze_data = self.gaze_data[-1]
-            lv = bool(gaze_data["left_gaze_point_validity"])
-            rv = bool(gaze_data["right_gaze_point_validity"])
+            lv = gaze_data['left_gaze_point_validity']
+            rv = gaze_data['right_gaze_point_validity']
 
             if any((lv, rv)):
                 # if the last sample is missing
@@ -841,8 +856,8 @@ class infant_tobii_controller:
         absence_timer.reset()
         while trial_timer.getTime() <= max_time:
             gaze_data = self.gaze_data[-1]
-            lv = bool(gaze_data["left_gaze_point_validity"])
-            rv = bool(gaze_data["right_gaze_point_validity"])
+            lv = gaze_data['left_gaze_point_validity']
+            rv = gaze_data['right_gaze_point_validity']
 
             if any((lv, rv)):
                 # if the last sample is missing
@@ -883,19 +898,28 @@ class infant_tobii_controller:
             lt = max_time - np.sum(away_time)
             return (round(lt, 3))
 
-    def start_recording(self, filename=None):
+    def start_recording(self, filename=None, newfile=True, embed_event=True):
         """Start recording
 
         Args:
             filename: the name of the data file. If None, use default name.
                 Defaults to None.
+            newfile: open a new file to save data. Defaults to True.
+            embed_event: should the file contains the event column.
+                Defaults to True.
 
         Returns:
             None
         """
         if filename is not None:
-            self.filename = filename
-        self.open_datafile()
+            if type(filename) == str:
+                self.filename = filename
+            else:
+                raise ValueError('filename should be string')
+        if newfile:
+            self.open_datafile()
+
+        self.embed_event = embed_event
         self.gaze_data = []
         self.event_data = []
         self.eyetracker.subscribe_to(
@@ -957,23 +981,21 @@ class infant_tobii_controller:
             None
 
         Returns:
-            None
+            ((left_eye_x, left_eye_y), (right_eye_x, right_eye_y))
         """
 
         if not self.gaze_data:
             return ((np.nan, np.nan), (np.nan, np.nan))
         else:
+            lxy = (np.nan, np.nan)
+            rxy = (np.nan, np.nan)
             gaze_data = self.gaze_data[-1]
-            if bool(gaze_data["left_gaze_point_validity"]):
+            if gaze_data['left_gaze_point_validity']:
                 lxy = self._get_psychopy_pos(
                     gaze_data["left_gaze_point_on_display_area"])
-            else:
-                lxy = (np.nan, np.nan)
-            if bool(gaze_data["right_gaze_point_validity"]):
+            if gaze_data['right_gaze_point_validity']:
                 rxy = self._get_psychopy_pos(
                     gaze_data["right_gaze_point_on_display_area"])
-            else:
-                rxy = (np.nan, np.nan)
 
             return (lxy, rxy)
 
@@ -984,28 +1006,27 @@ class infant_tobii_controller:
             None
 
         Returns:
-            None
+            (left_eye_pupil_size, right_eye_pupil_size)
         """
 
         if not self.gaze_data:
             return (np.nan, np.nan)
         else:
+            lp = np.nan
+            rp = np.nan
             gaze_data = self.gaze_data[-1]
             if bool(gaze_data["left_pupil_validity"]):
                 lp = gaze_data["left_pupil_diameter"]
-            else:
-                lp = np.nan
             if bool(gaze_data["right_pupil_validity"]):
                 rp = gaze_data["right_pupil_diameter"]
-            else:
-                rp = np.nan
+
             return (lp, rp)
 
     def open_datafile(self):
         """Open a file for gaze data.
 
         Args:
-            embed_events: whether to include the event code in the same file.
+            None
 
         Returns:
             None
