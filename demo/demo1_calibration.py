@@ -26,8 +26,6 @@ CALISTIMS = [
 # Demo
 ###############################################################################
 # create a Window to control the monitor
-# It is assumed that the profile of the monitor is know. Thus, stimuli in
-# show_status are in 'height' units.
 win = visual.Window(
     size=[1280, 1024],
     monitor='tobii',
@@ -37,20 +35,16 @@ win = visual.Window(
     allowGUI=False)
 
 gaze = visual.Circle(
-    win,
-    size=0.02,
-    lineColor=None,
-    fillColor='white',
-    autoLog=False)
+    win, size=0.02, lineColor=None, fillColor='white', autoLog=False)
 
 # initialize tobii_controller to communicate with the eyetracker
 controller = infant_tobii_controller(win)
 
 # show the relative position of the subject to the eyetracker
+# stimuli in show_status are in 'height' units.
 controller.show_status("infant/seal-clip.mp4")
 
 success = controller.run_calibration(CALIPOINTS, CALISTIMS, start_key=None)
-
 if not success:
     win.close()
     core.quit()
@@ -59,13 +53,13 @@ marker = visual.Rect(win, width=1, height=1)
 
 # Start recording.
 controller.start_recording('demo1-test.tsv')
-
+timer = core.Clock()
 waitkey = True
 while waitkey:
     # Get the latest gaze position data.
     currentGazePosition = controller.get_current_gaze_position()
-    
-    # Gaze position is a tuple of four values (lx, ly, rx, ry).
+
+    # Gaze position is a tuple: ((left_eye_x, left_eye_y), (right_eye_x, right_eye_y))
     # The value is numpy.nan if Tobii failed to detect gaze position.
     if np.nan not in currentGazePosition[0]:
         marker.setPos(currentGazePosition[0])
@@ -74,16 +68,18 @@ while waitkey:
         marker.setLineColor('red')
     keys = event.getKeys()
     if 'space' in keys:
-        waitkey=False
-    elif len(keys)>=1:
-        # Record the first key name to the data file.
+        waitkey = False
+    elif len(keys) >= 1:
+        # Record the pressed key to the data file.
         controller.record_event(keys[0])
-    
+        print('pressed {k} at {t} ms'.format(
+            k=keys[0], t=timer.getTime() * 1000))
+
     marker.draw()
     win.flip()
 
 # stop recording
-controller.unsubscribe()
+controller.stop_recording()
 # close the file
 controller.close_datafile()
 

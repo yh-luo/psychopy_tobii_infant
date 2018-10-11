@@ -408,8 +408,10 @@ class infant_tobii_controller:
             output = self._convert_tobii_record(gaze_data)
             self._write_record(output)
             # if there's a corresponding event, write it.
-            if self.event_data and self.embed_event:
+            if self.embed_event:
                 self._write_event(output)
+            else:
+                self.datafile.write('\n')
         else:
             # write the remained events in the end of data
             for event in self.event_data:
