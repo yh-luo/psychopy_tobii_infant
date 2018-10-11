@@ -304,29 +304,23 @@ class infant_tobii_controller:
             ]) + '\n')
         self._flush_to_file()
 
-    def _write_event(self, record=None):
-        """Write events to the data file.
+    def _write_event(self, record):
+        """Write embed events to the data file.
 
         Args:
-            record: reformed gaze data. Defaults to None
+            record: reformed gaze data
         Returns:
             None
         """
 
-        # else:
-        # check record
-        if record is None:
-            print('record not found. Write the events separately')
-            self.embed_event = False
+        for event in self.event_data:
+            if event[0] <= record[0]:
+                self.datafile.write('%s\n' % event[1])
+                # remove the old event
+                self.event_data.remove(event)
+                break
         else:
-            for event in self.event_data:
-                if event[0] <= record[0]:
-                    self.datafile.write('%s\n' % event[1])
-                    # remove the old event
-                    self.event_data.remove(event)
-                    break
-            else:
-                self.datafile.write('\n')
+            self.datafile.write('\n')
 
     def _write_record(self, record):
         """Write the Tobii output to the data file.
@@ -415,7 +409,7 @@ class infant_tobii_controller:
         else:
             # write the remained events in the end of data
             for event in self.event_data:
-                    self.datafile.write('%.1f\t%s\n' % (event[0], event[1]))
+                self.datafile.write('%.1f\t%s\n' % (event[0], event[1]))
         self.datafile.write('Session End\n')
         self._flush_to_file()
 
@@ -1024,6 +1018,22 @@ class infant_tobii_controller:
 
             return (lp, rp)
 
+    def record_event(self, event):
+        """Record events with timestamp.
+
+        Note: This method works only during recording.
+
+        Args:
+            event: the event
+
+        Returns:
+            None
+        """
+        if not self.recording:
+            return
+
+        self.event_data.append([tr.get_system_time_stamp(), event])
+
     def open_datafile(self):
         """Open a file for gaze data.
 
@@ -1050,7 +1060,7 @@ class infant_tobii_controller:
 
         self._flush_to_file()
 
-    def close_datafile(self):
+    def close(self):
         """Close the data file.
 
         Args:
@@ -1063,22 +1073,6 @@ class infant_tobii_controller:
             self.datafile.close()
         except AttributeError:
             raise AttributeError('No opened file to close.')
-
-    def record_event(self, event):
-        """Record events with timestamp.
-
-        Note: This method works only during recording.
-
-        Args:
-            event: the event
-
-        Returns:
-            None
-        """
-        if not self.recording:
-            return
-
-        self.event_data.append([tr.get_system_time_stamp(), event])
 
 
 def _unload(self):

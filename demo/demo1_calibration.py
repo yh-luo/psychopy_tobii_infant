@@ -8,7 +8,6 @@ from psychopy_tobii_infant import infant_tobii_controller
 
 ###############################################################################
 # Constants
-###############################################################################
 DIR = os.path.dirname(__file__)
 # users should know the display well.
 DISPSIZE = (34, 27)
@@ -24,7 +23,6 @@ CALISTIMS = [
 
 ###############################################################################
 # Demo
-###############################################################################
 # create a Window to control the monitor
 win = visual.Window(
     size=[1280, 1024],
@@ -81,7 +79,7 @@ while waitkey:
 # stop recording
 controller.stop_recording()
 # close the file
-controller.close_datafile()
+controller.close()
 
 win.close()
 core.quit()
