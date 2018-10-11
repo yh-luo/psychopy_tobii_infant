@@ -4,6 +4,7 @@ import tobii_research as tr
 import numpy as np
 import datetime
 import os
+import copy
 
 from psychopy import visual, event, core
 from psychopy.tools.monitorunittools import deg2cm, deg2pix, pix2cm, pix2deg, cm2pix
@@ -374,7 +375,7 @@ class infant_tobii_controller:
                 bgrect.draw()
                 zbar.draw()
                 zc.draw()
-                gaze_data = self.gaze_data[-1]
+                gaze_data = copy.copy(self.gaze_data[-1])
                 lv = gaze_data['left_gaze_point_validity']
                 rv = gaze_data['right_gaze_point_validity']
                 if lv:
@@ -495,7 +496,7 @@ class infant_tobii_controller:
         absence_timer.reset()
 
         while trial_timer.getTime() <= max_time:
-            gaze_data = self.gaze_data[-1]
+            gaze_data = copy.copy(self.gaze_data[-1])
             lv = gaze_data["left_gaze_point_validity"]
             rv = gaze_data["right_gaze_point_validity"]
 
@@ -559,7 +560,7 @@ class infant_tobii_controller:
         trial_timer.reset()
         absence_timer.reset()
         while trial_timer.getTime() <= max_time:
-            gaze_data = self.gaze_data[-1]
+            gaze_data = copy.copy(self.gaze_data[-1])
             lv = ["left_gaze_point_validity"]
             rv = gaze_data["right_gaze_point_validity"]
 
@@ -812,7 +813,7 @@ class infant_tobii_controller:
         if not self.gaze_data:
             return ((np.nan, np.nan), (np.nan, np.nan))
         else:
-            gaze_data = self.gaze_data[-1]
+            gaze_data = copy.copy(self.gaze_data[-1])
             if gaze_data["left_gaze_point_validity"]:
                 lxy = self._get_psychopy_pos(
                     gaze_data["left_gaze_point_on_display_area"])
@@ -839,7 +840,7 @@ class infant_tobii_controller:
         if not self.gaze_data:
             return (np.nan, np.nan)
         else:
-            gaze_data = self.gaze_data[-1]
+            gaze_data = copy.copy(self.gaze_data[-1])
             if gaze_data["left_pupil_validity"]:
                 lp = gaze_data["left_pupil_diameter"]
             else:
