@@ -434,19 +434,18 @@ class infant_tobii_controller:
             How to use:
                 - Use 1~9 to present calibration stimulus and 0 to hide the target.
                 - Press space to start collect calibration samples.
+                - Press return (Enter) to finish the calibration and show the result.
+                - Choose the points to recalibrate with 1~9.
+                - Press decision_key to accept the calibration or recalibrate.
 
             The experimenter should manually show the stimulus and collect data
             when the subject is paying attention to the stimulus.
-
-            The experimenter may press the `start_key` to start
-            the procedure. To finish and leave the procedure, press the
-            `decision_key`.
 
         Args:
             calibration_points: list of position of the calibration points.
             infant_stims: list of images to attract the infant.
             start_key: the key to start the procedure. If None, directly
-            proceed to the calibration procedure.
+                proceed to the calibration procedure.
             decision_key: the key to leave the procedure.
 
         Returns:
@@ -622,14 +621,14 @@ class infant_tobii_controller:
                     units='pix'):
         """Infant-friendly procedure to adjust the participant's position.
 
-        This is an implementation of show_status() in psychopy_tobii_controller. It
-        plays an interesting video to attract the participant's attention and
-        map the relative position of eyes to the track box. The experimenter can
-        thus inspect and adjust the position of the participant.
+            This is an implementation of show_status in psychopy_tobii_controller.
+            It plays an interesting video to attract the participant and map
+            the relative position of the participant's eyes to the trackbox.
 
         Args:
             att_stim: the filename of the video to be played.
-            enable_mouse: use mouse clicks to leave the procedure?
+            enable_mouse: use mouse clicks to leave the procedure.
+                Defaults to False
             pos: the position to draw the video.
             size: the size of the video.
             units: the units of the video (see PsychoPy manual for more info).
@@ -767,8 +766,8 @@ class infant_tobii_controller:
     def collect_lt(self, max_time, min_away, blink_dur=1):
         """Collect looking time data in runtime
 
-        Collect and calculate looking time in runtime. Also end the trial
-        automatically when the participant look away.
+            Collect and calculate looking time in runtime. Also end the trial
+            automatically when the participant look away.
 
         Args:
             max_time: maximum looking time in seconds.
@@ -830,8 +829,8 @@ class infant_tobii_controller:
     def collect_lt_mov(self, movie, max_time, min_away, blink_dur=1):
         """Collect looking time data and playing video
 
-        Collect and calculate looking time in runtime. Also end the trial
-        automatically when the participant look away.
+            Collect and calculate looking time in runtime. Also end the trial
+            automatically when the participant look away.
 
         Args:
             movie: the MovieStim object to use.
@@ -1048,7 +1047,7 @@ class infant_tobii_controller:
     def record_event(self, event):
         """Record events with timestamp.
 
-        Note: This method works only during recording.
+            This method works only during recording.
 
         Args:
             event: the event

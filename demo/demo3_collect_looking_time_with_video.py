@@ -25,7 +25,7 @@ CALISTIMS = [
 # create a Window to control the monitor
 win = visual.Window(
     size=[1280, 1024],
-    monitor='tobii',
+    monitor='tobii', # TODO: change it to the real monitor
     units='cm',
     screen=1,
     fullscr=True,
@@ -35,8 +35,16 @@ win = visual.Window(
 controller = infant_tobii_controller(win)
 
 # show the relative position of the subject to the eyetracker
+# Press space to exit
 controller.show_status("infant/seal-clip.mp4")
 
+# How to use:
+# - Use 1~9 (depending on the number of calibration points) to present
+#   calibration stimulus and 0 to hide the target.
+# - Press space to start collect calibration samples.
+# - Press return (Enter) to finish the calibration and show the result.
+# - Choose the points to recalibrate with 1~9.
+# - Press decision_key to accept the calibration or recalibrate.
 success = controller.run_calibration(CALIPOINTS, CALISTIMS, start_key=None)
 if not success:
     win.close()
@@ -52,6 +60,8 @@ movie = visual.MovieStim3(
     name='infant/seal-clip.mp4')
 
 # Start recording.
+# filename of the data file could be define in this method or when creating an
+# infant_tobii_controller instance
 controller.start_recording('demo3-test.tsv')
 
 # start
