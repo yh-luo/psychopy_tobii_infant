@@ -3,6 +3,7 @@ import random
 import tobii_research as tr
 import numpy as np
 import datetime
+import os
 
 from psychopy import visual, event, core
 from psychopy.tools.monitorunittools import deg2cm, deg2pix, pix2cm, pix2deg, cm2pix
@@ -59,10 +60,10 @@ class infant_tobii_controller:
         'num_9': 8
     }
 
-    def __init__(self, win, id=0):
+    def __init__(self, win, id=0, filename='gaze_TOBII_output.tsv'):
         self.eyetracker_id = id
         self.win = win
-
+        self.filename = filename
         eyetrackers = tr.find_all_eyetrackers()
 
         if len(eyetrackers) == 0:
@@ -374,8 +375,8 @@ class infant_tobii_controller:
                 zc.draw()
                 if self.gaze_data:
                     gaze_data = self.gaze_data[-1]
-                    lv = self.gaze_data['left_gaze_point_validity']
-                    rv = self.gaze_data['right_gaze_point_validity']
+                    lv = gaze_data['left_gaze_point_validity']
+                    rv = gaze_data['right_gaze_point_validity']
                     if lv:
                         lx, ly, lz = gaze_data[
                             'left_gaze_origin_in_trackbox_coordinate_system']
@@ -494,7 +495,9 @@ class infant_tobii_controller:
         absence_timer.reset()
 
         while trial_timer.getTime() <= max_time:
-            lv, rv = self.gaze_data[-1][4], self.gaze_data[-1][8]
+            gaze_data = self.gaze_data[-1]
+            lv = gaze_data["left_gaze_point_validity"]
+            rv = gaze_data["right_gaze_point_validity"]
 
             if any((lv, rv)):
                 # if the last sample is missing
@@ -556,7 +559,9 @@ class infant_tobii_controller:
         trial_timer.reset()
         absence_timer.reset()
         while trial_timer.getTime() <= max_time:
-            lv, rv = self.gaze_data[-1][4], self.gaze_data[-1][8]
+            gaze_data = self.gaze_data[-1]
+            lv = ["left_gaze_point_validity"]
+            rv = gaze_data["right_gaze_point_validity"]
 
             if any((lv, rv)):
                 # if the last sample is missing
@@ -724,12 +729,14 @@ class infant_tobii_controller:
         Returns:
             None
         """
+        self.open_datafile()
         self.gaze_data = []
         self.event_data = []
         self.eyetracker.subscribe_to(
             tr.EYETRACKER_GAZE_DATA, self._on_gaze_data, as_dictionary=True)
         core.wait(1)  # wait a bit for the eye tracker to get ready
         self.recording = True
+        self.t0 = tr.get_system_time_stamp()
 
     def stop_recording(self):
         """Stop recording.
@@ -743,7 +750,11 @@ class infant_tobii_controller:
         if self.recording:
             self.eyetracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA)
             self.recording = False
-            self.flush_data()
+            # time correction for event data
+            self.event_data = list(
+                map(lambda x: ((x[0] - self.t0) / 1000.0, x[1]),
+                    self.event_data))
+            self._flush_data()
         else:
             print('A recording has not been started. Do nothing now...')
 
@@ -837,11 +848,10 @@ class infant_tobii_controller:
                 rp = np.nan
             return (lp, rp)
 
-    def open_datafile(self, filename='tobii_file.tsv', embed_events=False):
+    def open_datafile(self):
         """Open a file for gaze data.
 
         Args:
-            filename: the name of the file.
             embed_events: whether to include the event code in the same file.
 
         Returns:
@@ -852,7 +862,7 @@ class infant_tobii_controller:
         except AttributeError:
             pass
 
-        self.datafile = open(filename, 'w')
+        self.datafile = open(self.filename, 'w')
         self.datafile.write('Recording date:\t' +
                             datetime.datetime.now().strftime('%Y/%m/%d') +
                             '\n')
@@ -861,14 +871,15 @@ class infant_tobii_controller:
                             '\n')
         self.datafile.write(
             'Recording resolution:\t%d x %d\n' % tuple(self.win.size))
-        self.embed_events = embed_events
-        if embed_events:
-            self.datafile.write('Event recording mode:\tEmbedded\n\n')
-        else:
-            self.datafile.write('Event recording mode:\tSeparated\n\n')
+        # self.embed_events = embed_events
+        # if embed_events:
+        #     self.datafile.write('Event recording mode:\tEmbedded\n\n')
+        # else:
+        #     self.datafile.write('Event recording mode:\tSeparated\n\n')
+        self._flush_to_file()
 
     def close_datafile(self):
-        """Write data to the data file and close the data file.
+        """Close the data file.
 
         Args:
             None
@@ -877,11 +888,9 @@ class infant_tobii_controller:
             None
         """
         try:
-            self.flush_data()
+            self.datafile.close()
         except AttributeError:
-            raise AttributeError('No file instance to write.')
-
-        self.datafile.close()
+            raise AttributeError('No opened file to close.')
 
     def record_event(self, event):
         """Record events with timestamp.
@@ -897,124 +906,100 @@ class infant_tobii_controller:
         if not self.recording:
             return
 
-        self.event_data.append((tr.get_system_time_stamp(), event))
+        self.event_data.append([tr.get_system_time_stamp(), event])
 
-    def flush_data(self):
-        """Write data to the data file.
+    def _flush_to_file(self):
+        self.datafile.flush()  # internal buffer to RAM
+        os.fsync(self.datafile.fileno())  # RAM file cache to disk
 
-            Note: This method do nothing during recording.
+    def _write_header(self):
+        """Write the header to the data file.
 
-        Args:
-            None
+        """
+        self.datafile.write('\t'.join([
+            'TimeStamp', 'GazePointXLeft', 'GazePointYLeft', 'ValidityLeft',
+            'GazePointXRight', 'GazePointYRight', 'ValidityRight',
+            'GazePointX', 'GazePointY', 'PupilSizeLeft', 'PupilValidityLeft',
+            'PupilSizeRight', 'PupilValidityRight', 'Event'
+        ]) + '\n')
+        self._flush_to_file()
 
-        Returns:
-            None
+    def _write_event(self, record):
+        if self.event_data:
+            for event in self.event_data:
+                if event[0] <= record[0]:
+                    self.datafile.write('%s\n' % event[1])
+                    # remove the old events
+                    self.event_data.remove(event)
+                    break
+            else:
+                self.datafile.write('\n')
+        else:
+            pass  # do nothing when no events to write
+
+    def _write_record(self, record):
+        format_string = (
+            '%.1f\t'  # TimeStamp
+            '%.4f\t'  # GazePointXLeft
+            '%.4f\t'  # GazePointYLeft
+            '%d\t'  # ValidityLeft
+            '%.4f\t'  # GazePointXRight
+            '%.4f\t'  # GazePointYRight
+            '%d\t'  # ValidityRight
+            '%.4f\t'  # GazePointX
+            '%.4f\t'  # GazePointY
+            '%.4f\t'  # PupilSizeLeft
+            '%d\t'  # PupilValidityLeft
+            '%.4f\t'  # PupilSizeRight
+            '%d\t'  # PupilValidityRight
+        )
+        # write data
+        self.datafile.write(format_string % record)
+
+    def _convert_tobii_record(self, record):
+        """Convert tobii coordinates to output style.
+
         """
 
+        lp = self._get_psychopy_pos(record['left_gaze_point_on_display_area'])
+        rp = self._get_psychopy_pos(record['right_gaze_point_on_display_area'])
+
+        if not (record['left_gaze_point_validity']
+                or record['right_gaze_point_validity']):  #not detected
+            ave = (np.nan, np.nan)
+        elif not record['left_gaze_point_validity']:
+            ave = rp  # use right eye
+        elif not record['right_gaze_point_validity']:
+            ave = lp  # use left eye
+        else:
+            ave = ((lp[0] + rp[0]) / 2.0, (lp[1] + rp[1]) / 2.0)
+
+        return (((record['system_time_stamp'] - self.t0) / 1000.0, lp[0],
+                 lp[1], record['left_gaze_point_validity'], rp[0], rp[1],
+                 record['right_gaze_point_validity'], ave[0], ave[1],
+                 record['left_pupil_diameter'], record['left_pupil_validity'],
+                 record['right_pupil_diameter'],
+                 record['right_pupil_validity']))
+
+    def _flush_data(self):
         if not self.gaze_data:
             # do nothing when there's no data
             return
 
         if self.recording:
+            # do nothing while recording
             return
 
         self.datafile.write('Session Start\n')
+        self._write_header()
+        for gaze_data in self.gaze_data:
+            output = self._convert_tobii_record(gaze_data)
+            self._write_record(output)
+            # if there's a corresponding event, write it.
+            # if no events are found, simply write \n
+            self._write_event(output)
 
-        if self.embed_events:
-            self.datafile.write('\t'.join([
-                'TimeStamp', 'GazePointXLeft', 'GazePointYLeft', 'PupilLeft',
-                'ValidityLeft', 'GazePointXRight', 'GazePointYRight',
-                'PupilRight', 'ValidityRight', 'GazePointX', 'GazePointY',
-                'Event'
-            ]) + '\n')
-        else:
-            self.datafile.write('\t'.join([
-                'TimeStamp', 'GazePointXLeft', 'GazePointYLeft', 'PupilLeft',
-                'ValidityLeft', 'GazePointXRight', 'GazePointYRight',
-                'PupilRight', 'ValidityRight', 'GazePointX', 'GazePointY'
-            ]) + '\n')
-
-        format_string = '%.1f\t%.4f\t%.4f\t%.4f\t%d\t%.4f\t%.4f\t%.4f\t%d\t%.4f\t%.4f'
-
-        timestamp_start = self.gaze_data[0][0]
-        num_output_events = 0
-
-        if self.embed_events:
-            for i in range(len(self.gaze_data)):
-                if num_output_events < len(
-                        self.event_data
-                ) and self.event_data[num_output_events][0] < self.gaze_data[i][0]:
-                    event_t = self.event_data[num_output_events][0]
-                    event_text = self.event_data[num_output_events][1]
-
-                    if i > 0:
-                        output_data = self.convert_tobii_record(
-                            self.interpolate_gaze_data(
-                                self.gaze_data[i - 1], self.gaze_data[i],
-                                event_t), timestamp_start)
-                    else:
-                        output_data = ((event_t - timestamp_start) / 1000.0,
-                                       np.nan, np.nan, np.nan, 0, np.nan,
-                                       np.nan, np.nan, 0, np.nan, np.nan)
-
-                    self.datafile.write(format_string % output_data)
-                    self.datafile.write('\t%s\n' % (event_text))
-
-                    num_output_events += 1
-
-                self.datafile.write(format_string % self.convert_tobii_record(
-                    self.gaze_data[i], timestamp_start))
-                self.datafile.write('\t\n')
-
-            # flush remaining events
-            if num_output_events < len(self.event_data):
-                for e_i in range(num_output_events, len(self.event_data)):
-                    event_t = self.event_data[e_i][0]
-                    event_text = self.event_data[e_i][1]
-
-                    output_data = ((event_t - timestamp_start) / 1000.0,
-                                   np.nan, np.nan, np.nan, 0, np.nan, np.nan,
-                                   np.nan, 0, np.nan, np.nan)
-                    self.datafile.write(format_string % output_data)
-                    self.datafile.write('\t%s\n' % (event_text))
-        else:
-            for i in range(len(self.gaze_data)):
-                self.datafile.write(format_string % self.convert_tobii_record(
-                    self.gaze_data[i], timestamp_start))
-                self.datafile.write('\n')
-
-            self.datafile.write('TimeStamp\tEvent\n')
-            for e in self.event_data:
-                self.datafile.write(
-                    '%.1f\t%s\n' % ((e[0] - timestamp_start) / 1000.0, e[1]))
-
-        self.datafile.write('Session End\n\n')
-        self.datafile.flush()
-
-    def convert_tobii_record(self, record, start_time):
-        """
-        Convert tobii data to output style.
-        Usually, users don't have to call this method.
-
-        :param record: element of self.gaze_data.
-        :param start_time: Tobii's timestamp when recording was started.
-        """
-
-        lxy = self._get_psychopy_pos(record[1:3])
-        rxy = self._get_psychopy_pos(record[5:7])
-
-        if record[4] == 0 and record[8] == 0:  #not detected
-            ave = (np.nan, np.nan)
-        elif record[4] == 0:
-            ave = rxy
-        elif record[8] == 0:
-            ave = lxy
-        else:
-            ave = ((lxy[0] + rxy[0]) / 2.0, (lxy[1] + rxy[1]) / 2.0)
-
-        return ((record[0] - start_time) / 1000.0, lxy[0], lxy[1], record[3],
-                record[4], rxy[0], rxy[1], record[7], record[8], ave[0],
-                ave[1])
+        self._flush_to_file()
 
     def interpolate_gaze_data(self, record1, record2, t):
         """
