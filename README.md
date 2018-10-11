@@ -1,5 +1,7 @@
 # psychopy_tobii_infant
 
+**DO NOT USE NOW: rewriting ongoing.**
+
 Create infant-friendly eyetracking experiments with PsychoPy and Tobii eyetrackers.
 
 ## What it's for
