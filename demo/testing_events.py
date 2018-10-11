@@ -74,7 +74,7 @@ while waitkey:
     elif len(keys)>=1:
         # Record the first key name to the data file.
         controller.record_event(keys[0])
-        print('pressed {k} at {t}'.format(k=keys[0], t=timer.getTime()-1))
+        print('pressed {k} at {t} ms'.format(k=keys[0], t=timer.getTime()*1000))
 
     marker.draw()
     win.flip()
