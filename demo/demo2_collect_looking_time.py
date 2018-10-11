@@ -33,11 +33,7 @@ win = visual.Window(
 
 # prepare the experiment stimuli
 tar_1 = visual.ImageStim(
-    win,
-    'stim/checkboard_big.png',
-    size=[1280, 1024],
-    units='pix',
-    name='big')
+    win, 'stim/checkboard_big.png', size=[1280, 1024], units='pix', name='big')
 tar_2 = visual.ImageStim(
     win,
     'stim/checkboard_small.png',
@@ -66,13 +62,12 @@ for target in alltar:
     # Draw the stimuli in each frames
     target.setAutoDraw(True)
     # send a event to the eyetracker
-    stim_on = win.callOnFlip(controller.record_event, event='stim_onset')
+    win.callOnFlip(controller.record_event, event='stim_onset')
     # collect looking time
     lt = controller.collect_lt(10, 2)
     target.setAutoDraw(False)
-    stim_off = win.callOnFlip(controller.record_event, event='stim_offset')
-    print('Looking time in {tar}:{lt}\nStim duration:{dur}'.format(
-        tar=target.name, lt=lt, dur=stim_off - stim_on))
+    win.callOnFlip(controller.record_event, event='stim_offset')
+    print('Looking time in {tar}:{lt}'.format(tar=target.name, lt=lt))
 
 # stop recording
 controller.stop_recording()
