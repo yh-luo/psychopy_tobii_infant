@@ -25,6 +25,7 @@ class infant_tobii_controller:
     Args:
         win: psychopy.visual.Window object.
         id: the id of eyetracker.
+        filename: the name of the data file.
 
     Attributes:
         infant_stims: the stimuli to be used in calibration. The user should
@@ -79,6 +80,341 @@ class infant_tobii_controller:
         self.calibration = tr.ScreenBasedCalibration(self.eyetracker)
         self.update_calibration = self._update_calibration_infant
         self.gaze_data = []
+
+    def _on_gaze_data(self, gaze_data):
+        """Callback function used by Tobii SDK.
+
+            Users should not use this method on most occasions.
+
+        Args:
+            gaze_data: gaze data provided by the eye tracker.
+
+        Returns:
+            None
+        """
+        self.gaze_data.append(gaze_data)
+
+    def _get_psychopy_pos(self, p):
+        """Convert Tobii ADCS coordinates to PsychoPy coordinates.
+
+        Args:
+            p: Gaze position (x, y) in Tobii ADCS.
+
+        Returns:
+            Gaze position in PsychoPy coordinate systems.
+        """
+
+        if self.win.units == 'norm':
+            return (2 * p[0] - 1, -2 * p[1] + 1)
+        elif self.win.units == 'height':
+            return ((p[0] - 0.5) * (self.win.size[0] / self.win.size[1]),
+                    -p[1] + 0.5)
+        elif self.win.units in ['pix', 'cm', 'deg', 'degFlat', 'degFlatPos']:
+            p_pix = ((p[0] - 0.5) * self.win.size[0],
+                     (-p[1] + 0.5) * self.win.size[1])
+            if self.win.units == 'pix':
+                return p_pix
+            elif self.win.units == 'cm':
+                return (pix2cm(p_pix[0], self.win.monitor),
+                        pix2cm(p_pix[1], self.win.monitor))
+            elif self.win.units == 'deg':
+                return (pix2deg(p_pix[0], self.win.monitor),
+                        pix2deg(p_pix[1], self.win.monitor))
+            else:
+                return (pix2deg(
+                    np.array(p_pix), self.win.monitor, correctFlat=True))
+        else:
+            raise ValueError('unit ({}) is not supported.'.format(
+                self.win.units))
+
+    def _get_tobii_pos(self, p):
+        """Convert PsychoPy coordinates to Tobii ADCS coordinates.
+
+        Args:
+            p: Gaze position (x, y) in PsychoPy coordinate systems.
+
+        Returns:
+            Gaze position in Tobii ADCS.
+        """
+
+        if self.win.units == 'norm':
+            return ((p[0] + 1) / 2, (p[1] - 1) / -2)
+        elif self.win.units == 'height':
+            return (p[0] * (self.win.size[1] / self.win.size[0]) + 0.5,
+                    -p[1] + 0.5)
+        elif self.win.units == 'pix':
+            return self._pix2tobii(p)
+        elif self.win.units in ['cm', 'deg', 'degFlat', 'degFlatPos']:
+            if self.win.units == 'cm':
+                p_pix = (cm2pix(p[0], self.win.monitor),
+                         cm2pix(p[1], self.win.monitor))
+            elif self.win.units == 'deg':
+                p_pix = (deg2pix(p[0], self.win.monitor),
+                         deg2pix(p[1], self.win.monitor))
+            elif self.win.units in ['degFlat', 'degFlatPos']:
+                p_pix = (deg2pix(
+                    np.array(p), self.win.monitor, correctFlat=True))
+
+            return self._pix2tobii(p_pix)
+        else:
+            raise ValueError('unit ({}) is not supported'.format(
+                self.win.units))
+
+    def _pix2tobii(self, p):
+        """Convert PsychoPy pixel coordinates to Tobii ADCS.
+
+            Called by _get_tobii_pos.
+
+        Args:
+            p: Gaze position (x, y) in pix.
+
+        Returns:
+            Gaze position in Tobii ADCS.
+        """
+        return (p[0] / self.win.size[0] + 0.5, -p[1] / self.win.size[1] + 0.5)
+
+    def _get_psychopy_pos_from_trackbox(self, p, units=None):
+        """Convert Tobii TBCS coordinates to PsychoPy coordinates.
+
+            Called by show_status.
+
+        Args:
+            p: Gaze position (x, y) in Tobii TBCS.
+            units: The PsychoPy coordinate system to use.
+
+        Returns:
+            Gaze position in PsychoPy coordinate systems.
+        """
+
+        if units is None:
+            units = self.win.units
+
+        if units == 'norm':
+            return (-2 * p[0] + 1, -2 * p[1] + 1)
+        elif units == 'height':
+            return ((-p[0] + 0.5) * (self.win.size[0] / self.win.size[1]),
+                    -p[1] + 0.5)
+        elif units in ['pix', 'cm', 'deg', 'degFlat', 'degFlatPos']:
+            p_pix = ((-2 * p[0] + 1) * self.win.size[0] / 2,
+                     (-2 * p[1] + 1) * self.win.size[1] / 2)
+            if units == 'pix':
+                return p_pix
+            elif units == 'cm':
+                return (pix2cm(p_pix[0], self.win.monitor),
+                        pix2cm(p_pix[1], self.win.monitor))
+            elif units == 'deg':
+                return (pix2deg(p_pix[0], self.win.monitor),
+                        pix2deg(p_pix[1], self.win.monitor))
+            else:
+                return (pix2deg(
+                    np.array(p_pix), self.win.monitor, correctFlat=True))
+        else:
+            raise ValueError('unit ({}) is not supported.'.format(
+                self.win.units))
+
+    def _update_calibration_infant(self,
+                                   collect_key='space',
+                                   exit_key='return'):
+        """The calibration procedure designed for infants.
+
+        An implementation of run_calibration() in psychopy_tobii_controller,
+        Using 1~9 to present calibration stimulus and 0 to hide the target.
+
+        Args:
+            collect_key: the key to start collecting samples.
+            exit_key: the key to finish and leave the current calibration
+                procedure. It should not be confused with `decision_key`, which
+                is used to leave the whole calibration process. `exit_key` is
+                used to leave the current calibration, the user may recalibrate
+                or accept the results afterwards.
+
+        Returns:
+            None
+        """
+
+        # start calibration
+        event.clearEvents()
+        current_point_index = -1
+        in_calibration = True
+        clock = core.Clock()
+        while in_calibration:
+            # get keys
+            keys = event.getKeys()
+            for key in keys:
+                if key in self.numkey_dict:
+                    current_point_index = self.numkey_dict[key]
+
+                elif key == collect_key:
+                    # collect samples when space is pressed
+                    if current_point_index in self.retry_points:
+                        self._collect_calibration_data(
+                            self.original_calibration_points[
+                                current_point_index])
+                        current_point_index = -1
+                elif key == exit_key:
+                    # exit calibration when return is presssed
+                    in_calibration = False
+                    break
+
+            # draw calibration target
+            if current_point_index in self.retry_points:
+                self.targets[current_point_index].setPos(
+                    self.original_calibration_points[current_point_index])
+                t = clock.getTime()
+                newsize = [(math.sin(t)**2 + 0.2) * e
+                           for e in self.target_original_size]
+                self.targets[current_point_index].setSize(newsize)
+                self.targets[current_point_index].draw()
+            self.win.flip()
+
+    def _flush_to_file(self):
+        """Write data to disk.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        self.datafile.flush()  # internal buffer to RAM
+        os.fsync(self.datafile.fileno())  # RAM file cache to disk
+
+    def _write_header(self):
+        """Write the header to the data file.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        self.datafile.write('\t'.join([
+            'TimeStamp', 'GazePointXLeft', 'GazePointYLeft', 'ValidityLeft',
+            'GazePointXRight', 'GazePointYRight', 'ValidityRight',
+            'GazePointX', 'GazePointY', 'PupilSizeLeft', 'PupilValidityLeft',
+            'PupilSizeRight', 'PupilValidityRight', 'Event'
+        ]) + '\n')
+        self._flush_to_file()
+
+    def _write_event(self, record):
+        """Write events to the data file.
+
+        Args:
+            record: reformed gaze data
+
+        Returns:
+            None
+        """
+        if self.event_data:
+            for event in self.event_data:
+                if event[0] <= record[0]:
+                    self.datafile.write('%s\n' % event[1])
+                    # remove the old events
+                    self.event_data.remove(event)
+                    break
+            else:
+                self.datafile.write('\n')  # do nothing when no events to write
+        else:
+            self.datafile.write('\n')  # do nothing when no events to write
+
+    def _write_record(self, record):
+        """Write the Tobii output to the data file.
+
+        Args:
+            record: reformed gaze data
+
+        Returns:
+            None
+        """
+        format_string = (
+            '%.1f\t'  # TimeStamp
+            '%.4f\t'  # GazePointXLeft
+            '%.4f\t'  # GazePointYLeft
+            '%d\t'  # ValidityLeft
+            '%.4f\t'  # GazePointXRight
+            '%.4f\t'  # GazePointYRight
+            '%d\t'  # ValidityRight
+            '%.4f\t'  # GazePointX
+            '%.4f\t'  # GazePointY
+            '%.4f\t'  # PupilSizeLeft
+            '%d\t'  # PupilValidityLeft
+            '%.4f\t'  # PupilSizeRight
+            '%d\t'  # PupilValidityRight
+        )
+        # write data
+        self.datafile.write(format_string % record)
+
+    def _convert_tobii_record(self, record):
+        """Convert tobii coordinates to output style.
+
+        Args:
+            record: raw gaze data
+
+        Returns:
+            reformed gaze data
+        """
+
+        lp = self._get_psychopy_pos(record['left_gaze_point_on_display_area'])
+        rp = self._get_psychopy_pos(record['right_gaze_point_on_display_area'])
+
+        if not (record['left_gaze_point_validity']
+                or record['right_gaze_point_validity']):  # not detected
+            ave = (np.nan, np.nan)
+        elif not record['left_gaze_point_validity']:
+            ave = rp  # use right eye
+        elif not record['right_gaze_point_validity']:
+            ave = lp  # use left eye
+        else:
+            ave = ((lp[0] + rp[0]) / 2.0, (lp[1] + rp[1]) / 2.0)
+
+        return (((record['system_time_stamp'] - self.t0) / 1000.0, lp[0],
+                 lp[1], record['left_gaze_point_validity'], rp[0], rp[1],
+                 record['right_gaze_point_validity'], ave[0], ave[1],
+                 record['left_pupil_diameter'], record['left_pupil_validity'],
+                 record['right_pupil_diameter'],
+                 record['right_pupil_validity']))
+
+    def _flush_data(self):
+        """Wrapper for writing the header and data to the data file.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        if not self.gaze_data:
+            # do nothing when there's no data
+            return
+
+        if self.recording:
+            # do nothing while recording
+            return
+
+        self.datafile.write('Session Start\n')
+        self._write_header()
+        for gaze_data in self.gaze_data:
+            output = self._convert_tobii_record(gaze_data)
+            self._write_record(output)
+            # if there's a corresponding event, write it.
+            # if no events are found, simply write \n
+            self._write_event(output)
+
+        self._flush_to_file()
+
+    def _collect_calibration_data(self, p):
+        """Callback function used by Tobii calibration in run_calibration.
+
+        Args:
+            p: the calibration point
+
+        Returns:
+            None
+        """
+
+        if self.calibration.collect_data(
+                *self._get_tobii_pos(p)) != tr.CALIBRATION_STATUS_SUCCESS:
+            self.calibration.collect_data(*self._get_tobii_pos(p))
 
     def run_calibration(self,
                         calibration_points,
@@ -415,61 +751,6 @@ class infant_tobii_controller:
         attention_grabber.stop()
         self.eyetracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA)
 
-    def _update_calibration_infant(self,
-                                   collect_key='space',
-                                   exit_key='return'):
-        """The calibration procedure designed for infants.
-
-        An implementation of run_calibration() in psychopy_tobii_controller,
-        Using 1~9 to present calibration stimulus and 0 to hide the target.
-
-        Args:
-            collect_key: the key to start collecting samples.
-            exit_key: the key to finish and leave the current calibration
-                procedure. It should not be confused with `decision_key`, which
-                is used to leave the whole calibration process. `exit_key` is
-                used to leave the current calibration, the user may recalibrate
-                or accept the results afterwards.
-
-        Returns:
-            None
-        """
-
-        # start calibration
-        event.clearEvents()
-        current_point_index = -1
-        in_calibration = True
-        clock = core.Clock()
-        while in_calibration:
-            # get keys
-            keys = event.getKeys()
-            for key in keys:
-                if key in self.numkey_dict:
-                    current_point_index = self.numkey_dict[key]
-
-                elif key == collect_key:
-                    # collect samples when space is pressed
-                    if current_point_index in self.retry_points:
-                        self._collect_calibration_data(
-                            self.original_calibration_points[
-                                current_point_index])
-                        current_point_index = -1
-                elif key == exit_key:
-                    # exit calibration when return is presssed
-                    in_calibration = False
-                    break
-
-            # draw calibration target
-            if current_point_index in self.retry_points:
-                self.targets[current_point_index].setPos(
-                    self.original_calibration_points[current_point_index])
-                t = clock.getTime()
-                newsize = [(math.sin(t)**2 + 0.2) * e
-                           for e in self.target_original_size]
-                self.targets[current_point_index].setSize(newsize)
-                self.targets[current_point_index].draw()
-            self.win.flip()
-
     # Collect looking time
     def collect_lt(self, max_time, min_away, blink_dur=1):
         """Collect looking time data in runtime
@@ -496,8 +777,8 @@ class infant_tobii_controller:
 
         while trial_timer.getTime() <= max_time:
             gaze_data = self.gaze_data[-1]
-            lv = gaze_data["left_gaze_point_validity"]
-            rv = gaze_data["right_gaze_point_validity"]
+            lv = bool(gaze_data["left_gaze_point_validity"])
+            rv = bool(gaze_data["right_gaze_point_validity"])
 
             if any((lv, rv)):
                 # if the last sample is missing
@@ -541,7 +822,7 @@ class infant_tobii_controller:
         automatically when the participant look away.
 
         Args:
-            movie: the video to play.
+            movie: the MovieStim object to use.
             max_time: maximum looking time in seconds.
             min_away: minimum duration to stop in seconds.
             blink_dur: the tolerable duration of missing data in seconds.
@@ -560,8 +841,8 @@ class infant_tobii_controller:
         absence_timer.reset()
         while trial_timer.getTime() <= max_time:
             gaze_data = self.gaze_data[-1]
-            lv = ["left_gaze_point_validity"]
-            rv = gaze_data["right_gaze_point_validity"]
+            lv = bool(gaze_data["left_gaze_point_validity"])
+            rv = bool(gaze_data["right_gaze_point_validity"])
 
             if any((lv, rv)):
                 # if the last sample is missing
@@ -602,129 +883,12 @@ class infant_tobii_controller:
             lt = max_time - np.sum(away_time)
             return (round(lt, 3))
 
-    def _get_psychopy_pos(self, p):
-        """Convert Tobii ADCS coordinates to PsychoPy coordinates.
-
-        Args:
-            p: Gaze position (x, y) in Tobii ADCS.
-
-        Returns:
-            Gaze position in PsychoPy coordinate systems.
-        """
-
-        if self.win.units == 'norm':
-            return (2 * p[0] - 1, -2 * p[1] + 1)
-        elif self.win.units == 'height':
-            return ((p[0] - 0.5) * (self.win.size[0] / self.win.size[1]),
-                    -p[1] + 0.5)
-        elif self.win.units in ['pix', 'cm', 'deg', 'degFlat', 'degFlatPos']:
-            p_pix = ((p[0] - 0.5) * self.win.size[0],
-                     (-p[1] + 0.5) * self.win.size[1])
-            if self.win.units == 'pix':
-                return p_pix
-            elif self.win.units == 'cm':
-                return (pix2cm(p_pix[0], self.win.monitor),
-                        pix2cm(p_pix[1], self.win.monitor))
-            elif self.win.units == 'deg':
-                return (pix2deg(p_pix[0], self.win.monitor),
-                        pix2deg(p_pix[1], self.win.monitor))
-            else:
-                return (pix2deg(
-                    np.array(p_pix), self.win.monitor, correctFlat=True))
-        else:
-            raise ValueError('unit ({}) is not supported.'.format(
-                self.win.units))
-
-    def _get_tobii_pos(self, p):
-        """Convert PsychoPy coordinates to Tobii ADCS coordinates.
-
-        Args:
-            p: Gaze position (x, y) in PsychoPy coordinate systems.
-
-        Returns:
-            Gaze position in Tobii ADCS.
-        """
-
-        if self.win.units == 'norm':
-            return ((p[0] + 1) / 2, (p[1] - 1) / -2)
-        elif self.win.units == 'height':
-            return (p[0] * (self.win.size[1] / self.win.size[0]) + 0.5,
-                    -p[1] + 0.5)
-        elif self.win.units == 'pix':
-            return self._pix2tobii(p)
-        elif self.win.units in ['cm', 'deg', 'degFlat', 'degFlatPos']:
-            if self.win.units == 'cm':
-                p_pix = (cm2pix(p[0], self.win.monitor),
-                         cm2pix(p[1], self.win.monitor))
-            elif self.win.units == 'deg':
-                p_pix = (deg2pix(p[0], self.win.monitor),
-                         deg2pix(p[1], self.win.monitor))
-            elif self.win.units in ['degFlat', 'degFlatPos']:
-                p_pix = (deg2pix(
-                    np.array(p), self.win.monitor, correctFlat=True))
-
-            return self._pix2tobii(p_pix)
-        else:
-            raise ValueError('unit ({}) is not supported'.format(
-                self.win.units))
-
-    def _pix2tobii(self, p):
-        """Convert PsychoPy pixel coordinates to Tobii ADCS.
-
-            Called by _get_tobii_pos.
-
-        Args:
-            p: Gaze position (x, y) in pix.
-
-        Returns:
-            Gaze position in Tobii ADCS.
-        """
-        return (p[0] / self.win.size[0] + 0.5, -p[1] / self.win.size[1] + 0.5)
-
-    def _get_psychopy_pos_from_trackbox(self, p, units=None):
-        """Convert Tobii TBCS coordinates to PsychoPy coordinates.
-
-            Called by show_status.
-
-        Args:
-            p: Gaze position (x, y) in Tobii TBCS.
-            units: The PsychoPy coordinate system to use.
-
-        Returns:
-            Gaze position in PsychoPy coordinate systems.
-        """
-
-        if units is None:
-            units = self.win.units
-
-        if units == 'norm':
-            return (-2 * p[0] + 1, -2 * p[1] + 1)
-        elif units == 'height':
-            return ((-p[0] + 0.5) * (self.win.size[0] / self.win.size[1]),
-                    -p[1] + 0.5)
-        elif units in ['pix', 'cm', 'deg', 'degFlat', 'degFlatPos']:
-            p_pix = ((-2 * p[0] + 1) * self.win.size[0] / 2,
-                     (-2 * p[1] + 1) * self.win.size[1] / 2)
-            if units == 'pix':
-                return p_pix
-            elif units == 'cm':
-                return (pix2cm(p_pix[0], self.win.monitor),
-                        pix2cm(p_pix[1], self.win.monitor))
-            elif units == 'deg':
-                return (pix2deg(p_pix[0], self.win.monitor),
-                        pix2deg(p_pix[1], self.win.monitor))
-            else:
-                return (pix2deg(
-                    np.array(p_pix), self.win.monitor, correctFlat=True))
-        else:
-            raise ValueError('unit ({}) is not supported.'.format(
-                self.win.units))
-
     def start_recording(self, filename=None):
         """Start recording
 
         Args:
-            None
+            filename: the name of the data file. If None, use default name.
+                Defaults to None.
 
         Returns:
             None
@@ -786,19 +950,6 @@ class infant_tobii_controller:
         """
         self.stop_recording()
 
-    def _on_gaze_data(self, gaze_data):
-        """Callback function used by Tobii SDK.
-
-            Users should not use this method on most occasions.
-
-        Args:
-            gaze_data: gaze data provided by the eye tracker.
-
-        Returns:
-            None
-        """
-        self.gaze_data.append(gaze_data)
-
     def get_current_gaze_position(self):
         """Get the newest gaze position.
 
@@ -813,12 +964,12 @@ class infant_tobii_controller:
             return ((np.nan, np.nan), (np.nan, np.nan))
         else:
             gaze_data = self.gaze_data[-1]
-            if gaze_data["left_gaze_point_validity"]:
+            if bool(gaze_data["left_gaze_point_validity"]):
                 lxy = self._get_psychopy_pos(
                     gaze_data["left_gaze_point_on_display_area"])
             else:
                 lxy = (np.nan, np.nan)
-            if gaze_data["right_gaze_point_validity"]:
+            if bool(gaze_data["right_gaze_point_validity"]):
                 rxy = self._get_psychopy_pos(
                     gaze_data["right_gaze_point_on_display_area"])
             else:
@@ -840,11 +991,11 @@ class infant_tobii_controller:
             return (np.nan, np.nan)
         else:
             gaze_data = self.gaze_data[-1]
-            if gaze_data["left_pupil_validity"]:
+            if bool(gaze_data["left_pupil_validity"]):
                 lp = gaze_data["left_pupil_diameter"]
             else:
                 lp = np.nan
-            if gaze_data["right_pupil_validity"]:
+            if bool(gaze_data["right_pupil_validity"]):
                 rp = gaze_data["right_pupil_diameter"]
             else:
                 rp = np.nan
@@ -873,11 +1024,7 @@ class infant_tobii_controller:
                             '\n')
         self.datafile.write(
             'Recording resolution:\t%d x %d\n' % tuple(self.win.size))
-        # self.embed_events = embed_events
-        # if embed_events:
-        #     self.datafile.write('Event recording mode:\tEmbedded\n\n')
-        # else:
-        #     self.datafile.write('Event recording mode:\tSeparated\n\n')
+
         self._flush_to_file()
 
     def close_datafile(self):
@@ -909,150 +1056,6 @@ class infant_tobii_controller:
             return
 
         self.event_data.append([tr.get_system_time_stamp(), event])
-
-    def _flush_to_file(self):
-        self.datafile.flush()  # internal buffer to RAM
-        os.fsync(self.datafile.fileno())  # RAM file cache to disk
-
-    def _write_header(self):
-        """Write the header to the data file.
-
-        """
-        self.datafile.write('\t'.join([
-            'TimeStamp', 'GazePointXLeft', 'GazePointYLeft', 'ValidityLeft',
-            'GazePointXRight', 'GazePointYRight', 'ValidityRight',
-            'GazePointX', 'GazePointY', 'PupilSizeLeft', 'PupilValidityLeft',
-            'PupilSizeRight', 'PupilValidityRight', 'Event'
-        ]) + '\n')
-        self._flush_to_file()
-
-    def _write_event(self, record):
-        if self.event_data:
-            for event in self.event_data:
-                if event[0] <= record[0]:
-                    self.datafile.write('%s\n' % event[1])
-                    # remove the old events
-                    self.event_data.remove(event)
-                    break
-            else:
-                self.datafile.write('\n') # do nothing when no events to write
-        else:
-            self.datafile.write('\n') # do nothing when no events to write
-
-    def _write_record(self, record):
-        format_string = (
-            '%.1f\t'  # TimeStamp
-            '%.4f\t'  # GazePointXLeft
-            '%.4f\t'  # GazePointYLeft
-            '%d\t'  # ValidityLeft
-            '%.4f\t'  # GazePointXRight
-            '%.4f\t'  # GazePointYRight
-            '%d\t'  # ValidityRight
-            '%.4f\t'  # GazePointX
-            '%.4f\t'  # GazePointY
-            '%.4f\t'  # PupilSizeLeft
-            '%d\t'  # PupilValidityLeft
-            '%.4f\t'  # PupilSizeRight
-            '%d\t'  # PupilValidityRight
-        )
-        # write data
-        self.datafile.write(format_string % record)
-
-    def _convert_tobii_record(self, record):
-        """Convert tobii coordinates to output style.
-
-        """
-
-        lp = self._get_psychopy_pos(record['left_gaze_point_on_display_area'])
-        rp = self._get_psychopy_pos(record['right_gaze_point_on_display_area'])
-
-        if not (record['left_gaze_point_validity']
-                or record['right_gaze_point_validity']):  #not detected
-            ave = (np.nan, np.nan)
-        elif not record['left_gaze_point_validity']:
-            ave = rp  # use right eye
-        elif not record['right_gaze_point_validity']:
-            ave = lp  # use left eye
-        else:
-            ave = ((lp[0] + rp[0]) / 2.0, (lp[1] + rp[1]) / 2.0)
-
-        return (((record['system_time_stamp'] - self.t0) / 1000.0, lp[0],
-                 lp[1], record['left_gaze_point_validity'], rp[0], rp[1],
-                 record['right_gaze_point_validity'], ave[0], ave[1],
-                 record['left_pupil_diameter'], record['left_pupil_validity'],
-                 record['right_pupil_diameter'],
-                 record['right_pupil_validity']))
-
-    def _flush_data(self):
-        if not self.gaze_data:
-            # do nothing when there's no data
-            return
-
-        if self.recording:
-            # do nothing while recording
-            return
-
-        self.datafile.write('Session Start\n')
-        self._write_header()
-        for gaze_data in self.gaze_data:
-            output = self._convert_tobii_record(gaze_data)
-            self._write_record(output)
-            # if there's a corresponding event, write it.
-            # if no events are found, simply write \n
-            self._write_event(output)
-
-        self._flush_to_file()
-
-    def interpolate_gaze_data(self, record1, record2, t):
-        """
-        Interpolate gaze data between record1 and record2.
-        Usually, users don't have to call this method.
-
-        :param record1: element of self.gaze_data.
-        :param record2: element of self.gaze_data.
-        :param t: timestamp to calculate interpolation.
-        """
-
-        w1 = (record2[0] - t) / (record2[0] - record1[0])
-        w2 = (t - record1[0]) / (record2[0] - record1[0])
-
-        #left eye
-        if record1[4] == 0 and record2[4] == 0:
-            ldata = record1[1:5]
-        elif record1[4] == 0:
-            ldata = record2[1:5]
-        elif record2[4] == 0:
-            ldata = record1[1:5]
-        else:
-            ldata = (w1 * record1[1] + w2 * record2[1],
-                     w1 * record1[2] + w2 * record2[2],
-                     w1 * record1[3] + w2 * record2[3], 1)
-
-        #right eye
-        if record1[8] == 0 and record2[8] == 0:
-            rdata = record1[5:9]
-        elif record1[4] == 0:
-            rdata = record2[5:9]
-        elif record2[4] == 0:
-            rdata = record1[5:9]
-        else:
-            rdata = (w1 * record1[5] + w2 * record2[5],
-                     w1 * record1[6] + w2 * record2[6],
-                     w1 * record1[7] + w2 * record2[7], 1)
-
-        return (t, ) + ldata + rdata
-
-    def _collect_calibration_data(self, p):
-        """
-        Callback function used by
-        :func:`~psychopy_tobii_controller.tobii_controller.run_calibration`
-
-        Usually, users don't have to call this method.
-        """
-
-        if self.calibration.collect_data(
-                *self._get_tobii_pos(p)) != tr.CALIBRATION_STATUS_SUCCESS:
-            self.calibration.collect_data(*self._get_tobii_pos(p))
 
 
 def _unload(self):
