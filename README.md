@@ -1,7 +1,5 @@
 # psychopy_tobii_infant
 
-**DO NOT USE NOW: rewriting ongoing.**
-
 Create infant-friendly eyetracking experiments with PsychoPy and Tobii eyetrackers.
 
 ## What it's for
@@ -17,7 +15,6 @@ This package was based on [psychopy_tobii_controller](https://github.com/hsogo/p
 ### TODO
 
 - Support PsychoPy 3
-- Support Builder
 
 ## Author
 
@@ -42,10 +39,15 @@ Currently tested on Python 3.5.6
 
 - [PsychoPy 1.90.x](http://www.psychopy.org/)
     Currently tested on v1.90.3
-- [tobii_research](https://pypi.python.org/pypi/tobii-research)  
-- [psychopy_tobii_controller](https://github.com/hsogo/psychopy_tobii_controller) by Hiroyuki Sogo
+- [tobii_research](https://pypi.python.org/pypi/tobii-research)
 
 ## Releases
+
+### v0.3
+
+- Rewrite data collection
+- Rewrite data output
+- Improve documentation
 
 ### v0.2
 
@@ -75,3 +77,14 @@ Currently tested on Python 3.5.6
 ## License
 
 GPL v3.0 or later
+
+## Acknowledgements
+
+This package is built upon/inspired by the following packages, for which credit goes out to the respective authors.
+
+- [PsychoPy](http://www.psychopy.org/)
+- [Tobii Pro SDK](https://www.tobiipro.com/product-listing/tobii-pro-sdk/)
+- [psychopy_tobii_controller](https://github.com/hsogo/psychopy_tobii_controller) by [Hiroyuki Sogo](https://github.com/hsogo)
+- [PyGaze](http://www.pygaze.org/) by [Edwin S. Dalmaijer](https://github.com/esdalmaijer)
+
+Good luck!
