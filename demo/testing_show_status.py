@@ -51,41 +51,41 @@ controller = infant_tobii_controller(win)
 # show the relative position of the subject to the eyetracker
 controller.show_status("infant/seal-clip.mp4")
 
-ret = controller.run_calibration(CALIPOINTS, CALISTIMS, start_key=None)
+# ret = controller.run_calibration(CALIPOINTS, CALISTIMS, start_key=None)
 
-if ret == 'abort':
-    core.quit()
+# if ret == 'abort':
+#     core.quit()
 
-marker = visual.Rect(win,width=1,height=1)
+# marker = visual.Rect(win,width=1,height=1)
 
-# Start recording.
-controller.subscribe()
+# # Start recording.
+# controller.subscribe()
 
-waitkey = True
-while waitkey:
-    # Get the latest gaze position data.
-    currentGazePosition = controller.get_current_gaze_position()
+# waitkey = True
+# while waitkey:
+#     # Get the latest gaze position data.
+#     currentGazePosition = controller.get_current_gaze_position()
     
-    # Gaze position is a tuple of four values (lx, ly, rx, ry).
-    # The value is numpy.nan if Tobii failed to detect gaze position.
-    if not np.nan in currentGazePosition:
-        marker.setPos(currentGazePosition[0:2])
-        marker.setLineColor('white')
-    else:
-        marker.setLineColor('red')
-    keys = event.getKeys()
-    if 'space' in keys:
-        waitkey=False
-    elif len(keys)>=1:
-        # Record the first key name to the data file.
-        controller.record_event(keys[0])
+#     # Gaze position is a tuple of four values (lx, ly, rx, ry).
+#     # The value is numpy.nan if Tobii failed to detect gaze position.
+#     if not np.nan in currentGazePosition:
+#         marker.setPos(currentGazePosition[0:2])
+#         marker.setLineColor('white')
+#     else:
+#         marker.setLineColor('red')
+#     keys = event.getKeys()
+#     if 'space' in keys:
+#         waitkey=False
+#     elif len(keys)>=1:
+#         # Record the first key name to the data file.
+#         controller.record_event(keys[0])
     
-    marker.draw()
-    win.flip()
+#     marker.draw()
+#     win.flip()
 
-# stop recording
-controller.unsubscribe()
-# close the file
+# # stop recording
+# controller.unsubscribe()
+# # close the file
 # controller.close_datafile()
 
 win.close()
