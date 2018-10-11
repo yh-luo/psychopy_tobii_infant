@@ -935,9 +935,9 @@ class infant_tobii_controller:
                     self.event_data.remove(event)
                     break
             else:
-                self.datafile.write('\n')
+                self.datafile.write('\n') # do nothing when no events to write
         else:
-            pass  # do nothing when no events to write
+            self.datafile.write('\n') # do nothing when no events to write
 
     def _write_record(self, record):
         format_string = (
