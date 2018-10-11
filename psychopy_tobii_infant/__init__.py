@@ -720,7 +720,7 @@ class infant_tobii_controller:
             raise ValueError('unit ({}) is not supported.'.format(
                 self.win.units))
 
-    def start_recording(self):
+    def start_recording(self, filename=None):
         """Start recording
 
         Args:
@@ -729,6 +729,8 @@ class infant_tobii_controller:
         Returns:
             None
         """
+        if filename is not None:
+            self.filename = filename
         self.open_datafile()
         self.gaze_data = []
         self.event_data = []
