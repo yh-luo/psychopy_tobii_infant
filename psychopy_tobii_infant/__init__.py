@@ -19,7 +19,7 @@ except:
 class infant_tobii_controller:
     """Tobii controller for PsychoPy.
 
-    tobii_research are required for this module.
+        tobii_research are required for this module.
 
     Args:
         win: psychopy.visual.Window object.
@@ -82,8 +82,6 @@ class infant_tobii_controller:
 
     def _on_gaze_data(self, gaze_data):
         """Callback function used by Tobii SDK.
-
-            Users should not use this method on most occasions.
 
         Args:
             gaze_data: gaze data provided by the eye tracker.
@@ -216,16 +214,15 @@ class infant_tobii_controller:
                                    exit_key='return'):
         """The calibration procedure designed for infants.
 
-        An implementation of run_calibration() in psychopy_tobii_controller,
-        Using 1~9 to present calibration stimulus and 0 to hide the target.
+            An implementation of run_calibration() in psychopy_tobii_controller.
 
         Args:
-            collect_key: the key to start collecting samples.
+            collect_key: the key to start collecting samples. Defaults to space.
             exit_key: the key to finish and leave the current calibration
                 procedure. It should not be confused with `decision_key`, which
                 is used to leave the whole calibration process. `exit_key` is
                 used to leave the current calibration, the user may recalibrate
-                or accept the results afterwards.
+                or accept the results afterwards. Defaults to return (Enter)
 
         Returns:
             None
@@ -434,12 +431,16 @@ class infant_tobii_controller:
                         decision_key='space'):
         """Run calibration
 
-        The experimenter should manually show the stimulus and collect data
-        when the subject is paying attention to the stimulus.
-        The stimulus will change its size according to time, in order to
-        attract the infant. The experimenter may press the `start_key` to start
-        the procedure. To finish and leave the procedure, press the
-        `decision_key`.
+            How to use:
+                - Use 1~9 to present calibration stimulus and 0 to hide the target.
+                - Press space to start collect calibration samples.
+
+            The experimenter should manually show the stimulus and collect data
+            when the subject is paying attention to the stimulus.
+
+            The experimenter may press the `start_key` to start
+            the procedure. To finish and leave the procedure, press the
+            `decision_key`.
 
         Args:
             calibration_points: list of position of the calibration points.
@@ -627,7 +628,7 @@ class infant_tobii_controller:
         thus inspect and adjust the position of the participant.
 
         Args:
-            att_stim: the video to be played.
+            att_stim: the filename of the video to be played.
             enable_mouse: use mouse clicks to leave the procedure?
             pos: the position to draw the video.
             size: the size of the video.
@@ -894,6 +895,32 @@ class infant_tobii_controller:
             lt = max_time - np.sum(away_time)
             return (round(lt, 3))
 
+    def _open_datafile(self):
+        """Open a file for gaze data.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        try:
+            self.close_datafile()
+        except AttributeError:
+            pass
+
+        self.datafile = open(self.filename, 'w')
+        self.datafile.write('Recording date:\t' +
+                            datetime.datetime.now().strftime('%Y/%m/%d') +
+                            '\n')
+        self.datafile.write('Recording time:\t' +
+                            datetime.datetime.now().strftime('%H:%M:%S') +
+                            '\n')
+        self.datafile.write(
+            'Recording resolution:\t%d x %d\n' % tuple(self.win.size))
+
+        self._flush_to_file()
+
     def start_recording(self, filename=None, newfile=True, embed_event=True):
         """Start recording
 
@@ -988,10 +1015,10 @@ class infant_tobii_controller:
             gaze_data = self.gaze_data[-1]
             if gaze_data['left_gaze_point_validity']:
                 lxy = self._get_psychopy_pos(
-                    gaze_data["left_gaze_point_on_display_area"])
+                    gaze_data['left_gaze_point_on_display_area'])
             if gaze_data['right_gaze_point_validity']:
                 rxy = self._get_psychopy_pos(
-                    gaze_data["right_gaze_point_on_display_area"])
+                    gaze_data['right_gaze_point_on_display_area'])
 
             return (lxy, rxy)
 
@@ -1011,10 +1038,10 @@ class infant_tobii_controller:
             lp = np.nan
             rp = np.nan
             gaze_data = self.gaze_data[-1]
-            if bool(gaze_data["left_pupil_validity"]):
-                lp = gaze_data["left_pupil_diameter"]
-            if bool(gaze_data["right_pupil_validity"]):
-                rp = gaze_data["right_pupil_diameter"]
+            if gaze_data['left_pupil_validity']:
+                lp = gaze_data['left_pupil_diameter']
+            if gaze_data['right_pupil_validity']:
+                rp = gaze_data['right_pupil_diameter']
 
             return (lp, rp)
 
@@ -1033,32 +1060,6 @@ class infant_tobii_controller:
             return
 
         self.event_data.append([tr.get_system_time_stamp(), event])
-
-    def open_datafile(self):
-        """Open a file for gaze data.
-
-        Args:
-            None
-
-        Returns:
-            None
-        """
-        try:
-            self.close_datafile()
-        except AttributeError:
-            pass
-
-        self.datafile = open(self.filename, 'w')
-        self.datafile.write('Recording date:\t' +
-                            datetime.datetime.now().strftime('%Y/%m/%d') +
-                            '\n')
-        self.datafile.write('Recording time:\t' +
-                            datetime.datetime.now().strftime('%H:%M:%S') +
-                            '\n')
-        self.datafile.write(
-            'Recording resolution:\t%d x %d\n' % tuple(self.win.size))
-
-        self._flush_to_file()
 
     def close(self):
         """Close the data file.
