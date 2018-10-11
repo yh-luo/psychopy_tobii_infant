@@ -1,4 +1,4 @@
-import random
+import numpy as np
 import os
 
 from psychopy import visual, event, core, prefs
@@ -8,9 +8,6 @@ from psychopy_tobii_infant import infant_tobii_controller
 
 ###############################################################################
 # Constants
-###############################################################################
-random.seed()
-
 DIR = os.path.dirname(__file__)
 # users should know the display well.
 DISPSIZE = (34, 27)
@@ -25,10 +22,7 @@ CALISTIMS = [
 
 ###############################################################################
 # Demo
-###############################################################################
 # create a Window to control the monitor
-# It is assumed that the profile of the monitor is know. Thus, stimuli in
-# show_status are in 'height' units.
 win = visual.Window(
     size=[1280, 1024],
     monitor='tobii',
@@ -54,37 +48,36 @@ alltar = [tar_1, tar_2]
 
 # initialize tobii_controller to communicate with the eyetracker
 controller = infant_tobii_controller(win)
-# Open a file to save the eyetracking data
-controller.open_datafile('test_infant_calibration.tsv')
 
 # show the relative position of the subject to the eyetracker
+# stimuli in show_status are in 'height' units
 controller.show_status("infant/seal-clip.mp4")
 
-ret = controller.run_calibration(CALIPOINTS, CALISTIMS, start_key=None)
-
-if ret == 'abort':
+success = controller.run_calibration(CALIPOINTS, CALISTIMS, start_key=None)
+if not success:
+    win.close()
     core.quit()
 
-controller.subscribe()
-# wait a bit for the eyetracker to turn on
-core.wait(0.5)
+# Start recording.
+controller.start_recording('demo1-test.tsv')
 # start
-random.shuffle(alltar)
+np.random.shuffle(alltar)
 for target in alltar:
     # Draw the stimuli in each frames
     target.setAutoDraw(True)
-    stim_on = win.flip()
+    # send a event to the eyetracker
+    stim_on = win.callOnFlip(controller.record_event, event='stim_onset')
     # collect looking time
     lt = controller.collect_lt(10, 2)
     target.setAutoDraw(False)
-    stim_off = win.flip()
+    stim_off = win.callOnFlip(controller.record_event, event='stim_offset')
     print('Looking time in {tar}:{lt}\nStim duration:{dur}'.format(
         tar=target.name, lt=lt, dur=stim_off - stim_on))
 
 # stop recording
-controller.unsubscribe()
+controller.stop_recording()
 # close the file
-controller.close_datafile()
+controller.close()
 
 win.close()
 core.quit()
