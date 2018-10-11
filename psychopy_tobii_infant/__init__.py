@@ -378,24 +378,23 @@ class infant_tobii_controller:
                 gaze_data = self.gaze_data[-1]
                 lv = bool(gaze_data['left_gaze_point_validity'])
                 rv = bool(gaze_data['right_gaze_point_validity'])
+                lx, ly, lz = gaze_data[
+                    'left_gaze_origin_in_trackbox_coordinate_system']
+                rx, ry, rz = gaze_data[
+                    'right_gaze_origin_in_trackbox_coordinate_system']
                 if lv:
-                    lx, ly, lz = gaze_data[
-                        'left_gaze_origin_in_trackbox_coordinate_system']
                     lx, ly = self._get_psychopy_pos_from_trackbox(
                         [lx, ly], units='height')
                     leye.setPos((lx * 0.25, ly * 0.2 + 0.4))
                     leye.draw()
                 if rv:
-                    rx, ry, rz = gaze_data[
-                        'right_gaze_origin_in_trackbox_coordinate_system']
                     rx, ry = self._get_psychopy_pos_from_trackbox(
                         [rx, ry], units='height')
                     reye.setPos((rx * 0.25, ry * 0.2 + 0.4))
                     reye.draw()
                 if lv or rv:
                     zpos.setPos(((((lz * int(lv) + rz * int(rv)) /
-                                    (int(lv) + int(rv))) - 0.5) * 0.125,
-                                    0.28))
+                                   (int(lv) + int(rv))) - 0.5) * 0.125, 0.28))
                     zpos.draw()
 
                 for key in event.getKeys():
