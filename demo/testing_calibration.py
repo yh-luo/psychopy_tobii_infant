@@ -63,8 +63,8 @@ while waitkey:
     
     # Gaze position is a tuple of four values (lx, ly, rx, ry).
     # The value is numpy.nan if Tobii failed to detect gaze position.
-    if not np.nan in currentGazePosition:
-        marker.setPos(currentGazePosition[0:2])
+    if np.nan not in currentGazePosition[0]:
+        marker.setPos(currentGazePosition[0])
         marker.setLineColor('white')
     else:
         marker.setLineColor('red')
