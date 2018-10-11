@@ -59,7 +59,7 @@ if not success:
     core.quit()
 
 # Start recording.
-controller.start_recording('demo1-test.tsv')
+controller.start_recording('demo2-test.tsv')
 # start
 np.random.shuffle(alltar)
 for target in alltar:
