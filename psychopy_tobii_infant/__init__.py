@@ -905,7 +905,7 @@ class infant_tobii_controller:
             None
         """
         try:
-            self.close_datafile()
+            self.close()
         except AttributeError:
             pass
 
@@ -940,7 +940,7 @@ class infant_tobii_controller:
             else:
                 raise ValueError('filename should be string')
         if newfile:
-            self.open_datafile()
+            self._open_datafile()
 
         self.embed_event = embed_event
         self.gaze_data = []
