@@ -284,22 +284,42 @@ class infant_tobii_controller:
         Returns:
             None
         """
+        # yapf: disable
         if self.embed_event:
             self.datafile.write('\t'.join([
-                'TimeStamp', 'GazePointXLeft', 'GazePointYLeft',
-                'ValidityLeft', 'GazePointXRight', 'GazePointYRight',
-                'ValidityRight', 'GazePointX', 'GazePointY', 'PupilSizeLeft',
-                'PupilValidityLeft', 'PupilSizeRight', 'PupilValidityRight',
+                'TimeStamp',
+                'GazePointXLeft',
+                'GazePointYLeft',
+                'ValidityLeft',
+                'GazePointXRight',
+                'GazePointYRight',
+                'ValidityRight',
+                'GazePointX',
+                'GazePointY',
+                'PupilSizeLeft',
+                'PupilValidityLeft',
+                'PupilSizeRight',
+                'PupilValidityRight',
                 'Event'
             ]) + '\n')
         else:
             self.datafile.write('\t'.join([
-                'TimeStamp', 'GazePointXLeft', 'GazePointYLeft',
-                'ValidityLeft', 'GazePointXRight', 'GazePointYRight',
-                'ValidityRight', 'GazePointX', 'GazePointY', 'PupilSizeLeft',
-                'PupilValidityLeft', 'PupilSizeRight', 'PupilValidityRight'
+                'TimeStamp',
+                'GazePointXLeft',
+                'GazePointYLeft',
+                'ValidityLeft',
+                'GazePointXRight',
+                'GazePointYRight',
+                'ValidityRight',
+                'GazePointX',
+                'GazePointY',
+                'PupilSizeLeft',
+                'PupilValidityLeft',
+                'PupilSizeRight',
+                'PupilValidityRight'
             ]) + '\n')
         self._flush_to_file()
+        # yapf: enable
 
     def _write_event(self, record):
         """Write embed events to the data file.
@@ -328,21 +348,22 @@ class infant_tobii_controller:
         Returns:
             None
         """
+
         format_string = (
             '%.1f\t'  # TimeStamp
             '%.4f\t'  # GazePointXLeft
             '%.4f\t'  # GazePointYLeft
-            '%d\t'  # ValidityLeft
+            '%d\t'    # ValidityLeft
             '%.4f\t'  # GazePointXRight
             '%.4f\t'  # GazePointYRight
-            '%d\t'  # ValidityRight
+            '%d\t'    # ValidityRight
             '%.4f\t'  # GazePointX
             '%.4f\t'  # GazePointY
             '%.4f\t'  # PupilSizeLeft
-            '%d\t'  # PupilValidityLeft
+            '%d\t'    # PupilValidityLeft
             '%.4f\t'  # PupilSizeRight
-            '%d\t'  # PupilValidityRight
-        )
+            '%d\t'    # PupilValidityRight
+        ) # yapf: disable
         # write data
         self.datafile.write(format_string % record)
 
