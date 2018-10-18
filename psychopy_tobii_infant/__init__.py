@@ -544,7 +544,6 @@ class tobii_controller:
             }
 
         # get original size of stimuli
-        self.target_original_size = self.targets[0].size
         img = Image.new('RGBA', tuple(self.win.size))
         img_draw = ImageDraw.Draw(img)
 
@@ -557,10 +556,11 @@ class tobii_controller:
             autoLog=False)
         retry_marker = visual.Circle(
             self.win,
-            radius=0.1 * self.target_original_size[0],
+            radius=10,
             fillColor='black',
             lineColor='white',
             lineWidth=1,
+            units='pix',
             autoLog=False)
 
         self.calibration.enter_calibration_mode()
@@ -573,13 +573,6 @@ class tobii_controller:
         in_calibration_loop = True
         event.clearEvents()
         while in_calibration_loop:
-
-            # randomization of calibration targets
-            np.random.shuffle(self.targets)
-            self.calibration_points = [
-                self.original_calibration_points[x] for x in self.retry_points
-            ]
-
             if start_key is None:
                 self.win.flip()
             else:
