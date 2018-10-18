@@ -15,26 +15,75 @@ except:
     from PIL import Image
     from PIL import ImageDraw
 
+default_calibration_target_dot_size = {
+    'pix': 2.0,
+    'norm': 0.004,
+    'height': 0.002,
+    'cm': 0.05,
+    'deg': 0.05,
+    'degFlat': 0.05,
+    'degFlatPos': 0.05
+}
+default_calibration_target_disc_size = {
+    'pix': 2.0 * 20,
+    'norm': 0.004 * 20,
+    'height': 0.002 * 20,
+    'cm': 0.05 * 20,
+    'deg': 0.05 * 20,
+    'degFlat': 0.05 * 20,
+    'degFlatPos': 0.05 * 20
+}
+
+default_key_index_dict = {
+    '1': 0,
+    'num_1': 0,
+    '2': 1,
+    'num_2': 1,
+    '3': 2,
+    'num_3': 2,
+    '4': 3,
+    'num_4': 3,
+    '5': 4,
+    'num_5': 4,
+    '6': 5,
+    'num_6': 5,
+    '7': 6,
+    'num_7': 6,
+    '8': 7,
+    'num_8': 7,
+    '9': 8,
+    'num_9': 8
+}
+
 
 class tobii_controller:
     # the keymap for target index
-    numkey_dict = {
-        'num_0': -1,
-        'num_1': 0,
-        'num_2': 1,
-        'num_3': 2,
-        'num_4': 3,
-        'num_5': 4,
-        'num_6': 5,
-        'num_7': 6,
-        'num_8': 7,
-        'num_9': 8
-    }
+    numkey_dict = default_key_index_dict.copy()
 
     def __init__(self, win, id=0, filename='gaze_TOBII_output.tsv'):
         self.eyetracker_id = id
         self.win = win
         self.filename = filename
+        self.calibration_target_dot_size = default_calibration_target_dot_size[
+            self.win.units]
+        self.calibration_target_disc_size = default_calibration_target_disc_size[
+            self.win.units]
+        self.calibration_target_dot = visual.Circle(
+            self.win,
+            radius=self.calibration_target_dot_size,
+            fillColor=(1, 1, 1),
+            lineColor=(1, 1, 1))
+        self.calibration_target_disc = visual.Circle(
+            self.win,
+            radius=self.calibration_target_disc_size,
+            fillColor=(-1, -1, -1),
+            lineColor=(-1, -1, -1))
+        if self.win.units == 'norm':  # fix oval
+            self.calibration_target_dot.setSize(
+                [float(self.win.size[1]) / self.win.size[0], 1.0])
+            self.calibration_target_disc.setSize(
+                [float(self.win.size[1]) / self.win.size[0], 1.0])
+
         eyetrackers = tr.find_all_eyetrackers()
 
         if len(eyetrackers) == 0:
@@ -685,21 +734,8 @@ class tobii_controller:
         return retval
 
     def _update_calibration_auto(self):
-        in_circle = visual.Circle(
-            self.win,
-            radius=10,
-            units='pix',
-            fillColor=(1, 1, 1),
-            lineColor=(1, 1, 1))
-        out_circle = visual.Circle(
-            self.win,
-            radius=60,
-            units='pix',
-            fillColor=(-1, -1, -1),
-            lineColor=(-1, -1, -1))
-
-        out_circle_original = out_circle.size
-        in_circle_original = in_circle.size
+        disc_original = self.calibration_target_disc.size
+        dat_original = self.calibration_target_dot.size
         # start calibration
         event.clearEvents()
         clock = core.Clock()
@@ -707,16 +743,18 @@ class tobii_controller:
             clock.reset()
             while True:
                 t = clock.getTime()
-                out_circle.setPos(self.original_calibration_points[
-                    self.calibration_points.index(point)])
-                in_circle.setPos(self.original_calibration_points[
-                    self.calibration_points.index(point)])
-                out_circle.setSize(
-                    [(np.sin(t)**2 + 0.2) * e for e in out_circle_original])
-                in_circle.setSize(
-                    [(np.sin(t)**2 + 0.2) * e for e in in_circle_original])
-                out_circle.draw()
-                in_circle.draw()
+                self.calibration_target_disc.setPos(
+                    self.original_calibration_points[
+                        self.calibration_points.index(point)])
+                self.calibration_target_dot.setPos(
+                    self.original_calibration_points[
+                        self.calibration_points.index(point)])
+                self.calibration_target_disc.setSize(
+                    [(np.sin(t)**2 + 0.2) * e for e in disc_original])
+                self.calibration_target_dot.setSize(
+                    [(np.sin(t)**2 + 0.2) * e for e in dat_original])
+                self.calibration_target_disc.draw()
+                self.calibration_target_dot.draw()
                 if t >= 3:
                     core.wait(0.5)
                     self._collect_calibration_data(
@@ -877,18 +915,7 @@ class infant_tobii_controller:
 
     infant_stims = None
     # the keymap for target index
-    numkey_dict = {
-        'num_0': -1,
-        'num_1': 0,
-        'num_2': 1,
-        'num_3': 2,
-        'num_4': 3,
-        'num_5': 4,
-        'num_6': 5,
-        'num_7': 6,
-        'num_8': 7,
-        'num_9': 8
-    }
+    numkey_dict = default_key_index_dict.copy()
 
     def __init__(self, win, id=0, filename='gaze_TOBII_output.tsv'):
         self.eyetracker_id = id
