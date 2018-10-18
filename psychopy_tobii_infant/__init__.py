@@ -978,7 +978,7 @@ class infant_tobii_controller(tobii_controller):
         Returns:
             Gaze position in PsychoPy coordinate systems.
         """
-        return super()._get_psychopy_pos_from_trackbox(p)
+        return super()._get_psychopy_pos_from_trackbox(p,units)
 
     def _update_calibration_infant(self,
                                    collect_key='space',
