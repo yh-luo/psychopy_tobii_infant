@@ -30,6 +30,7 @@ class tobii_controller:
         'num_8': 7,
         'num_9': 8
     }
+
     def __init__(self, win, id=0, filename='gaze_TOBII_output.tsv'):
         self.eyetracker_id = id
         self.win = win
@@ -573,6 +574,9 @@ class tobii_controller:
         in_calibration_loop = True
         event.clearEvents()
         while in_calibration_loop:
+            self.calibration_points = [
+                self.original_calibration_points[x] for x in self.retry_points
+            ]
             if start_key is None:
                 self.win.flip()
             else:
