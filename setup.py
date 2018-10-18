@@ -13,5 +13,4 @@ setup(name='psychopy_tobii_infant',
       author_email='yuhanluo1994@gmail.com',
       license='GPL v3.0 or later',
       packages=['psychopy_tobii_infant'],
-      dependency_links=['https://github.com/hsogo/psychopy_tobii_controller'],
       zip_safe=False)

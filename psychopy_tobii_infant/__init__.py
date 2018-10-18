@@ -1,4 +1,3 @@
-import math
 import tobii_research as tr
 import numpy as np
 import datetime
