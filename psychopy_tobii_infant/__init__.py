@@ -34,7 +34,7 @@ class tobii_controller:
                     self.eyetracker_id, len(eyetrackers)))
 
         self.calibration = tr.ScreenBasedCalibration(self.eyetracker)
-        self.update_calibration = self._update_calibration_infant
+        self.update_calibration = self._update_calibration_auto
         self.gaze_data = []
 
     def _on_gaze_data(self, gaze_data):
