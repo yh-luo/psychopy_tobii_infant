@@ -606,11 +606,10 @@ class tobii_controller:
             autoLog=False)
         retry_marker = visual.Circle(
             self.win,
-            radius=10,
+            radius=self.calibration_target_dot.radius,
             fillColor='black',
             lineColor='white',
             lineWidth=1,
-            units='pix',
             autoLog=False)
 
         self.calibration.enter_calibration_mode()
@@ -1168,7 +1167,7 @@ class infant_tobii_controller(tobii_controller):
             autoLog=False)
         retry_marker = visual.Circle(
             self.win,
-            radius=0.1 * self.target_original_size[0],
+            radius=self.calibration_target_dot.radius,
             fillColor='black',
             lineColor='white',
             lineWidth=1,
