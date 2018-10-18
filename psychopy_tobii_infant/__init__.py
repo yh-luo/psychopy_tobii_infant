@@ -919,6 +919,7 @@ class infant_tobii_controller(tobii_controller):
 
     def __init__(self, win, id=0, filename='gaze_TOBII_output.tsv'):
         super().__init__(win, id, filename)
+        self.update_calibration = self._update_calibration_infant
 
     def _on_gaze_data(self, gaze_data):
         """Callback function used by Tobii SDK.
