@@ -16,22 +16,22 @@ except:
     from PIL import ImageDraw
 
 default_calibration_target_dot_size = {
-    'pix': 2.0,
-    'norm': 0.004,
-    'height': 0.002,
-    'cm': 0.05,
-    'deg': 0.05,
-    'degFlat': 0.05,
-    'degFlatPos': 0.05
+    'norm': 0.02,
+    'height': 0.01,
+    'pix': 10.0,
+    'degFlatPos': 0.25,
+    'deg': 0.25,
+    'degFlat': 0.25,
+    'cm': 0.25
 }
 default_calibration_target_disc_size = {
-    'pix': 2.0 * 20,
-    'norm': 0.004 * 20,
-    'height': 0.002 * 20,
-    'cm': 0.05 * 20,
-    'deg': 0.05 * 20,
-    'degFlat': 0.05 * 20,
-    'degFlatPos': 0.05 * 20
+    'norm': 0.08,
+    'height': 0.04,
+    'pix': 40.0,
+    'degFlatPos': 1.0,
+    'deg': 1.0,
+    'degFlat': 1.0,
+    'cm': 1.0
 }
 
 default_key_index_dict = {
@@ -913,10 +913,6 @@ class infant_tobii_controller(tobii_controller):
         gaze_data_status: the current gaze position, used by show_status().
     """
 
-    infant_stims = None
-    # the keymap for target index
-    numkey_dict = default_key_index_dict.copy()
-
     def __init__(self, win, id=0, filename='gaze_TOBII_output.tsv'):
         super().__init__(win, id, filename)
         self.update_calibration = self._update_calibration_infant
@@ -979,7 +975,7 @@ class infant_tobii_controller(tobii_controller):
         Returns:
             Gaze position in PsychoPy coordinate systems.
         """
-        return super()._get_psychopy_pos_from_trackbox(p,units)
+        return super()._get_psychopy_pos_from_trackbox(p, units)
 
     def _update_calibration_infant(self,
                                    collect_key='space',

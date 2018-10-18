@@ -43,6 +43,10 @@ Currently tested on Python 3.5.6
 
 ## Releases
 
+### v0.4
+
+- Add generic tobii controller, infant_tobii_controller now is a subclass of it.
+
 ### v0.3
 
 - Rewrite data collection
