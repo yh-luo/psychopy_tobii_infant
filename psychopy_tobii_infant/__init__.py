@@ -17,6 +17,19 @@ except:
 
 
 class tobii_controller:
+    # the keymap for target index
+    numkey_dict = {
+        'num_0': -1,
+        'num_1': 0,
+        'num_2': 1,
+        'num_3': 2,
+        'num_4': 3,
+        'num_5': 4,
+        'num_6': 5,
+        'num_7': 6,
+        'num_8': 7,
+        'num_9': 8
+    }
     def __init__(self, win, id=0, filename='gaze_TOBII_output.tsv'):
         self.eyetracker_id = id
         self.win = win
@@ -530,11 +543,6 @@ class tobii_controller:
                 if v < len(calibration_points)
             }
 
-        # prepare calibration stimuli
-        self.targets = [
-            visual.ImageStim(self.win, image=v, autoLog=False)
-            for v in infant_stims
-        ]
         # get original size of stimuli
         self.target_original_size = self.targets[0].size
         img = Image.new('RGBA', tuple(self.win.size))
