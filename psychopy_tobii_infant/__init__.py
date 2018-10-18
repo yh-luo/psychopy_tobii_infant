@@ -748,12 +748,10 @@ class tobii_controller:
                 self.calibration_target_dot.setPos(
                     self.original_calibration_points[
                         self.calibration_points.index(point)])
-                self.calibration_target_disc.setSize(
-                    [(np.sin(t)**2 + 0.2) * e
-                     for e in self.calibration_target_disc_size])
-                self.calibration_target_dot.setSize(
-                    [(np.sin(t)**2 + 0.2) * e
-                     for e in self.calibration_target_dot_size])
+                self.calibration_target_disc.setRadius(
+                    [(np.sin(t)**2 + 0.2) * self.calibration_target_disc_size])
+                self.calibration_target_dot.setRadius(
+                    [(np.sin(t)**2 + 0.2) * self.calibration_target_dot_size])
                 self.calibration_target_disc.draw()
                 self.calibration_target_dot.draw()
                 if t >= 3:
