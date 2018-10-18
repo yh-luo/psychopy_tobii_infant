@@ -735,8 +735,6 @@ class tobii_controller:
         return retval
 
     def _update_calibration_auto(self):
-        disc_original = self.calibration_target_disc.size
-        dat_original = self.calibration_target_dot.size
         # start calibration
         event.clearEvents()
         clock = core.Clock()
@@ -751,9 +749,11 @@ class tobii_controller:
                     self.original_calibration_points[
                         self.calibration_points.index(point)])
                 self.calibration_target_disc.setSize(
-                    [(np.sin(t)**2 + 0.2) * e for e in disc_original])
+                    [(np.sin(t)**2 + 0.2) * e
+                     for e in self.calibration_target_disc_size])
                 self.calibration_target_dot.setSize(
-                    [(np.sin(t)**2 + 0.2) * e for e in dat_original])
+                    [(np.sin(t)**2 + 0.2) * e
+                     for e in self.calibration_target_dot_size])
                 self.calibration_target_disc.draw()
                 self.calibration_target_dot.draw()
                 if t >= 3:
@@ -1028,7 +1028,7 @@ class infant_tobii_controller(tobii_controller):
                 self.targets[current_point_index].setPos(
                     self.original_calibration_points[current_point_index])
                 t = clock.getTime()
-                newsize = [(math.sin(t)**2 + 0.2) * e
+                newsize = [(np.sin(t)**2 + 0.2) * e
                            for e in self.target_original_size]
                 self.targets[current_point_index].setSize(newsize)
                 self.targets[current_point_index].draw()
