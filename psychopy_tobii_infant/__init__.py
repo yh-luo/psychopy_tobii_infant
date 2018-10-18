@@ -78,10 +78,19 @@ class tobii_controller:
             radius=self.calibration_target_disc_size,
             fillColor=(-1, -1, -1),
             lineColor=(-1, -1, -1))
+        self.retry_marker = visual.Circle(
+            self.win,
+            radius=self.calibration_target_dot_size,
+            fillColor='black',
+            lineColor='white',
+            lineWidth=1,
+            autoLog=False)
         if self.win.units == 'norm':  # fix oval
             self.calibration_target_dot.setSize(
                 [float(self.win.size[1]) / self.win.size[0], 1.0])
             self.calibration_target_disc.setSize(
+                [float(self.win.size[1]) / self.win.size[0], 1.0])
+            self.retry_marker.setSize(
                 [float(self.win.size[1]) / self.win.size[0], 1.0])
 
         eyetrackers = tr.find_all_eyetrackers()
@@ -604,13 +613,6 @@ class tobii_controller:
             color='white',
             units='pix',
             autoLog=False)
-        retry_marker = visual.Circle(
-            self.win,
-            radius=self.calibration_target_dot.radius,
-            fillColor='black',
-            lineColor='white',
-            lineWidth=1,
-            autoLog=False)
 
         self.calibration.enter_calibration_mode()
 
@@ -706,9 +708,9 @@ class tobii_controller:
                 result_img.draw()
                 if len(self.retry_points) > 0:
                     for retry_p in self.retry_points:
-                        retry_marker.setPos(
+                        self.retry_marker.setPos(
                             self.original_calibration_points[retry_p])
-                        retry_marker.draw()
+                        self.retry_marker.draw()
 
                 result_msg.draw()
                 self.win.flip()
@@ -1165,13 +1167,6 @@ class infant_tobii_controller(tobii_controller):
             color='white',
             units='pix',
             autoLog=False)
-        retry_marker = visual.Circle(
-            self.win,
-            radius=self.calibration_target_dot.radius,
-            fillColor='black',
-            lineColor='white',
-            lineWidth=1,
-            autoLog=False)
 
         self.calibration.enter_calibration_mode()
 
@@ -1271,9 +1266,9 @@ class infant_tobii_controller(tobii_controller):
                 result_img.draw()
                 if len(self.retry_points) > 0:
                     for retry_p in self.retry_points:
-                        retry_marker.setPos(
+                        self.retry_marker.setPos(
                             self.original_calibration_points[retry_p])
-                        retry_marker.draw()
+                        self.retry_marker.draw()
 
                 result_msg.draw()
                 self.win.flip()
