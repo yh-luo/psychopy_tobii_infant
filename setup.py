@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='psychopy_tobii_infant',
-      version='0.4.0',
+      version='0.4.2',
       description='Infant-friendly eyetracking',
       long_description=long_description,
       long_description_content_type="text/markdown",
@@ -13,4 +13,5 @@ setup(name='psychopy_tobii_infant',
       author_email='yuhanluo1994@gmail.com',
       license='GPL v3.0 or later',
       packages=['psychopy_tobii_infant'],
+      install_requires=['tobii-research'],
       zip_safe=False)
