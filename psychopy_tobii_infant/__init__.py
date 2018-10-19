@@ -64,6 +64,7 @@ class tobii_controller:
     _shrink_sec = 3 / _shrink_speed
     _calibration_dot_color = (0, 0, 0)
     _calcalibration_disc_color = (-1, -1, 0)
+    _update_calibration = None
 
     def __init__(self, win, id=0, filename='gaze_TOBII_output.tsv'):
         """Tobii controller for PsychoPy.
@@ -89,6 +90,8 @@ class tobii_controller:
             calibration_disc_color: the color of the disc in the
                 calibration target. Defaults to deep blue.
             numkey_dict: keys used for calibration. Defaults to the number pad.
+            update_calibration: the presentation of calibration target.
+                Defaults to auto calibration.
         """
         self.eyetracker_id = id
         self.win = win
@@ -137,6 +140,7 @@ class tobii_controller:
         self.update_calibration = self._update_calibration_auto
         self.gaze_data = []
 
+    # property getters and setters for parameter changes
     @property
     def shrink_speed(self):
         return self._shrink_speed
@@ -186,6 +190,14 @@ class tobii_controller:
     @numkey_dict.setter
     def numkey_dict(self, value):
         self._numkey_dict = value
+
+    @property
+    def update_calibration(self):
+        return self._update_calibration
+
+    @update_calibration.setter
+    def update_calibration(self, value):
+        self._update_calibration = value
 
     def _on_gaze_data(self, gaze_data):
         """Callback function used by Tobii SDK.
@@ -828,17 +840,13 @@ class tobii_controller:
 
                 self.win.flip()
 
-    def show_status(self, enable_mouse=False):
-        """Infant-friendly procedure to adjust the participant's position.
+    def show_status(self):
+        """Simple procedure to adjust the participant's position.
 
-            This is an implementation of show_status in psychopy_tobii_controller.
-            It plays an interesting video to attract the participant and map
-            the relative position of the participant's eyes to the trackbox.
-            Press space to leave.
+            This is an modification of show_status in psychopy_tobii_controller.
 
         Args:
-            enable_mouse: use mouse clicks to leave the procedure.
-                Defaults to False
+            None
 
         Returns:
             None
@@ -903,9 +911,6 @@ class tobii_controller:
         if self.eyetracker is None:
             raise RuntimeError('Eyetracker is not found.')
 
-        if enable_mouse:
-            mouse = event.Mouse(visible=False, win=self.win)
-
         self.eyetracker.subscribe_to(
             tr.EYETRACKER_GAZE_DATA, self._on_gaze_data, as_dictionary=True)
         core.wait(1)  # wait a bit for the eye tracker to get ready
@@ -942,9 +947,6 @@ class tobii_controller:
                 if key == 'space':
                     b_show_status = False
                     break
-
-            if enable_mouse and mouse.getPressed()[0]:
-                b_show_status = False
 
             self.win.flip()
 
@@ -1207,10 +1209,7 @@ class infant_tobii_controller(tobii_controller):
 
     def show_status(self,
                     att_stim,
-                    enable_mouse=False,
-                    pos=[0, 0],
-                    size=[640, 480],
-                    units='pix'):
+                    **kwargs):
         """Infant-friendly procedure to adjust the participant's position.
 
             This is an implementation of show_status in psychopy_tobii_controller.
@@ -1220,11 +1219,7 @@ class infant_tobii_controller(tobii_controller):
 
         Args:
             att_stim: the filename of the video to be played.
-            enable_mouse: use mouse clicks to leave the procedure.
-                Defaults to False
-            pos: the position to draw the video.
-            size: the size of the video.
-            units: the units of the video (see PsychoPy manual for more info).
+            **kwargs: other arguments for the MovieStim3 object of the video.
 
         Returns:
             None
@@ -1234,11 +1229,7 @@ class infant_tobii_controller(tobii_controller):
         attention_grabber = visual.MovieStim3(
             self.win,
             att_stim,
-            pos=pos,
-            size=size,
-            units=units,
-            name=att_stim,
-            autoLog=False)
+            **kwargs)
 
         bgrect = visual.Rect(
             self.win,
@@ -1299,9 +1290,6 @@ class infant_tobii_controller(tobii_controller):
         if self.eyetracker is None:
             raise RuntimeError('Eyetracker is not found.')
 
-        if enable_mouse:
-            mouse = event.Mouse(visible=False, win=self.win)
-
         self.eyetracker.subscribe_to(
             tr.EYETRACKER_GAZE_DATA, self._on_gaze_data, as_dictionary=True)
         core.wait(1)  # wait a bit for the eye tracker to get ready
@@ -1343,10 +1331,6 @@ class infant_tobii_controller(tobii_controller):
                         b_show_status = False
                         playing = False
                         break
-
-                if enable_mouse and mouse.getPressed()[0]:
-                    b_show_status = False
-                    playing = False
 
                 attention_grabber.draw()
                 self.win.flip()
