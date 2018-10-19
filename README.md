@@ -6,15 +6,11 @@ Create infant-friendly eyetracking experiments with PsychoPy and Tobii eyetracke
 
 This package was based on [psychopy_tobii_controller](https://github.com/hsogo/psychopy_tobii_controller), with some some modifications for developmental research.
 
-### Cautions
+## Cautions
 
-- This project is unofficial.
-- This project is under development.
+- This project is not a stand-alone program. It is an implementation of PsychoPy for Tobii eye trackers.
+- This project is unofficial and under development.
 - Test the scripts thoroughly before jump into data collection!
-
-### TODO
-
-- Support PsychoPy 3
 
 ## Author
 
@@ -91,4 +87,10 @@ This package is built upon/inspired by the following packages, for which credit 
 - [psychopy_tobii_controller](https://github.com/hsogo/psychopy_tobii_controller) by [Hiroyuki Sogo](https://github.com/hsogo)
 - [PyGaze](http://www.pygaze.org/) by [Edwin S. Dalmaijer](https://github.com/esdalmaijer)
 
-Good luck!
+## Citation
+
+At the moment, I do not have a formal publication for it. Since it may hopefully help my academic career (if I have one), please consider to cite both this package and PsychoPy:
+
+(APA formatted)
+- Luo, Y.-H. (2018). psychopy_tobii_infant. Retrieved from https://github.com/yh-luo/psychopy_tobii_infant
+- Peirce, J. (2009). Generating stimuli for neuroscience using PsychoPy. Frontiers in Neuroinformatics, 2, 10. doi:10.3389/neuro.11.010.2008

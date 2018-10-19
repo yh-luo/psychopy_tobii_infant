@@ -13,5 +13,5 @@ setup(name='psychopy_tobii_infant',
       author_email='yuhanluo1994@gmail.com',
       license='GPL v3.0 or later',
       packages=['psychopy_tobii_infant'],
-      install_requires=['tobii-research'],
+      install_requires=['tobii-research', 'PsychoPy'],
       zip_safe=False)
