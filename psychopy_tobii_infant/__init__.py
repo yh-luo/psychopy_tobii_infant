@@ -34,6 +34,8 @@ default_calibration_disc_size = {
 }
 
 default_key_index_dict = {
+    '0': -1,
+    'num_0': -1,
     '1': 0,
     'num_1': 0,
     '2': 1,
