@@ -14,7 +14,7 @@ except:
     from PIL import Image
     from PIL import ImageDraw
 
-default_calibration_target_dot_size = {
+default_calibration_dot_size = {
     'norm': 0.02,
     'height': 0.01,
     'pix': 10.0,
@@ -23,7 +23,7 @@ default_calibration_target_dot_size = {
     'degFlat': 0.25,
     'cm': 0.25
 }
-default_calibration_target_disc_size = {
+default_calibration_disc_size = {
     'norm': 0.08,
     'height': 0.04,
     'pix': 40.0,
@@ -60,32 +60,56 @@ class tobii_controller:
     _numkey_dict = default_key_index_dict.copy()
     _shrink_speed = 1.5
     _shrink_sec = 3 / _shrink_speed
-    _calibration_target_dot_color = (1, 1, 1)
-    _calibration_target_disc_color = (-1, -1, -1)
+    _calibration_dot_color = (0, 0, 0)
+    _calcalibration_disc_color = (-1, -1, 0)
 
     def __init__(self, win, id=0, filename='gaze_TOBII_output.tsv'):
+        """Tobii controller for PsychoPy.
+
+            tobii_research are required for this module.
+
+        Args:
+            win: psychopy.visual.Window object.
+            id: the id of eyetracker.
+            filename: the name of the data file.
+
+        Attributes:
+            shrink_speed: the shrinking speed of target in calibration.
+                Defaults to 1.5.
+            calibration_dot_size: the size of the central dot in the
+                calibration target. Defaults to default_calibration_dot_size
+                according to the units of self.win.
+            calibration_dot_color: the color of the central dot in the
+                calibration target. Defaults to grey.
+            calibration_disc_size: the size of the disc in the
+                calibration target. Defaults to default_calibration_disc_size
+                according to the units of self.win.
+            calibration_disc_color: the color of the disc in the
+                calibration target. Defaults to deep blue.
+            numkey_dict: keys used for calibration. Defaults to the number pad.
+        """
         self.eyetracker_id = id
         self.win = win
         self.filename = filename
-        self._calibration_target_dot_size = default_calibration_target_dot_size[
+        self._calibration_dot_size = default_calibration_dot_size[
             self.win.units]
-        self._calibration_target_disc_size = default_calibration_target_disc_size[
+        self._calibration_disc_size = default_calibration_disc_size[
             self.win.units]
         self.calibration_target_dot = visual.Circle(
             self.win,
-            radius=self._calibration_target_dot_size,
-            fillColor=self._calibration_target_dot_color,
-            lineColor=self._calibration_target_dot_color)
+            radius=self._calibration_dot_size,
+            fillColor=self._calibration_dot_color,
+            lineColor=self._calibration_dot_color)
         self.calibration_target_disc = visual.Circle(
             self.win,
-            radius=self._calibration_target_disc_size,
-            fillColor=self._calibration_target_disc_color,
-            lineColor=self._calibration_target_disc_color)
+            radius=self._calibration_disc_size,
+            fillColor=self._calcalibration_disc_color,
+            lineColor=self._calcalibration_disc_color)
         self.retry_marker = visual.Circle(
             self.win,
-            radius=self._calibration_target_dot_size,
-            fillColor=self._calibration_target_dot_color,
-            lineColor=self._calibration_target_disc_color,
+            radius=self._calibration_dot_size,
+            fillColor=self._calibration_dot_color,
+            lineColor=self._calcalibration_disc_color,
             autoLog=False)
         if self.win.units == 'norm':  # fix oval
             self.calibration_target_dot.setSize(
@@ -122,36 +146,36 @@ class tobii_controller:
         self._shrink_sec = 3 / self._shrink_speed
 
     @property
-    def calibration_target_dot_size(self):
-        return self._calibration_target_dot_size
+    def calibration_dot_size(self):
+        return self._calibration_dot_size
 
-    @calibration_target_dot_size.setter
-    def calibration_target_dot_size(self, value):
-        self._calibration_target_dot_size = value
-
-    @property
-    def calibration_target_dot_color(self):
-        return self._calibration_target_dot_color
-
-    @calibration_target_dot_color.setter
-    def calibration_target_dot_color(self, value):
-        self._calibration_target_dot_color = value
+    @calibration_dot_size.setter
+    def calibration_dot_size(self, value):
+        self._calibration_dot_size = value
 
     @property
-    def calibration_target_disc_size(self):
-        return self._calibration_target_disc_size
+    def calibration_dot_color(self):
+        return self._calibration_dot_color
 
-    @calibration_target_disc_size.setter
-    def calibration_target_disc_size(self, value):
-        self._calibration_target_disc_size = value
+    @calibration_dot_color.setter
+    def calibration_dot_color(self, value):
+        self._calibration_dot_color = value
 
     @property
-    def calibration_target_disc_color(self):
-        return self._calibration_target_disc_color
+    def calibration_disc_size(self):
+        return self._calibration_disc_size
 
-    @calibration_target_disc_color.setter
-    def calibration_target_disc_color(self, value):
-        self._calibration_target_disc_color = value
+    @calibration_disc_size.setter
+    def calibration_disc_size(self, value):
+        self._calibration_disc_size = value
+
+    @property
+    def calcalibration_disc_color(self):
+        return self._calcalibration_disc_color
+
+    @calcalibration_disc_color.setter
+    def calcalibration_disc_color(self, value):
+        self._calcalibration_disc_color = value
 
     @property
     def numkey_dict(self):
@@ -788,9 +812,9 @@ class tobii_controller:
                     self.original_calibration_points[
                         self.calibration_points.index(point)])
                 self.calibration_target_disc.setRadius(
-                    [(np.sin(t)**2 + 0.2) * self.calibration_target_disc_size])
+                    [(np.sin(t)**2 + 0.2) * self.calibration_disc_size])
                 self.calibration_target_dot.setRadius(
-                    [(np.sin(t)**2 + 0.2) * self.calibration_target_dot_size])
+                    [(np.sin(t)**2 + 0.2) * self.calibration_dot_size])
                 self.calibration_target_disc.draw()
                 self.calibration_target_dot.draw()
                 if clock.getTime() >= self._shrink_sec:
@@ -926,37 +950,25 @@ class tobii_controller:
 
 
 class infant_tobii_controller(tobii_controller):
-    """Tobii controller for PsychoPy.
-
-        tobii_research are required for this module.
-
-    Args:
-        win: psychopy.visual.Window object.
-        id: the id of eyetracker.
-        filename: the name of the data file.
-
-    Attributes:
-        infant_stims: the stimuli to be used in calibration. The user should
-            define it with run_calibration().
-        numkey_dict: the keymap to index calibration target.
-        eyetracker_id: the id of eyetracker.
-        win: psychopy.visual.Window object.
-        eyetracker: the used eyetracker.
-        calibration: the calibration procedure from tobii_research.
-        update_calibration: the used calibration procedure.
-        targets: the stimuli in calibration.
-        target_original_size: the original size of the targets. It assumes that
-            all the targets are of the same size.
-        original_calibration_points: calibration points defined by The user in
-            run_calibration().
-        retry_points: recalibration points defined by The user in calibration.
-        calibration_points: the current calibration point.
-        gaze_data_status: the current gaze position, used by show_status().
-    """
-
     def __init__(self, win, id=0, filename='gaze_TOBII_output.tsv'):
+        """Tobii controller for PsychoPy.
+
+            tobii_research are required for this module.
+
+        Args:
+            win: psychopy.visual.Window object.
+            id: the id of eyetracker.
+            filename: the name of the data file.
+
+        Attributes:
+            shrink_speed: the shrinking speed of target in calibration.
+                Defaults to 1.
+            numkey_dict: keys used for calibration. Defaults to the number pad.
+        """
         super().__init__(win, id, filename)
         self.update_calibration = self._update_calibration_infant
+        # slower for infants
+        self.shrink_speed = 1
 
     def _update_calibration_infant(self,
                                    collect_key='space',
@@ -988,7 +1000,6 @@ class infant_tobii_controller(tobii_controller):
             for key in keys:
                 if key in self.numkey_dict:
                     current_point_index = self.numkey_dict[key]
-
                 elif key == collect_key:
                     # allow the participant to focus
                     core.wait(0.5)
@@ -1052,10 +1063,17 @@ class infant_tobii_controller(tobii_controller):
             }
 
         # prepare calibration stimuli
-        self.targets = [
-            visual.ImageStim(self.win, image=v, autoLog=False)
-            for v in infant_stims
-        ]
+        try:
+            self.targets = [
+                visual.ImageStim(self.win, image=v, autoLog=False)
+                for v in infant_stims
+            ]
+        except:
+            raise RuntimeError(
+                'Unable to load the calibration images.\n'
+                'Is the number of images equal to the number of calibration points?'
+            )
+
         # get original size of stimuli
         self.target_original_size = self.targets[0].size
         img = Image.new('RGBA', tuple(self.win.size))
