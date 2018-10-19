@@ -57,32 +57,36 @@ default_key_index_dict = {
 
 class tobii_controller:
     # the keymap for target index
-    numkey_dict = default_key_index_dict.copy()
+    _numkey_dict = default_key_index_dict.copy()
+    _shrink_speed = 1.5
+    _shrink_sec = 3 / shrink_speed
+    _calibration_target_dot_color=(1, 1, 1)
+    _calibration_target_disc_color=(-1,-1,-1)
+
 
     def __init__(self, win, id=0, filename='gaze_TOBII_output.tsv'):
         self.eyetracker_id = id
         self.win = win
         self.filename = filename
-        self.calibration_target_dot_size = default_calibration_target_dot_size[
+        self._calibration_target_dot_size = default_calibration_target_dot_size[
             self.win.units]
-        self.calibration_target_disc_size = default_calibration_target_disc_size[
+        self._calibration_target_disc_size = default_calibration_target_disc_size[
             self.win.units]
         self.calibration_target_dot = visual.Circle(
             self.win,
-            radius=self.calibration_target_dot_size,
-            fillColor=(1, 1, 1),
-            lineColor=(1, 1, 1))
+            radius=self._calibration_target_dot_size,
+            fillColor=self._calibration_target_dot_color,
+            lineColor=self._calibration_target_dot_color)
         self.calibration_target_disc = visual.Circle(
             self.win,
-            radius=self.calibration_target_disc_size,
-            fillColor=(-1, -1, -1),
-            lineColor=(-1, -1, -1))
+            radius=self._calibration_target_disc_size,
+            fillColor=self._calibration_target_disc_color,
+            lineColor=self._calibration_target_disc_color)
         self.retry_marker = visual.Circle(
             self.win,
-            radius=self.calibration_target_dot_size,
-            fillColor='black',
-            lineColor='white',
-            lineWidth=1,
+            radius=self._calibration_target_dot_size,
+            fillColor=self._calibration_target_dot_color,
+            lineColor=self._calibration_target_disc_color,
             autoLog=False)
         if self.win.units == 'norm':  # fix oval
             self.calibration_target_dot.setSize(
@@ -107,6 +111,57 @@ class tobii_controller:
         self.calibration = tr.ScreenBasedCalibration(self.eyetracker)
         self.update_calibration = self._update_calibration_auto
         self.gaze_data = []
+
+    @property
+    def shrink_speed(self):
+        return self._shrink_speed
+
+    @shrink_speed.setter
+    def shrink_speed(self, value):
+        self._shrink_speed = value
+        # adjust the second
+        self._shrink_sec = 3 / self._shrink_speed
+
+    @property
+    def calibration_target_dot_size(self):
+        return self._calibration_target_dot_size
+
+    @calibration_target_dot_size.setter
+    def calibration_target_dot_size(self, value):
+        self._calibration_target_dot_size = value
+
+    @property
+    def calibration_target_dot_color(self):
+        return self._calibration_target_dot_color
+
+    @calibration_target_dot_color.setter
+    def calibration_target_dot_color(self, value):
+        self._calibration_target_dot_color = value
+
+    @property
+    def calibration_target_disc_size(self):
+        return self._calibration_target_disc_size
+
+    @calibration_target_disc_size.setter
+    def calibration_target_disc_size(self, value):
+        self._calibration_target_disc_size = value
+
+    @property
+    def calibration_target_disc_color(self):
+        return self._calibration_target_disc_color
+
+    @calibration_target_disc_color.setter
+    def calibration_target_disc_color(self, value):
+        self._calibration_target_disc_color = value
+
+    @property
+    def numkey_dict(self):
+        return self._numkey_dict
+
+    @numkey_dict.setter
+    def numkey_dict(self, value):
+        self._numkey_dict = value
+
 
     def _on_gaze_data(self, gaze_data):
         """Callback function used by Tobii SDK.
@@ -472,8 +527,8 @@ class tobii_controller:
         self.eyetracker.subscribe_to(
             tr.EYETRACKER_GAZE_DATA, self._on_gaze_data, as_dictionary=True)
         core.wait(1)  # wait a bit for the eye tracker to get ready
-        self.recording = True
         self.t0 = tr.get_system_time_stamp()
+        self.recording = True
 
     def stop_recording(self):
         """Stop recording.
@@ -521,7 +576,7 @@ class tobii_controller:
             return (lxy, rxy)
 
     def get_current_pupil_size(self):
-        """Get the newest recent pupil size.
+        """Get the newest pupil size.
 
         Args:
             None
@@ -575,14 +630,11 @@ class tobii_controller:
 
     def run_calibration(self,
                         calibration_points,
-                        start_key=None,
                         decision_key='space'):
         """Run calibration
 
         Args:
             calibration_points: list of position of the calibration points.
-            start_key: the key to start the procedure. If None, directly
-                proceed to the calibration procedure.
             decision_key: the key to leave the procedure.
 
         Returns:
@@ -601,7 +653,6 @@ class tobii_controller:
                 if v < len(calibration_points)
             }
 
-        # get original size of stimuli
         img = Image.new('RGBA', tuple(self.win.size))
         img_draw = ImageDraw.Draw(img)
 
@@ -626,19 +677,12 @@ class tobii_controller:
             self.calibration_points = [
                 self.original_calibration_points[x] for x in self.retry_points
             ]
-            if start_key is None:
-                self.win.flip()
-            else:
-                result_msg.setText(
-                    'Press {} to start calibration'.format(start_key))
-                result_msg.draw()
-                self.win.flip()
-                event.waitKeys(keyList=[start_key])
 
+            # clear the display
+            self.win.flip()
             self.update_calibration()
 
             calibration_result = self.calibration.compute_and_apply()
-
             self.win.flip()
 
             img_draw.rectangle(
@@ -740,7 +784,7 @@ class tobii_controller:
         for point in self.calibration_points:
             clock.reset()
             while True:
-                t = clock.getTime()
+                t = clock.getTime()* self.shrink_speed
                 self.calibration_target_disc.setPos(
                     self.original_calibration_points[
                         self.calibration_points.index(point)])
@@ -753,8 +797,8 @@ class tobii_controller:
                     [(np.sin(t)**2 + 0.2) * self.calibration_target_dot_size])
                 self.calibration_target_disc.draw()
                 self.calibration_target_dot.draw()
-                if t >= 3:
-                    core.wait(0.5)
+                if clock.getTime() >= self._shrink_sec:
+                    core.wait(1)
                     self._collect_calibration_data(
                         self.original_calibration_points[
                             self.calibration_points.index(point)])
@@ -768,6 +812,7 @@ class tobii_controller:
             This is an implementation of show_status in psychopy_tobii_controller.
             It plays an interesting video to attract the participant and map
             the relative position of the participant's eyes to the trackbox.
+            Press space to leave.
 
         Args:
             enable_mouse: use mouse clicks to leave the procedure.
@@ -870,7 +915,7 @@ class tobii_controller:
                 zpos.draw()
 
             for key in event.getKeys():
-                if key == 'escape' or key == 'space':
+                if key == 'space':
                     b_show_status = False
                     break
 
@@ -914,66 +959,6 @@ class infant_tobii_controller(tobii_controller):
     def __init__(self, win, id=0, filename='gaze_TOBII_output.tsv'):
         super().__init__(win, id, filename)
         self.update_calibration = self._update_calibration_infant
-
-    def _on_gaze_data(self, gaze_data):
-        """Callback function used by Tobii SDK.
-
-        Args:
-            gaze_data: gaze data provided by the eye tracker.
-
-        Returns:
-            None
-        """
-        super()._on_gaze_data(gaze_data)
-
-    def _get_psychopy_pos(self, p):
-        """Convert Tobii ADCS coordinates to PsychoPy coordinates.
-
-        Args:
-            p: Gaze position (x, y) in Tobii ADCS.
-
-        Returns:
-            Gaze position in PsychoPy coordinate systems.
-        """
-        return super()._get_psychopy_pos(p)
-
-    def _get_tobii_pos(self, p):
-        """Convert PsychoPy coordinates to Tobii ADCS coordinates.
-
-        Args:
-            p: Gaze position (x, y) in PsychoPy coordinate systems.
-
-        Returns:
-            Gaze position in Tobii ADCS.
-        """
-        return super()._get_tobii_pos(p)
-
-    def _pix2tobii(self, p):
-        """Convert PsychoPy pixel coordinates to Tobii ADCS.
-
-            Called by _get_tobii_pos.
-
-        Args:
-            p: Gaze position (x, y) in pix.
-
-        Returns:
-            Gaze position in Tobii ADCS.
-        """
-        return super()._pix2tobii(p)
-
-    def _get_psychopy_pos_from_trackbox(self, p, units=None):
-        """Convert Tobii TBCS coordinates to PsychoPy coordinates.
-
-            Called by show_status.
-
-        Args:
-            p: Gaze position (x, y) in Tobii TBCS.
-            units: The PsychoPy coordinate system to use.
-
-        Returns:
-            Gaze position in PsychoPy coordinate systems.
-        """
-        return super()._get_psychopy_pos_from_trackbox(p, units)
 
     def _update_calibration_infant(self,
                                    collect_key='space',
@@ -1024,93 +1009,16 @@ class infant_tobii_controller(tobii_controller):
             if current_point_index in self.retry_points:
                 self.targets[current_point_index].setPos(
                     self.original_calibration_points[current_point_index])
-                t = clock.getTime()
+                t = clock.getTime()*self.shrink_speed
                 newsize = [(np.sin(t)**2 + 0.2) * e
                            for e in self.target_original_size]
                 self.targets[current_point_index].setSize(newsize)
                 self.targets[current_point_index].draw()
             self.win.flip()
 
-    def _flush_to_file(self):
-        """Write data to disk.
-
-        Args:
-            None
-
-        Returns:
-            None
-        """
-        super()._flush_to_file()
-
-    def _write_header(self):
-        """Write the header to the data file.
-
-        Args:
-            None
-
-        Returns:
-            None
-        """
-        super()._write_header()
-
-    def _write_event(self, record):
-        """Write embed events to the data file.
-
-        Args:
-            record: reformed gaze data
-        Returns:
-            None
-        """
-        super()._write_event(record)
-
-    def _write_record(self, record):
-        """Write the Tobii output to the data file.
-
-        Args:
-            record: reformed gaze data
-
-        Returns:
-            None
-        """
-        super()._write_record(record)
-
-    def _convert_tobii_record(self, record):
-        """Convert tobii coordinates to output style.
-
-        Args:
-            record: raw gaze data
-
-        Returns:
-            reformed gaze data
-        """
-        return super()._convert_tobii_record(record)
-
-    def _flush_data(self):
-        """Wrapper for writing the header and data to the data file.
-
-        Args:
-            None
-
-        Returns:
-            None
-        """
-        super()._flush_data()
-
-    def _collect_calibration_data(self, p):
-        """Callback function used by Tobii calibration in run_calibration.
-
-        Args:
-            p: the calibration point
-
-        Returns:
-            None
-        """
-        super()._collect_calibration_data(p)
-
     def run_calibration(self,
                         calibration_points,
                         infant_stims,
-                        start_key=None,
                         decision_key='space'):
         """Run calibration
 
@@ -1127,8 +1035,6 @@ class infant_tobii_controller(tobii_controller):
         Args:
             calibration_points: list of position of the calibration points.
             infant_stims: list of images to attract the infant.
-            start_key: the key to start the procedure. If None, directly
-                proceed to the calibration procedure.
             decision_key: the key to leave the procedure.
 
         Returns:
@@ -1182,19 +1088,11 @@ class infant_tobii_controller(tobii_controller):
                 self.original_calibration_points[x] for x in self.retry_points
             ]
 
-            if start_key is None:
-                self.win.flip()
-            else:
-                result_msg.setText(
-                    'Press {} to start calibration'.format(start_key))
-                result_msg.draw()
-                self.win.flip()
-                event.waitKeys(keyList=[start_key])
-
+            # clear the display
+            self.win.flip()
             self.update_calibration()
 
             calibration_result = self.calibration.compute_and_apply()
-
             self.win.flip()
 
             img_draw.rectangle(
@@ -1300,6 +1198,7 @@ class infant_tobii_controller(tobii_controller):
             This is an implementation of show_status in psychopy_tobii_controller.
             It plays an interesting video to attract the participant and map
             the relative position of the participant's eyes to the trackbox.
+            Press space to leave.
 
         Args:
             att_stim: the filename of the video to be played.
@@ -1421,7 +1320,7 @@ class infant_tobii_controller(tobii_controller):
                     zpos.draw()
 
                 for key in event.getKeys():
-                    if key == 'escape' or key == 'space':
+                    if key == 'space':
                         b_show_status = False
                         playing = False
                         break
@@ -1569,89 +1468,6 @@ class infant_tobii_controller(tobii_controller):
             movie.stop()
             lt = max_time - np.sum(away_time)
             return (round(lt, 3))
-
-    def _open_datafile(self):
-        """Open a file for gaze data.
-
-        Args:
-            None
-
-        Returns:
-            None
-        """
-        super()._open_datafile()
-
-    def start_recording(self, filename=None, newfile=True, embed_event=True):
-        """Start recording
-
-        Args:
-            filename: the name of the data file. If None, use default name.
-                Defaults to None.
-            newfile: open a new file to save data. Defaults to True.
-            embed_event: should the file contains the event column.
-                Defaults to True.
-
-        Returns:
-            None
-        """
-        super().start_recording(filename, newfile, embed_event)
-
-    def stop_recording(self):
-        """Stop recording.
-
-        Args:
-            None
-
-        Returns:
-            None
-        """
-        super().stop_recording()
-
-    def get_current_gaze_position(self):
-        """Get the newest gaze position.
-
-        Args:
-            None
-
-        Returns:
-            ((left_eye_x, left_eye_y), (right_eye_x, right_eye_y))
-        """
-        return super().get_current_gaze_position()
-
-    def get_current_pupil_size(self):
-        """Get the newest recent pupil size.
-
-        Args:
-            None
-
-        Returns:
-            (left_eye_pupil_size, right_eye_pupil_size)
-        """
-        return super().get_current_pupil_size()
-
-    def record_event(self, event):
-        """Record events with timestamp.
-
-            This method works only during recording.
-
-        Args:
-            event: the event
-
-        Returns:
-            None
-        """
-        return super().record_event(event)
-
-    def close(self):
-        """Close the data file.
-
-        Args:
-            None
-
-        Returns:
-            None
-        """
-        super().close()
 
 
 def _unload(self):
