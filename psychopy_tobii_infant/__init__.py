@@ -59,7 +59,7 @@ class tobii_controller:
 
     _numkey_dict = default_key_index_dict.copy()
     _shrink_speed = 1.5
-    _shrink_sec = 3 / shrink_speed
+    _shrink_sec = 3 / _shrink_speed
     _calibration_target_dot_color = (1, 1, 1)
     _calibration_target_disc_color = (-1, -1, -1)
 
@@ -885,10 +885,11 @@ class tobii_controller:
         core.wait(1)  # wait a bit for the eye tracker to get ready
 
         b_show_status = True
-        bgrect.setAutoDraw(True)
-        zbar.setAutoDraw(True)
-        zc.setAutoDraw(True)
+
         while b_show_status:
+            bgrect.draw()
+            zbar.draw()
+            zc.draw()
             gaze_data = self.gaze_data[-1]
             lv = gaze_data['left_gaze_point_validity']
             rv = gaze_data['right_gaze_point_validity']
@@ -920,12 +921,6 @@ class tobii_controller:
                 b_show_status = False
 
             self.win.flip()
-
-        # clear the display
-        bgrect.setAutoDraw(False)
-        zbar.setAutoDraw(False)
-        zc.setAutoDraw(False)
-        self.win.flip()
 
         self.eyetracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA)
 
@@ -1294,13 +1289,13 @@ class infant_tobii_controller(tobii_controller):
         att_timer = core.CountdownTimer(attention_grabber.duration)
         playing = True
         b_show_status = True
-        bgrect.setAutoDraw(True)
-        zbar.setAutoDraw(True)
-        zc.setAutoDraw(True)
         while b_show_status:
             attention_grabber.play()
             att_timer.reset()
             while att_timer.getTime() > 0 and playing:
+                bgrect.draw()
+                zbar.draw()
+                zc.draw()
                 gaze_data = self.gaze_data[-1]
                 lv = gaze_data['left_gaze_point_validity']
                 rv = gaze_data['right_gaze_point_validity']
@@ -1339,12 +1334,6 @@ class infant_tobii_controller(tobii_controller):
                 attention_grabber.loadMovie(att_stim)
 
         attention_grabber.stop()
-        # clear the display
-        bgrect.setAutoDraw(False)
-        zbar.setAutoDraw(False)
-        zc.setAutoDraw(False)
-        self.win.flip()
-
         self.eyetracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA)
 
     # Collect looking time
@@ -1491,9 +1480,11 @@ def _unload(self):
         self.clearTextures()
     except Exception:
         pass
-
-    if self._mov is not None:
-        self._mov.close()
+    try:
+        if self._mov is not None:
+            self._mov.close()
+    except AttributeError:
+        pass
     self._mov = None
     self._numpyFrame = None
     if self._audioStream is not None:
