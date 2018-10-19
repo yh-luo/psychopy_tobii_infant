@@ -56,13 +56,12 @@ default_key_index_dict = {
 
 
 class tobii_controller:
-    # the keymap for target index
+
     _numkey_dict = default_key_index_dict.copy()
     _shrink_speed = 1.5
     _shrink_sec = 3 / shrink_speed
-    _calibration_target_dot_color=(1, 1, 1)
-    _calibration_target_disc_color=(-1,-1,-1)
-
+    _calibration_target_dot_color = (1, 1, 1)
+    _calibration_target_disc_color = (-1, -1, -1)
 
     def __init__(self, win, id=0, filename='gaze_TOBII_output.tsv'):
         self.eyetracker_id = id
@@ -161,7 +160,6 @@ class tobii_controller:
     @numkey_dict.setter
     def numkey_dict(self, value):
         self._numkey_dict = value
-
 
     def _on_gaze_data(self, gaze_data):
         """Callback function used by Tobii SDK.
@@ -628,9 +626,7 @@ class tobii_controller:
         except AttributeError:
             raise AttributeError('No opened file to close.')
 
-    def run_calibration(self,
-                        calibration_points,
-                        decision_key='space'):
+    def run_calibration(self, calibration_points, decision_key='space'):
         """Run calibration
 
         Args:
@@ -784,7 +780,7 @@ class tobii_controller:
         for point in self.calibration_points:
             clock.reset()
             while True:
-                t = clock.getTime()* self.shrink_speed
+                t = clock.getTime() * self.shrink_speed
                 self.calibration_target_disc.setPos(
                     self.original_calibration_points[
                         self.calibration_points.index(point)])
@@ -887,11 +883,12 @@ class tobii_controller:
         self.eyetracker.subscribe_to(
             tr.EYETRACKER_GAZE_DATA, self._on_gaze_data, as_dictionary=True)
         core.wait(1)  # wait a bit for the eye tracker to get ready
+
         b_show_status = True
+        bgrect.setAutoDraw(True)
+        zbar.setAutoDraw(True)
+        zc.setAutoDraw(True)
         while b_show_status:
-            bgrect.draw()
-            zbar.draw()
-            zc.draw()
             gaze_data = self.gaze_data[-1]
             lv = gaze_data['left_gaze_point_validity']
             rv = gaze_data['right_gaze_point_validity']
@@ -923,6 +920,12 @@ class tobii_controller:
                 b_show_status = False
 
             self.win.flip()
+
+        # clear the display
+        bgrect.setAutoDraw(False)
+        zbar.setAutoDraw(False)
+        zc.setAutoDraw(False)
+        self.win.flip()
 
         self.eyetracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA)
 
@@ -1009,7 +1012,7 @@ class infant_tobii_controller(tobii_controller):
             if current_point_index in self.retry_points:
                 self.targets[current_point_index].setPos(
                     self.original_calibration_points[current_point_index])
-                t = clock.getTime()*self.shrink_speed
+                t = clock.getTime() * self.shrink_speed
                 newsize = [(np.sin(t)**2 + 0.2) * e
                            for e in self.target_original_size]
                 self.targets[current_point_index].setSize(newsize)
@@ -1287,16 +1290,17 @@ class infant_tobii_controller(tobii_controller):
         self.eyetracker.subscribe_to(
             tr.EYETRACKER_GAZE_DATA, self._on_gaze_data, as_dictionary=True)
         core.wait(1)  # wait a bit for the eye tracker to get ready
+
         att_timer = core.CountdownTimer(attention_grabber.duration)
         playing = True
         b_show_status = True
+        bgrect.setAutoDraw(True)
+        zbar.setAutoDraw(True)
+        zc.setAutoDraw(True)
         while b_show_status:
             attention_grabber.play()
             att_timer.reset()
             while att_timer.getTime() > 0 and playing:
-                bgrect.draw()
-                zbar.draw()
-                zc.draw()
                 gaze_data = self.gaze_data[-1]
                 lv = gaze_data['left_gaze_point_validity']
                 rv = gaze_data['right_gaze_point_validity']
@@ -1335,6 +1339,12 @@ class infant_tobii_controller(tobii_controller):
                 attention_grabber.loadMovie(att_stim)
 
         attention_grabber.stop()
+        # clear the display
+        bgrect.setAutoDraw(False)
+        zbar.setAutoDraw(False)
+        zc.setAutoDraw(False)
+        self.win.flip()
+
         self.eyetracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA)
 
     # Collect looking time
