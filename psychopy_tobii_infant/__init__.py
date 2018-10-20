@@ -761,12 +761,12 @@ class tobii_controller:
         event.clearEvents()
         clock = core.Clock()
         for point in self.calibration_points:
-                self.calibration_target_disc.setPos(
-                    self.original_calibration_points[
-                        self.calibration_points.index(point)])
-                self.calibration_target_dot.setPos(
-                    self.original_calibration_points[
-                        self.calibration_points.index(point)])
+            self.calibration_target_disc.setPos(
+                self.original_calibration_points[
+                    self.calibration_points.index(point)])
+            self.calibration_target_dot.setPos(
+                self.original_calibration_points[
+                    self.calibration_points.index(point)])
             clock.reset()
             while True:
                 t = clock.getTime() * self.shrink_speed
