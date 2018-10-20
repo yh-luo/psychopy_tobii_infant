@@ -34,25 +34,25 @@ default_calibration_disc_size = {
 }
 
 default_key_index_dict = {
-    '0': -1,
+    0: -1,
     'num_0': -1,
-    '1': 0,
+    1: 0,
     'num_1': 0,
-    '2': 1,
+    2: 1,
     'num_2': 1,
-    '3': 2,
+    3: 2,
     'num_3': 2,
-    '4': 3,
+    4: 3,
     'num_4': 3,
-    '5': 4,
+    5: 4,
     'num_5': 4,
-    '6': 5,
+    6: 5,
     'num_6': 5,
-    '7': 6,
+    7: 6,
     'num_7': 6,
-    '8': 7,
+    8: 7,
     'num_8': 7,
-    '9': 8,
+    9: 8,
     'num_9': 8
 }
 
@@ -788,7 +788,7 @@ class tobii_controller:
     def show_status(self):
         """Simple procedure to adjust the participant's position.
 
-            This is an modification of show_status in psychopy_tobii_controller.
+            This is a modification of show_status in psychopy_tobii_controller.
 
         Args:
             None
@@ -1221,7 +1221,7 @@ class infant_tobii_controller(tobii_controller):
 
         Args:
             att_stim: the filename of the video to be played.
-            **kwargs: other arguments for the MovieStim3 object of the video.
+            **kwargs: other key arguments for the MovieStim3 object.
 
         Returns:
             None
