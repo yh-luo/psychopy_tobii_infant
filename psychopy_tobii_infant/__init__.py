@@ -100,21 +100,25 @@ class tobii_controller:
             self.win.units]
         self._calibration_disc_size = default_calibration_disc_size[
             self.win.units]
+        self.calibration_dot_size = self._calibration_dot_size
+        self.calibration_disc_size = self._calibration_disc_size
+        self.calibration_dot_color = self._calibration_dot_color
+        self.calcalibration_disc_color = self._calcalibration_disc_color
         self.calibration_target_dot = visual.Circle(
             self.win,
-            radius=self._calibration_dot_size,
-            fillColor=self._calibration_dot_color,
-            lineColor=self._calibration_dot_color)
+            radius=self.calibration_dot_size,
+            fillColor=self.calibration_dot_color,
+            lineColor=self.calibration_dot_color)
         self.calibration_target_disc = visual.Circle(
             self.win,
-            radius=self._calibration_disc_size,
-            fillColor=self._calcalibration_disc_color,
-            lineColor=self._calcalibration_disc_color)
+            radius=self.calibration_disc_size,
+            fillColor=self.calcalibration_disc_color,
+            lineColor=self.calcalibration_disc_color)
         self.retry_marker = visual.Circle(
             self.win,
-            radius=self._calibration_dot_size,
-            fillColor=self._calibration_dot_color,
-            lineColor=self._calcalibration_disc_color,
+            radius=self.calibration_dot_size,
+            fillColor=self.calibration_dot_color,
+            lineColor=self.calcalibration_disc_color,
             autoLog=False)
         if self.win.units == 'norm':  # fix oval
             self.calibration_target_dot.setSize(
@@ -139,65 +143,6 @@ class tobii_controller:
         self.calibration = tr.ScreenBasedCalibration(self.eyetracker)
         self.update_calibration = self._update_calibration_auto
         self.gaze_data = []
-
-    # property getters and setters for parameter changes
-    @property
-    def shrink_speed(self):
-        return self._shrink_speed
-
-    @shrink_speed.setter
-    def shrink_speed(self, value):
-        self._shrink_speed = value
-        # adjust the second
-        self._shrink_sec = 3 / self._shrink_speed
-
-    @property
-    def calibration_dot_size(self):
-        return self._calibration_dot_size
-
-    @calibration_dot_size.setter
-    def calibration_dot_size(self, value):
-        self._calibration_dot_size = value
-
-    @property
-    def calibration_dot_color(self):
-        return self._calibration_dot_color
-
-    @calibration_dot_color.setter
-    def calibration_dot_color(self, value):
-        self._calibration_dot_color = value
-
-    @property
-    def calibration_disc_size(self):
-        return self._calibration_disc_size
-
-    @calibration_disc_size.setter
-    def calibration_disc_size(self, value):
-        self._calibration_disc_size = value
-
-    @property
-    def calcalibration_disc_color(self):
-        return self._calcalibration_disc_color
-
-    @calcalibration_disc_color.setter
-    def calcalibration_disc_color(self, value):
-        self._calcalibration_disc_color = value
-
-    @property
-    def numkey_dict(self):
-        return self._numkey_dict
-
-    @numkey_dict.setter
-    def numkey_dict(self, value):
-        self._numkey_dict = value
-
-    @property
-    def update_calibration(self):
-        return self._update_calibration
-
-    @update_calibration.setter
-    def update_calibration(self, value):
-        self._update_calibration = value
 
     def _on_gaze_data(self, gaze_data):
         """Callback function used by Tobii SDK.
@@ -816,15 +761,15 @@ class tobii_controller:
         event.clearEvents()
         clock = core.Clock()
         for point in self.calibration_points:
-            clock.reset()
-            while True:
-                t = clock.getTime() * self.shrink_speed
                 self.calibration_target_disc.setPos(
                     self.original_calibration_points[
                         self.calibration_points.index(point)])
                 self.calibration_target_dot.setPos(
                     self.original_calibration_points[
                         self.calibration_points.index(point)])
+            clock.reset()
+            while True:
+                t = clock.getTime() * self.shrink_speed
                 self.calibration_target_disc.setRadius(
                     [(np.sin(t)**2 + 0.2) * self.calibration_disc_size])
                 self.calibration_target_dot.setRadius(
@@ -832,7 +777,7 @@ class tobii_controller:
                 self.calibration_target_disc.draw()
                 self.calibration_target_dot.draw()
                 if clock.getTime() >= self._shrink_sec:
-                    core.wait(1)
+                    core.wait(0.5)
                     self._collect_calibration_data(
                         self.original_calibration_points[
                             self.calibration_points.index(point)])
@@ -951,6 +896,65 @@ class tobii_controller:
             self.win.flip()
 
         self.eyetracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA)
+
+    # property getters and setters for parameter changes
+    @property
+    def shrink_speed(self):
+        return self._shrink_speed
+
+    @shrink_speed.setter
+    def shrink_speed(self, value):
+        self._shrink_speed = value
+        # adjust the second
+        self._shrink_sec = 3 / self._shrink_speed
+
+    @property
+    def calibration_dot_size(self):
+        return self._calibration_dot_size
+
+    @calibration_dot_size.setter
+    def calibration_dot_size(self, value):
+        self._calibration_dot_size = value
+
+    @property
+    def calibration_dot_color(self):
+        return self._calibration_dot_color
+
+    @calibration_dot_color.setter
+    def calibration_dot_color(self, value):
+        self._calibration_dot_color = value
+
+    @property
+    def calibration_disc_size(self):
+        return self._calibration_disc_size
+
+    @calibration_disc_size.setter
+    def calibration_disc_size(self, value):
+        self._calibration_disc_size = value
+
+    @property
+    def calcalibration_disc_color(self):
+        return self._calcalibration_disc_color
+
+    @calcalibration_disc_color.setter
+    def calcalibration_disc_color(self, value):
+        self._calcalibration_disc_color = value
+
+    @property
+    def numkey_dict(self):
+        return self._numkey_dict
+
+    @numkey_dict.setter
+    def numkey_dict(self, value):
+        self._numkey_dict = value
+
+    @property
+    def update_calibration(self):
+        return self._update_calibration
+
+    @update_calibration.setter
+    def update_calibration(self, value):
+        self._update_calibration = value
 
 
 class infant_tobii_controller(tobii_controller):
@@ -1207,9 +1211,7 @@ class infant_tobii_controller(tobii_controller):
 
         return retval
 
-    def show_status(self,
-                    att_stim,
-                    **kwargs):
+    def show_status(self, att_stim, **kwargs):
         """Infant-friendly procedure to adjust the participant's position.
 
             This is an implementation of show_status in psychopy_tobii_controller.
@@ -1226,10 +1228,7 @@ class infant_tobii_controller(tobii_controller):
         """
         # to fix the audio
         visual.MovieStim3._unload = _unload
-        attention_grabber = visual.MovieStim3(
-            self.win,
-            att_stim,
-            **kwargs)
+        attention_grabber = visual.MovieStim3(self.win, att_stim, **kwargs)
 
         bgrect = visual.Rect(
             self.win,
