@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import numpy as np
 import os
 
@@ -27,7 +28,7 @@ CALISTIMS = [
 win = visual.Window(
     size=[1280, 1024],
     units='pix',
-    screen=2, # change it to the real monitor
+    screen=1, # change it to the real monitor
     fullscr=True,
     allowGUI=False)
 

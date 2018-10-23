@@ -96,10 +96,10 @@ class tobii_controller:
         self.eyetracker_id = id
         self.win = win
         self.filename = filename
-        self._calibration_dot_size = default_calibration_dot_size[
-            self.win.units]
-        self._calibration_disc_size = default_calibration_disc_size[
-            self.win.units]
+        self._calibration_dot_size = default_calibration_dot_size[self.win.
+                                                                  units]
+        self._calibration_disc_size = default_calibration_disc_size[self.win.
+                                                                    units]
         self.calibration_dot_size = self._calibration_dot_size
         self.calibration_disc_size = self._calibration_disc_size
         self.calibration_dot_color = self._calibration_dot_color
@@ -664,8 +664,8 @@ class tobii_controller:
             calibration_result = self.calibration.compute_and_apply()
             self.win.flip()
 
-            img_draw.rectangle(
-                ((0, 0), tuple(self.win.size)), fill=(0, 0, 0, 0))
+            img_draw.rectangle(((0, 0), tuple(self.win.size)),
+                               fill=(0, 0, 0, 0))
             if calibration_result.status == tr.CALIBRATION_STATUS_FAILURE:
                 #computeCalibration failed.
                 pass
@@ -679,25 +679,22 @@ class tobii_controller:
                             lp = calibration_sample.left_eye.position_on_display_area
                             rp = calibration_sample.right_eye.position_on_display_area
                             if calibration_sample.left_eye.validity == tr.VALIDITY_VALID_AND_USED:
-                                img_draw.line(
-                                    ((p[0] * self.win.size[0],
-                                      p[1] * self.win.size[1]),
-                                     (lp[0] * self.win.size[0],
-                                      lp[1] * self.win.size[1])),
-                                    fill=(0, 255, 0, 255))
+                                img_draw.line(((p[0] * self.win.size[0],
+                                                p[1] * self.win.size[1]),
+                                               (lp[0] * self.win.size[0],
+                                                lp[1] * self.win.size[1])),
+                                              fill=(0, 255, 0, 255))
                             if calibration_sample.right_eye.validity == tr.VALIDITY_VALID_AND_USED:
-                                img_draw.line(
-                                    ((p[0] * self.win.size[0],
-                                      p[1] * self.win.size[1]),
-                                     (rp[0] * self.win.size[0],
-                                      rp[1] * self.win.size[1])),
-                                    fill=(255, 0, 0, 255))
-                        img_draw.ellipse(
-                            ((p[0] * self.win.size[0] - 3,
-                              p[1] * self.win.size[1] - 3),
-                             (p[0] * self.win.size[0] + 3,
-                              p[1] * self.win.size[1] + 3)),
-                            outline=(0, 0, 0, 255))
+                                img_draw.line(((p[0] * self.win.size[0],
+                                                p[1] * self.win.size[1]),
+                                               (rp[0] * self.win.size[0],
+                                                rp[1] * self.win.size[1])),
+                                              fill=(255, 0, 0, 255))
+                        img_draw.ellipse(((p[0] * self.win.size[0] - 3,
+                                           p[1] * self.win.size[1] - 3),
+                                          (p[0] * self.win.size[0] + 3,
+                                           p[1] * self.win.size[1] + 3)),
+                                         outline=(0, 0, 0, 255))
 
             result_msg.setText(
                 'Accept/Retry: {k}\n'
@@ -714,7 +711,7 @@ class tobii_controller:
                     if key in [decision_key, 'escape']:
                         waitkey = False
                     elif key in self.numkey_dict:
-                        if key in ['0', 'num_0']:
+                        if key in [0, 'num_0']:
                             if len(self.retry_points) == cp_num:
                                 self.retry_points = []
                             else:
@@ -760,13 +757,11 @@ class tobii_controller:
         # start calibration
         event.clearEvents()
         clock = core.Clock()
-        for point in self.calibration_points:
+        for current_point_index in self.retry_points:
             self.calibration_target_disc.setPos(
-                self.original_calibration_points[
-                    self.calibration_points.index(point)])
+                self.original_calibration_points[current_point_index])
             self.calibration_target_dot.setPos(
-                self.original_calibration_points[
-                    self.calibration_points.index(point)])
+                self.original_calibration_points[current_point_index])
             clock.reset()
             while True:
                 t = clock.getTime() * self.shrink_speed
@@ -779,8 +774,7 @@ class tobii_controller:
                 if clock.getTime() >= self._shrink_sec:
                     core.wait(0.5)
                     self._collect_calibration_data(
-                        self.original_calibration_points[
-                            self.calibration_points.index(point)])
+                        self.original_calibration_points[current_point_index])
                     break
 
                 self.win.flip()
@@ -874,13 +868,13 @@ class tobii_controller:
             rx, ry, rz = gaze_data[
                 'right_gaze_origin_in_trackbox_coordinate_system']
             if lv:
-                lx, ly = self._get_psychopy_pos_from_trackbox(
-                    [lx, ly], units='height')
+                lx, ly = self._get_psychopy_pos_from_trackbox([lx, ly],
+                                                              units='height')
                 leye.setPos((lx * 0.25, ly * 0.2 + 0.4))
                 leye.draw()
             if rv:
-                rx, ry = self._get_psychopy_pos_from_trackbox(
-                    [rx, ry], units='height')
+                rx, ry = self._get_psychopy_pos_from_trackbox([rx, ry],
+                                                              units='height')
                 reye.setPos((rx * 0.25, ry * 0.2 + 0.4))
                 reye.draw()
             if lv or rv:
@@ -1014,8 +1008,8 @@ class infant_tobii_controller(tobii_controller):
                     # collect samples when space is pressed
                     if current_point_index in self.retry_points:
                         self._collect_calibration_data(
-                            self.original_calibration_points[
-                                current_point_index])
+                            self.
+                            original_calibration_points[current_point_index])
                         current_point_index = -1
                 elif key == exit_key:
                     # exit calibration when return is presssed
@@ -1119,8 +1113,8 @@ class infant_tobii_controller(tobii_controller):
             calibration_result = self.calibration.compute_and_apply()
             self.win.flip()
 
-            img_draw.rectangle(
-                ((0, 0), tuple(self.win.size)), fill=(0, 0, 0, 0))
+            img_draw.rectangle(((0, 0), tuple(self.win.size)),
+                               fill=(0, 0, 0, 0))
             if calibration_result.status == tr.CALIBRATION_STATUS_FAILURE:
                 #computeCalibration failed.
                 pass
@@ -1134,25 +1128,22 @@ class infant_tobii_controller(tobii_controller):
                             lp = calibration_sample.left_eye.position_on_display_area
                             rp = calibration_sample.right_eye.position_on_display_area
                             if calibration_sample.left_eye.validity == tr.VALIDITY_VALID_AND_USED:
-                                img_draw.line(
-                                    ((p[0] * self.win.size[0],
-                                      p[1] * self.win.size[1]),
-                                     (lp[0] * self.win.size[0],
-                                      lp[1] * self.win.size[1])),
-                                    fill=(0, 255, 0, 255))
+                                img_draw.line(((p[0] * self.win.size[0],
+                                                p[1] * self.win.size[1]),
+                                               (lp[0] * self.win.size[0],
+                                                lp[1] * self.win.size[1])),
+                                              fill=(0, 255, 0, 255))
                             if calibration_sample.right_eye.validity == tr.VALIDITY_VALID_AND_USED:
-                                img_draw.line(
-                                    ((p[0] * self.win.size[0],
-                                      p[1] * self.win.size[1]),
-                                     (rp[0] * self.win.size[0],
-                                      rp[1] * self.win.size[1])),
-                                    fill=(255, 0, 0, 255))
-                        img_draw.ellipse(
-                            ((p[0] * self.win.size[0] - 3,
-                              p[1] * self.win.size[1] - 3),
-                             (p[0] * self.win.size[0] + 3,
-                              p[1] * self.win.size[1] + 3)),
-                            outline=(0, 0, 0, 255))
+                                img_draw.line(((p[0] * self.win.size[0],
+                                                p[1] * self.win.size[1]),
+                                               (rp[0] * self.win.size[0],
+                                                rp[1] * self.win.size[1])),
+                                              fill=(255, 0, 0, 255))
+                        img_draw.ellipse(((p[0] * self.win.size[0] - 3,
+                                           p[1] * self.win.size[1] - 3),
+                                          (p[0] * self.win.size[0] + 3,
+                                           p[1] * self.win.size[1] + 3)),
+                                         outline=(0, 0, 0, 255))
 
             result_msg.setText(
                 'Accept/Retry: {k}\n'
@@ -1169,7 +1160,7 @@ class infant_tobii_controller(tobii_controller):
                     if key in [decision_key, 'escape']:
                         waitkey = False
                     elif key in self.numkey_dict:
-                        if key in ['0', 'num_0']:
+                        if key in [0, 'num_0']:
                             if len(self.retry_points) == cp_num:
                                 self.retry_points = []
                             else:

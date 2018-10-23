@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os
 
 from psychopy import visual, event, core, prefs
