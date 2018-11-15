@@ -5,7 +5,7 @@ import os
 
 from psychopy import visual, event, core
 from psychopy.tools.monitorunittools import deg2cm, deg2pix, pix2cm, pix2deg, cm2pix
-from psychopy.constants import FINISHED
+from psychopy.constants import FINISHED, STOPPED
 
 try:
     import Image
@@ -1407,7 +1407,7 @@ class infant_tobii_controller(tobii_controller):
             blink_dur: the tolerable duration of missing data in seconds.
                 Default to 1
             loop: Whether to start the movie over from the beginning if the
-                movie is stopped before. Default to False
+                movie is stopped before. Default to False.
 
         Returns:
             lt: The looking time in the trial.
@@ -1417,6 +1417,8 @@ class infant_tobii_controller(tobii_controller):
         absence_timer = core.Clock()
         away_time = []
 
+        if movie.status == STOPPED and loop:
+            movie.loadMovie(movie.filename)
         movie.play()
         looking = True
         trial_timer.reset()
