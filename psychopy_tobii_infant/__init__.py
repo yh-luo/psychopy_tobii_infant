@@ -3,7 +3,7 @@ import numpy as np
 import datetime
 import os
 
-from psychopy import visual, event, core
+from psychopy import visual, event, core, logging
 from psychopy.tools.monitorunittools import deg2cm, deg2pix, pix2cm, pix2deg, cm2pix
 from psychopy.constants import FINISHED, STOPPED
 
