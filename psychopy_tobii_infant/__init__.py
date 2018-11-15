@@ -1395,7 +1395,12 @@ class infant_tobii_controller(tobii_controller):
             lt = max_time - np.sum(away_time)
             return (round(lt, 3))
 
-    def collect_lt_mov(self, movie, max_time, min_away, blink_dur=1, loop=False):
+    def collect_lt_mov(self,
+                       movie,
+                       max_time,
+                       min_away,
+                       blink_dur=1,
+                       loop=False):
         """Collect looking time data and playing video
 
             Collect and calculate looking time in runtime. Also end the trial
@@ -1492,6 +1497,7 @@ def _unload(self):
     self._audioStream = None
     self.status = FINISHED
 
+
 def stop(self, log=True):
     """Stop the current point in the movie (sound will stop, current frame
     will not advance). Once stopped the movie cannot be restarted -
@@ -1503,4 +1509,5 @@ def stop(self, log=True):
         self.reset()
         self.status = STOPPED
         if log and self.autoLog:
-            self.win.logOnFlip("Set %s stopped" % (self.name),level=logging.EXP, obj=self)
+            self.win.logOnFlip(
+                "Set %s stopped" % (self.name), level=logging.EXP, obj=self)
