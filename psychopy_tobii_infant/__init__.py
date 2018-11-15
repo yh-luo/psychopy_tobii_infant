@@ -104,29 +104,6 @@ class tobii_controller:
         self.calibration_disc_size = self._calibration_disc_size
         self.calibration_dot_color = self._calibration_dot_color
         self.calcalibration_disc_color = self._calcalibration_disc_color
-        self.calibration_target_dot = visual.Circle(
-            self.win,
-            radius=self.calibration_dot_size,
-            fillColor=self.calibration_dot_color,
-            lineColor=self.calibration_dot_color)
-        self.calibration_target_disc = visual.Circle(
-            self.win,
-            radius=self.calibration_disc_size,
-            fillColor=self.calcalibration_disc_color,
-            lineColor=self.calcalibration_disc_color)
-        self.retry_marker = visual.Circle(
-            self.win,
-            radius=self.calibration_dot_size,
-            fillColor=self.calibration_dot_color,
-            lineColor=self.calcalibration_disc_color,
-            autoLog=False)
-        if self.win.units == 'norm':  # fix oval
-            self.calibration_target_dot.setSize(
-                [float(self.win.size[1]) / self.win.size[0], 1.0])
-            self.calibration_target_disc.setSize(
-                [float(self.win.size[1]) / self.win.size[0], 1.0])
-            self.retry_marker.setSize(
-                [float(self.win.size[1]) / self.win.size[0], 1.0])
 
         eyetrackers = tr.find_all_eyetrackers()
 
@@ -631,10 +608,32 @@ class tobii_controller:
                 for k, v in self.numkey_dict.items()
                 if v < len(calibration_points)
             }
-
+        # prepare calibration stimuli
+        self.calibration_target_dot = visual.Circle(
+            self.win,
+            radius=self.calibration_dot_size,
+            fillColor=self.calibration_dot_color,
+            lineColor=self.calibration_dot_color)
+        self.calibration_target_disc = visual.Circle(
+            self.win,
+            radius=self.calibration_disc_size,
+            fillColor=self.calcalibration_disc_color,
+            lineColor=self.calcalibration_disc_color)
+        self.retry_marker = visual.Circle(
+            self.win,
+            radius=self.calibration_dot_size,
+            fillColor=self.calibration_dot_color,
+            lineColor=self.calcalibration_disc_color,
+            autoLog=False)
+        if self.win.units == 'norm':  # fix oval
+            self.calibration_target_dot.setSize(
+                [float(self.win.size[1]) / self.win.size[0], 1.0])
+            self.calibration_target_disc.setSize(
+                [float(self.win.size[1]) / self.win.size[0], 1.0])
+            self.retry_marker.setSize(
+                [float(self.win.size[1]) / self.win.size[0], 1.0])
         img = Image.new('RGBA', tuple(self.win.size))
         img_draw = ImageDraw.Draw(img)
-
         result_img = visual.SimpleImageStim(self.win, img, autoLog=False)
         result_msg = visual.TextStim(
             self.win,
