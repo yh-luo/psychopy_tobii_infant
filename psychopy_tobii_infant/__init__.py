@@ -63,7 +63,7 @@ class tobii_controller:
     _shrink_speed = 1.5
     _shrink_sec = 3 / _shrink_speed
     _calibration_dot_color = (0, 0, 0)
-    _calcalibration_disc_color = (-1, -1, 0)
+    _calibration_disc_color = (-1, -1, 0)
     _update_calibration = None
 
     def __init__(self, win, id=0, filename='gaze_TOBII_output.tsv'):
@@ -103,7 +103,7 @@ class tobii_controller:
         self.calibration_dot_size = self._calibration_dot_size
         self.calibration_disc_size = self._calibration_disc_size
         self.calibration_dot_color = self._calibration_dot_color
-        self.calcalibration_disc_color = self._calcalibration_disc_color
+        self.calibration_disc_color = self._calibration_disc_color
 
         eyetrackers = tr.find_all_eyetrackers()
 
@@ -617,13 +617,13 @@ class tobii_controller:
         self.calibration_target_disc = visual.Circle(
             self.win,
             radius=self.calibration_disc_size,
-            fillColor=self.calcalibration_disc_color,
-            lineColor=self.calcalibration_disc_color)
+            fillColor=self.calibration_disc_color,
+            lineColor=self.calibration_disc_color)
         self.retry_marker = visual.Circle(
             self.win,
             radius=self.calibration_dot_size,
             fillColor=self.calibration_dot_color,
-            lineColor=self.calcalibration_disc_color,
+            lineColor=self.calibration_disc_color,
             autoLog=False)
         if self.win.units == 'norm':  # fix oval
             self.calibration_target_dot.setSize(
@@ -926,12 +926,12 @@ class tobii_controller:
         self._calibration_disc_size = value
 
     @property
-    def calcalibration_disc_color(self):
-        return self._calcalibration_disc_color
+    def calibration_disc_color(self):
+        return self._calibration_disc_color
 
-    @calcalibration_disc_color.setter
-    def calcalibration_disc_color(self, value):
-        self._calcalibration_disc_color = value
+    @calibration_disc_color.setter
+    def calibration_disc_color(self, value):
+        self._calibration_disc_color = value
 
     @property
     def numkey_dict(self):
