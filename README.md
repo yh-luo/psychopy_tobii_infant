@@ -41,6 +41,12 @@ Currently tested on Python 3.5.6
 
 ### v0.4
 
+#### v0.4.3 (The latest version)
+
+- Bug fixes
+
+#### v0.4.1
+
 - Add generic tobii controller, infant_tobii_controller now is a subclass of it.
 
 ### v0.3
@@ -59,20 +65,26 @@ Currently tested on Python 3.5.6
 
 ### demo1_calibration.py
 
-1. Show the relative position of the subject to the eyetracker.
+1. Show the relative position of the subject to the eyetracker
 2. Run five-points calibration
 
 ### demo2_collect_looking_time.py
 
-1. Show the relative position of the subject to the eyetracker.
+1. Show the relative position of the subject to the eyetracker
 2. Run five-points calibration
 3. Collect looking time data based on the eyetracker (static image)
 
 ### demo3_collect_looking_time_with_video.py
 
-1. Show the relative position of the subject to the eyetracker.
+1. Show the relative position of the subject to the eyetracker
 2. Run five-points calibration
 3. Collect looking time data based on the eyetracker (video)
+
+### demo4_generic_controller.py
+
+1. Show the relative position of the subject to the eyetracker
+2. Adjust parameters of calibration stimuli
+3. Run five-points calibration automatically
 
 ## License
 
