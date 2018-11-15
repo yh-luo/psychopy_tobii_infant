@@ -1394,7 +1394,7 @@ class infant_tobii_controller(tobii_controller):
             lt = max_time - np.sum(away_time)
             return (round(lt, 3))
 
-    def collect_lt_mov(self, movie, max_time, min_away, blink_dur=1):
+    def collect_lt_mov(self, movie, max_time, min_away, blink_dur=1, loop=False):
         """Collect looking time data and playing video
 
             Collect and calculate looking time in runtime. Also end the trial
@@ -1405,6 +1405,9 @@ class infant_tobii_controller(tobii_controller):
             max_time: maximum looking time in seconds.
             min_away: minimum duration to stop in seconds.
             blink_dur: the tolerable duration of missing data in seconds.
+                Default to 1
+            loop: Whether to start the movie over from the beginning if the
+                movie is stopped before. Default to False
 
         Returns:
             lt: The looking time in the trial.
