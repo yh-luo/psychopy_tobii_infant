@@ -25,6 +25,57 @@ Yu-Han Luo
     pip install .
     ```
 
+## Basic usage
+
+```python
+import os
+from psychopy import visual, event, core, prefs
+prefs.general['audioLib'] = ['sounddevice']
+
+from psychopy_tobii_infant import infant_tobii_controller
+
+# create a Window to control the monitor
+win = visual.Window(
+    size=[1280, 1024],
+    units='norm',
+    screen=1, # change it to the real monitor
+    fullscr=True,
+    allowGUI=False)
+# initialize tobii_controller to communicate with the eyetracker
+controller = infant_tobii_controller(win)
+
+# show the relative position of the subject to the eyetracker
+# Press space to exit
+controller.show_status("infant/seal-clip.mp4")
+
+# run calibration
+# - Use 1~9 (depending on the number of calibration points) to present
+#   calibration stimulus and 0 to hide the target.
+# - Press space to start collect calibration samples.
+# - Press return (Enter) to finish the calibration and show the result.
+# - Choose the points to recalibrate with 1~9.
+# - Press decision_key to accept the calibration or recalibrate.
+# stimuli to use in calibration
+# The number of stimuli must be the same or larger than the calibration points.
+CALISTIMS = [
+    'infant/{}'.format(x) for x in os.listdir(os.path.join(DIR, 'infant'))
+    if '.png' in x
+]
+controller.run_calibration([(-0.4, 0.4), (-0.4, -0.4), (0.0, 0.0), (0.4, 0.4), (0.4, -0.4)], CALISTIMS)
+
+# Start recording
+controller.start_recording('demo1-test.tsv')
+core.wait(3) # record for 3 seconds
+
+# stop recording
+controller.stop_recording()
+# close the file
+controller.close()
+
+# shut down the experiment
+core.quit()
+```
+
 ## Requirements
 
 ### Python 3.5.x
