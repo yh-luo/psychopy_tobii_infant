@@ -1422,7 +1422,7 @@ class infant_tobii_controller(tobii_controller):
         absence_timer = core.Clock()
         away_time = []
 
-        if movie.status == STOPPED and loop:
+        if loop:
             movie.loadMovie(movie.filename)
         movie.play()
         looking = True
