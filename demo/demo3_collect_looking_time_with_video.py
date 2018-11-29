@@ -66,7 +66,7 @@ controller.start_recording('demo3-test.tsv')
 # start
 # let the monitor draw the movie automatically
 movie.setAutoDraw(True)
-lt = controller.collect_lt_mov(movie, 10, 2)
+lt = controller.collect_lt(10, 2)
 print('Looking time: %.3fs' % lt)
 # when finish, remove the movie
 movie.setAutoDraw(False)
