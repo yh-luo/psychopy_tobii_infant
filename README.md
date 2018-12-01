@@ -57,10 +57,11 @@ controller.show_status("infant/seal-clip.mp4")
 # - Press decision_key to accept the calibration or recalibrate.
 # stimuli to use in calibration
 # The number of stimuli must be the same or larger than the calibration points.
-CALISTIMS = [
-    'infant/{}'.format(x) for x in os.listdir(os.path.join(DIR, 'infant'))
-    if '.png' in x
-]
+
+# stimuli for calibration
+CALISTIMS = [x for x in os.listdir('infant/') if '.png' in x]
+# correct path for calibration stimuli
+CALISTIMS = ['infant/{}'.format(x) for x in CALISTIMS]
 controller.run_calibration([(-0.4, 0.4), (-0.4, -0.4), (0.0, 0.0), (0.4, 0.4), (0.4, -0.4)], CALISTIMS)
 
 # Start recording
@@ -84,20 +85,15 @@ Currently tested on Python 3.5.6
 
 ### Dependency
 
-- [PsychoPy 1.90.x](http://www.psychopy.org/)
-    Currently tested on v1.90.3
+- [PsychoPy 1.90.3](http://www.psychopy.org/)
 - [tobii_research](https://pypi.python.org/pypi/tobii-research)
 
 ## Releases
 
 ### v0.4
 
-#### v0.4.3 (The latest version)
-
+- Remove `collect_lt_mov`
 - Bug fixes
-
-#### v0.4.1
-
 - Add generic tobii controller, infant_tobii_controller now is a subclass of it.
 
 ### v0.3
@@ -141,7 +137,7 @@ Currently tested on Python 3.5.6
 
 GPL v3.0 or later
 
-## Acknowledgements
+## Acknowledgments
 
 This package is built upon/inspired by the following packages, for which credit goes out to the respective authors.
 

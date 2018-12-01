@@ -484,7 +484,7 @@ class tobii_controller:
         self.event_data = []
         self.eyetracker.subscribe_to(
             tr.EYETRACKER_GAZE_DATA, self._on_gaze_data, as_dictionary=True)
-        core.wait(1)  # wait a bit for the eye tracker to get ready
+        core.wait(0.5)  # wait a bit for the eye tracker to get ready
         self.t0 = tr.get_system_time_stamp()
         self.recording = True
 
@@ -851,7 +851,7 @@ class tobii_controller:
 
         self.eyetracker.subscribe_to(
             tr.EYETRACKER_GAZE_DATA, self._on_gaze_data, as_dictionary=True)
-        core.wait(1)  # wait a bit for the eye tracker to get ready
+        core.wait(0.5)  # wait a bit for the eye tracker to get ready
 
         b_show_status = True
 
@@ -1282,7 +1282,7 @@ class infant_tobii_controller(tobii_controller):
 
         self.eyetracker.subscribe_to(
             tr.EYETRACKER_GAZE_DATA, self._on_gaze_data, as_dictionary=True)
-        core.wait(1)  # wait a bit for the eye tracker to get ready
+        core.wait(0.5)  # wait a bit for the eye tracker to get ready
 
         att_timer = core.CountdownTimer(attention_grabber.duration)
         playing = True
