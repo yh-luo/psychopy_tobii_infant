@@ -46,7 +46,7 @@ controller = infant_tobii_controller(win)
 
 # show the relative position of the subject to the eyetracker
 # Press space to exit
-controller.show_status("infant/seal-clip.mp4")
+controller.show_status()
 
 # run calibration
 # - Use 1~9 (depending on the number of calibration points) to present
