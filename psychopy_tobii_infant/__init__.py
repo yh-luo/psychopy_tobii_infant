@@ -1075,6 +1075,16 @@ class infant_tobii_controller(tobii_controller):
                 'Is the number of images equal to the number of calibration points?'
             )
 
+        self.retry_marker = visual.Circle(
+            self.win,
+            radius=self.calibration_dot_size,
+            fillColor=self.calibration_dot_color,
+            lineColor=self.calibration_disc_color,
+            autoLog=False)
+        if self.win.units == 'norm':  # fix oval
+            self.retry_marker.setSize(
+                [float(self.win.size[1]) / self.win.size[0], 1.0])
+        img = Image.new('RGBA', tuple(self.win.size))
         # get original size of stimuli
         self.target_original_size = self.targets[0].size
         img = Image.new('RGBA', tuple(self.win.size))
