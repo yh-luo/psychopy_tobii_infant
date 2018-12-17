@@ -70,10 +70,9 @@ while waitkey:
     # Get the latest gaze position data.
     currentGazePosition = controller.get_current_gaze_position()
 
-    # Gaze position is a tuple: ((left_eye_x, left_eye_y), (right_eye_x, right_eye_y))
     # The value is numpy.nan if Tobii failed to detect gaze position.
-    if np.nan not in currentGazePosition[0]:
-        marker.setPos(currentGazePosition[0])
+    if np.nan not in currentGazePosition:
+        marker.setPos(currentGazePosition)
         marker.setLineColor('white')
     else:
         marker.setLineColor('red')

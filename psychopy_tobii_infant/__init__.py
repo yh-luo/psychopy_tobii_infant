@@ -531,7 +531,14 @@ class tobii_controller:
                 rxy = self._get_psychopy_pos(
                     gaze_data['right_gaze_point_on_display_area'])
 
-            return (lxy, rxy)
+            if (np.nan not in lxy) and (np.nan not in rxy):
+                ave = (lxy[0]+rxy[0])/2, (lxy[1]+rxy[1])/2
+            elif np.nan not in lxy:
+                ave = lxy
+            elif np.nan not in rxy:
+                ave = rxy
+
+            return ave
 
     def get_current_pupil_size(self):
         """Get the newest pupil size.
