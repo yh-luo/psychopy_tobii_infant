@@ -77,6 +77,10 @@ controller.close()
 core.quit()
 ```
 
++ Demo stimuli released under Creative Commons CC0, aka no copyright:
+  + [infant/](https://bit.ly/2BnAGwG)
+  + [stim/](https://bit.ly/2SQAOf9)
+
 ## Requirements
 
 ### Python 3.5.x
