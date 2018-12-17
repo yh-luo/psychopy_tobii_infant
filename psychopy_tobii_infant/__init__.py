@@ -1274,27 +1274,3 @@ class infant_tobii_controller(tobii_controller):
         else:
             lt = max_time - np.sum(away_time)
             return (round(lt, 3))
-
-
-def _unload(self):
-    """Stop MovieStim3
-
-    Fix the problem of audio stream in PsychoPy < v3.0
-
-    """
-    try:
-        # remove textures from graphics card to prevent crash
-        self.clearTextures()
-    except Exception:
-        pass
-    try:
-        if self._mov is not None:
-            self._mov.close()
-    except AttributeError:
-        pass
-    self._mov = None
-    self._numpyFrame = None
-    if self._audioStream is not None:
-        self._audioStream.stop()
-    self._audioStream = None
-    self.status = FINISHED
