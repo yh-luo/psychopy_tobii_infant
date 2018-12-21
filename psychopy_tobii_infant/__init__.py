@@ -458,7 +458,7 @@ class tobii_controller:
 
         self._flush_to_file()
 
-    def start_recording(self, filename=None, newfile=True, embed_event=True):
+    def start_recording(self, filename=None, newfile=True, embed_event=False):
         """Start recording
 
         Args:
