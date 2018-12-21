@@ -519,8 +519,10 @@ class tobii_controller:
         """
 
         if not self.gaze_data:
-            return ((np.nan, np.nan), (np.nan, np.nan))
+            return (np.nan, np.nan)
         else:
+            lxy = (np.nan, np.nan)
+            rxy = (np.nan, np.nan)
             gaze_data = self.gaze_data[-1]
             if gaze_data['left_gaze_point_validity']:
                 lxy = self._get_psychopy_pos(
@@ -530,7 +532,7 @@ class tobii_controller:
                     gaze_data['right_gaze_point_on_display_area'])
 
             if (np.nan not in lxy) and (np.nan not in rxy):
-                ave = (lxy[0]+rxy[0])/2, (lxy[1]+rxy[1])/2
+                ave = ((lxy[0]+rxy[0])/2, (lxy[1]+rxy[1])/2)
             elif np.nan not in lxy:
                 ave = lxy
             elif np.nan not in rxy:
