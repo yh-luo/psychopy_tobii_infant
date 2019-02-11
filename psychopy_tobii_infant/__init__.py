@@ -5,7 +5,6 @@ import os
 
 from psychopy import visual, event, core, logging
 from psychopy.tools.monitorunittools import deg2cm, deg2pix, pix2cm, pix2deg, cm2pix
-from psychopy.constants import FINISHED
 
 try:
     import Image
@@ -466,7 +465,7 @@ class tobii_controller:
                 Defaults to None.
             newfile: open a new file to save data. Defaults to True.
             embed_event: should the file contains the event column.
-                Defaults to True.
+                Defaults to False.
 
         Returns:
             None
@@ -515,7 +514,7 @@ class tobii_controller:
             None
 
         Returns:
-            ((left_eye_x, left_eye_y), (right_eye_x, right_eye_y))
+            (x, y)
         """
 
         if not self.gaze_data:
@@ -907,7 +906,7 @@ class tobii_controller:
     @shrink_speed.setter
     def shrink_speed(self, value):
         self._shrink_speed = value
-        # adjust the second
+        # adjust the duration of shrinking
         self._shrink_sec = 3 / self._shrink_speed
 
     @property

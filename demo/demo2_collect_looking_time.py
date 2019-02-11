@@ -27,7 +27,6 @@ CALISTIMS = [
 win = visual.Window(
     size=[1280, 1024],
     units='pix',
-    screen=1, # change it to the real monitor
     fullscr=True,
     allowGUI=False)
 
@@ -65,7 +64,7 @@ grabber.stop()
 # - Press decision_key to accept the calibration or recalibrate.
 success = controller.run_calibration(CALIPOINTS, CALISTIMS)
 if not success:
-    core.quit()
+    win.close()
 
 # Start recording.
 # filename of the data file could be define in this method or when creating an
@@ -89,4 +88,4 @@ controller.stop_recording()
 # close the file
 controller.close()
 
-core.quit()
+win.close()

@@ -28,7 +28,6 @@ CALISTIMS = [
 win = visual.Window(
     size=[1280, 1024],
     units='pix',
-    screen=1, # change it to the real monitor
     fullscr=True,
     allowGUI=False)
 
@@ -56,7 +55,6 @@ grabber.stop()
 success = controller.run_calibration(CALIPOINTS, CALISTIMS)
 if not success:
     win.close()
-    core.quit()
 
 marker = visual.Rect(win, width=20, height=20, autoLog=False)
 
@@ -93,4 +91,4 @@ controller.stop_recording()
 # close the file
 controller.close()
 
-core.quit()
+win.close()

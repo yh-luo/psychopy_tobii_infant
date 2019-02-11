@@ -22,7 +22,6 @@ CALIPOINTS = [(x * DISPSIZE[0], y * DISPSIZE[1]) for x, y in CALINORMP]
 win = visual.Window(
     size=[1280, 1024],
     units='pix',
-    screen=1, # change it to the real monitor
     fullscr=True,
     allowGUI=False)
 
@@ -40,13 +39,12 @@ controller.show_status()
 success = controller.run_calibration(CALIPOINTS)
 if not success:
     win.close()
-    core.quit()
 
 marker = visual.Rect(win, width=20, height=20, autoLog=False)
 
 # Start recording.
 # filename of the data file could be define in this method or when creating an
-# infant_tobii_controller instance
+# tobii_controller instance
 controller.start_recording('demo4-test.tsv')
 waitkey = True
 timer = core.Clock()
@@ -77,4 +75,4 @@ controller.stop_recording()
 # close the file
 controller.close()
 
-core.quit()
+win.close()
