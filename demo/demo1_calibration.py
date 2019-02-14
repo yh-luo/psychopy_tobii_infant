@@ -54,7 +54,7 @@ grabber.stop()
 # - Press decision_key to accept the calibration or recalibrate.
 success = controller.run_calibration(CALIPOINTS, CALISTIMS)
 if not success:
-    win.close()
+    core.quit()
 
 marker = visual.Rect(win, width=20, height=20, autoLog=False)
 
@@ -91,4 +91,4 @@ controller.stop_recording()
 # close the file
 controller.close()
 
-win.close()
+core.quit()

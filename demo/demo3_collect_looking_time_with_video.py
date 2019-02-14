@@ -53,7 +53,7 @@ grabber.stop()
 # - Press decision_key to accept the calibration or recalibrate.
 success = controller.run_calibration(CALIPOINTS, CALISTIMS)
 if not success:
-    win.close()
+    core.quit()
 
 # prepare the video
 movie = visual.MovieStim3(
@@ -82,4 +82,4 @@ controller.stop_recording()
 # close the file
 controller.close()
 
-win.close()
+core.quit()

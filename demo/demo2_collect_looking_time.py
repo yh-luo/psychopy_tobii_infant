@@ -64,7 +64,7 @@ grabber.stop()
 # - Press decision_key to accept the calibration or recalibrate.
 success = controller.run_calibration(CALIPOINTS, CALISTIMS)
 if not success:
-    win.close()
+    core.quit()
 
 # Start recording.
 # filename of the data file could be define in this method or when creating an
@@ -88,4 +88,4 @@ controller.stop_recording()
 # close the file
 controller.close()
 
-win.close()
+core.quit()
