@@ -6,12 +6,8 @@ import os
 from psychopy import visual, event, core, logging
 from psychopy.tools.monitorunittools import deg2cm, deg2pix, pix2cm, pix2deg, cm2pix
 
-try:
-    import Image
-    import ImageDraw
-except:
-    from PIL import Image
-    from PIL import ImageDraw
+from PIL import Image
+from PIL import ImageDraw
 
 default_calibration_dot_size = {
     'norm': 0.02,
@@ -33,25 +29,25 @@ default_calibration_disc_size = {
 }
 
 default_key_index_dict = {
-    0: -1,
+    "0": -1,
     'num_0': -1,
-    1: 0,
+    "1": 0,
     'num_1': 0,
-    2: 1,
+    "2": 1,
     'num_2': 1,
-    3: 2,
+    "3": 2,
     'num_3': 2,
-    4: 3,
+    "4": 3,
     'num_4': 3,
-    5: 4,
+    "5": 4,
     'num_5': 4,
-    6: 5,
+    "6": 5,
     'num_6': 5,
-    7: 6,
+    "7": 6,
     'num_7': 6,
-    8: 7,
+    "8": 7,
     'num_8': 7,
-    9: 8,
+    "9": 8,
     'num_9': 8
 }
 
@@ -63,6 +59,7 @@ class tobii_controller:
     _shrink_sec = 3 / _shrink_speed
     _calibration_dot_color = (0, 0, 0)
     _calibration_disc_color = (-1, -1, 0)
+    _calibration_target_min = 0.2
     _update_calibration = None
 
     def __init__(self, win, id=0, filename='gaze_TOBII_output.tsv'):
@@ -103,6 +100,7 @@ class tobii_controller:
         self.calibration_disc_size = self._calibration_disc_size
         self.calibration_dot_color = self._calibration_dot_color
         self.calibration_disc_color = self._calibration_disc_color
+        self.calibration_target_min = self._calibration_target_min
 
         eyetrackers = tr.find_all_eyetrackers()
 
@@ -681,7 +679,7 @@ class tobii_controller:
                     if key in [decision_key, 'escape']:
                         waitkey = False
                     elif key in self.numkey_dict:
-                        if key in [0, 'num_0']:
+                        if key in ["0", 'num_0']:
                             if len(self.retry_points) == cp_num:
                                 self.retry_points = []
                             else:
@@ -774,9 +772,9 @@ class tobii_controller:
             while True:
                 t = clock.getTime() * self.shrink_speed
                 self.calibration_target_disc.setRadius(
-                    [(np.sin(t)**2 + 0.2) * self.calibration_disc_size])
+                    [(np.sin(t)**2 + self.calibration_target_min) * self.calibration_disc_size])
                 self.calibration_target_dot.setRadius(
-                    [(np.sin(t)**2 + 0.2) * self.calibration_dot_size])
+                    [(np.sin(t)**2 + self.calibration_target_min) * self.calibration_dot_size])
                 self.calibration_target_disc.draw()
                 self.calibration_target_dot.draw()
                 if clock.getTime() >= self._shrink_sec:
@@ -943,6 +941,14 @@ class tobii_controller:
         self._calibration_disc_color = value
 
     @property
+    def calibration_target_min(self):
+        return self._calibration_target_min
+
+    @calibration_target_min.setter
+    def calibration_target_min(self, value):
+        self._calibration_target_min = value
+
+    @property
     def numkey_dict(self):
         return self._numkey_dict
 
@@ -1029,7 +1035,7 @@ class infant_tobii_controller(tobii_controller):
                 self.targets[current_point_index].setPos(
                     self.original_calibration_points[current_point_index])
                 t = clock.getTime() * self.shrink_speed
-                newsize = [(np.sin(t)**2 + 0.2) * e
+                newsize = [(np.sin(t)**2 + self.calibration_target_min) * e
                            for e in self.target_original_size]
                 self.targets[current_point_index].setSize(newsize)
                 self.targets[current_point_index].draw()
@@ -1136,7 +1142,7 @@ class infant_tobii_controller(tobii_controller):
                     if key in [decision_key, 'escape']:
                         waitkey = False
                     elif key in self.numkey_dict:
-                        if key in [0, 'num_0']:
+                        if key in ["0", 'num_0']:
                             if len(self.retry_points) == cp_num:
                                 self.retry_points = []
                             else:
