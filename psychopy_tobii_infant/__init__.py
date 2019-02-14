@@ -640,9 +640,6 @@ class tobii_controller:
                 [float(self.win.size[1]) / self.win.size[0], 1.0])
             self.retry_marker.setSize(
                 [float(self.win.size[1]) / self.win.size[0], 1.0])
-        img = Image.new('RGBA', tuple(self.win.size))
-        img_draw = ImageDraw.Draw(img)
-        result_img = visual.SimpleImageStim(self.win, img, autoLog=False)
         result_msg = visual.TextStim(
             self.win,
             pos=(0, -self.win.size[1] / 4),
@@ -667,52 +664,18 @@ class tobii_controller:
             # clear the display
             self.win.flip()
             self.update_calibration()
-
-            calibration_result = self.calibration.compute_and_apply()
+            self.calibration_result = self.calibration.compute_and_apply()
             self.win.flip()
 
-            img_draw.rectangle(((0, 0), tuple(self.win.size)),
-                               fill=(0, 0, 0, 0))
-            if calibration_result.status == tr.CALIBRATION_STATUS_FAILURE:
-                #computeCalibration failed.
-                pass
-            else:
-                if len(calibration_result.calibration_points) == 0:
-                    pass
-                else:
-                    for calibration_point in calibration_result.calibration_points:
-                        p = calibration_point.position_on_display_area
-                        for calibration_sample in calibration_point.calibration_samples:
-                            lp = calibration_sample.left_eye.position_on_display_area
-                            rp = calibration_sample.right_eye.position_on_display_area
-                            if calibration_sample.left_eye.validity == tr.VALIDITY_VALID_AND_USED:
-                                img_draw.line(((p[0] * self.win.size[0],
-                                                p[1] * self.win.size[1]),
-                                               (lp[0] * self.win.size[0],
-                                                lp[1] * self.win.size[1])),
-                                              fill=(0, 255, 0, 255))
-                            if calibration_sample.right_eye.validity == tr.VALIDITY_VALID_AND_USED:
-                                img_draw.line(((p[0] * self.win.size[0],
-                                                p[1] * self.win.size[1]),
-                                               (rp[0] * self.win.size[0],
-                                                rp[1] * self.win.size[1])),
-                                              fill=(255, 0, 0, 255))
-                        img_draw.ellipse(((p[0] * self.win.size[0] - 3,
-                                           p[1] * self.win.size[1] - 3),
-                                          (p[0] * self.win.size[0] + 3,
-                                           p[1] * self.win.size[1] + 3)),
-                                         outline=(0, 0, 0, 255))
-
+            result_img = self._show_calibration_result()
             result_msg.setText(
                 'Accept/Retry: {k}\n'
                 'Select/Deselect all points: 0\n'
                 'Select/Deselect recalibration points: 1-{p} key\n'
                 'Abort: esc'.format(k=decision_key, p=cp_num))
-            result_img.setImage(img)
 
             waitkey = True
             self.retry_points = []
-
             while waitkey:
                 for key in event.getKeys():
                     if key in [decision_key, 'escape']:
@@ -753,12 +716,50 @@ class tobii_controller:
             elif key == 'escape':
                 retval = False
                 in_calibration_loop = False
-            else:
-                raise RuntimeError('Calibration: Invalid key')
 
         self.calibration.leave_calibration_mode()
 
         return retval
+
+    def _show_calibration_result(self):
+        img = Image.new('RGBA', tuple(self.win.size))
+        img_draw = ImageDraw.Draw(img)
+        result_img = visual.SimpleImageStim(self.win, img, autoLog=False)
+        img_draw.rectangle(((0, 0), tuple(self.win.size)),
+                            fill=(0, 0, 0, 0))
+        if self.calibration_result.status == tr.CALIBRATION_STATUS_FAILURE:
+            #computeCalibration failed.
+            pass
+        else:
+            if len(self.calibration_result.calibration_points) == 0:
+                pass
+            else:
+                for calibration_point in self.calibration_result.calibration_points:
+                    p = calibration_point.position_on_display_area
+                    for calibration_sample in calibration_point.calibration_samples:
+                        lp = calibration_sample.left_eye.position_on_display_area
+                        rp = calibration_sample.right_eye.position_on_display_area
+                        if calibration_sample.left_eye.validity == tr.VALIDITY_VALID_AND_USED:
+                            img_draw.line(((p[0] * self.win.size[0],
+                                            p[1] * self.win.size[1]),
+                                            (lp[0] * self.win.size[0],
+                                            lp[1] * self.win.size[1])),
+                                            fill=(0, 255, 0, 255))
+                        if calibration_sample.right_eye.validity == tr.VALIDITY_VALID_AND_USED:
+                            img_draw.line(((p[0] * self.win.size[0],
+                                            p[1] * self.win.size[1]),
+                                            (rp[0] * self.win.size[0],
+                                            rp[1] * self.win.size[1])),
+                                            fill=(255, 0, 0, 255))
+                    img_draw.ellipse(((p[0] * self.win.size[0] - 3,
+                                        p[1] * self.win.size[1] - 3),
+                                        (p[0] * self.win.size[0] + 3,
+                                        p[1] * self.win.size[1] + 3)),
+                                        outline=(0, 0, 0, 255))
+
+        result_img.setImage(img)
+        return result_img
+
 
     def _update_calibration_auto(self):
         # start calibration
