@@ -30,7 +30,6 @@ Yu-Han Luo
 ```python
 import os
 from psychopy import visual, event, core, prefs
-prefs.general['audioLib'] = ['sounddevice']
 
 from psychopy_tobii_infant import infant_tobii_controller
 
@@ -38,7 +37,6 @@ from psychopy_tobii_infant import infant_tobii_controller
 win = visual.Window(
     size=[1280, 1024],
     units='norm',
-    screen=1, # change it to the real monitor
     fullscr=True,
     allowGUI=False)
 # initialize tobii_controller to communicate with the eyetracker
