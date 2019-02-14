@@ -85,6 +85,8 @@ class tobii_controller:
                 according to the units of self.win.
             calibration_disc_color: the color of the disc in the
                 calibration target. Defaults to deep blue.
+            calibration_target_min: the minimum size of the calibration target.
+                Defaults to 0.2.
             numkey_dict: keys used for calibration. Defaults to the number pad.
             update_calibration: the presentation of calibration target.
                 Defaults to auto calibration.
