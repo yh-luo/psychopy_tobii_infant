@@ -29,7 +29,7 @@ Yu-Han Luo
 
 ```python
 import os
-from psychopy import visual, event, core, prefs
+from psychopy import visual, event, core
 
 from psychopy_tobii_infant import infant_tobii_controller
 
