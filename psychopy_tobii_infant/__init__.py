@@ -3,16 +3,11 @@ import numpy as np
 import datetime
 import os
 
-from psychopy import visual, event, core
+from psychopy import visual, event, core, logging
 from psychopy.tools.monitorunittools import deg2cm, deg2pix, pix2cm, pix2deg, cm2pix
-from psychopy.constants import FINISHED
 
-try:
-    import Image
-    import ImageDraw
-except:
-    from PIL import Image
-    from PIL import ImageDraw
+from PIL import Image
+from PIL import ImageDraw
 
 default_calibration_dot_size = {
     'norm': 0.02,
@@ -34,25 +29,25 @@ default_calibration_disc_size = {
 }
 
 default_key_index_dict = {
-    0: -1,
+    "0": -1,
     'num_0': -1,
-    1: 0,
+    "1": 0,
     'num_1': 0,
-    2: 1,
+    "2": 1,
     'num_2': 1,
-    3: 2,
+    "3": 2,
     'num_3': 2,
-    4: 3,
+    "4": 3,
     'num_4': 3,
-    5: 4,
+    "5": 4,
     'num_5': 4,
-    6: 5,
+    "6": 5,
     'num_6': 5,
-    7: 6,
+    "7": 6,
     'num_7': 6,
-    8: 7,
+    "8": 7,
     'num_8': 7,
-    9: 8,
+    "9": 8,
     'num_9': 8
 }
 
@@ -63,7 +58,8 @@ class tobii_controller:
     _shrink_speed = 1.5
     _shrink_sec = 3 / _shrink_speed
     _calibration_dot_color = (0, 0, 0)
-    _calcalibration_disc_color = (-1, -1, 0)
+    _calibration_disc_color = (-1, -1, 0)
+    _calibration_target_min = 0.2
     _update_calibration = None
 
     def __init__(self, win, id=0, filename='gaze_TOBII_output.tsv'):
@@ -89,6 +85,8 @@ class tobii_controller:
                 according to the units of self.win.
             calibration_disc_color: the color of the disc in the
                 calibration target. Defaults to deep blue.
+            calibration_target_min: the minimum size of the calibration target.
+                Defaults to 0.2.
             numkey_dict: keys used for calibration. Defaults to the number pad.
             update_calibration: the presentation of calibration target.
                 Defaults to auto calibration.
@@ -103,30 +101,8 @@ class tobii_controller:
         self.calibration_dot_size = self._calibration_dot_size
         self.calibration_disc_size = self._calibration_disc_size
         self.calibration_dot_color = self._calibration_dot_color
-        self.calcalibration_disc_color = self._calcalibration_disc_color
-        self.calibration_target_dot = visual.Circle(
-            self.win,
-            radius=self.calibration_dot_size,
-            fillColor=self.calibration_dot_color,
-            lineColor=self.calibration_dot_color)
-        self.calibration_target_disc = visual.Circle(
-            self.win,
-            radius=self.calibration_disc_size,
-            fillColor=self.calcalibration_disc_color,
-            lineColor=self.calcalibration_disc_color)
-        self.retry_marker = visual.Circle(
-            self.win,
-            radius=self.calibration_dot_size,
-            fillColor=self.calibration_dot_color,
-            lineColor=self.calcalibration_disc_color,
-            autoLog=False)
-        if self.win.units == 'norm':  # fix oval
-            self.calibration_target_dot.setSize(
-                [float(self.win.size[1]) / self.win.size[0], 1.0])
-            self.calibration_target_disc.setSize(
-                [float(self.win.size[1]) / self.win.size[0], 1.0])
-            self.retry_marker.setSize(
-                [float(self.win.size[1]) / self.win.size[0], 1.0])
+        self.calibration_disc_color = self._calibration_disc_color
+        self.calibration_target_min = self._calibration_target_min
 
         eyetrackers = tr.find_all_eyetrackers()
 
@@ -481,7 +457,7 @@ class tobii_controller:
 
         self._flush_to_file()
 
-    def start_recording(self, filename=None, newfile=True, embed_event=True):
+    def start_recording(self, filename=None, newfile=True, embed_event=False):
         """Start recording
 
         Args:
@@ -489,7 +465,7 @@ class tobii_controller:
                 Defaults to None.
             newfile: open a new file to save data. Defaults to True.
             embed_event: should the file contains the event column.
-                Defaults to True.
+                Defaults to False.
 
         Returns:
             None
@@ -507,7 +483,7 @@ class tobii_controller:
         self.event_data = []
         self.eyetracker.subscribe_to(
             tr.EYETRACKER_GAZE_DATA, self._on_gaze_data, as_dictionary=True)
-        core.wait(1)  # wait a bit for the eye tracker to get ready
+        core.wait(0.5)  # wait a bit for the eye tracker to get ready
         self.t0 = tr.get_system_time_stamp()
         self.recording = True
 
@@ -538,11 +514,11 @@ class tobii_controller:
             None
 
         Returns:
-            ((left_eye_x, left_eye_y), (right_eye_x, right_eye_y))
+            (x, y)
         """
 
         if not self.gaze_data:
-            return ((np.nan, np.nan), (np.nan, np.nan))
+            return (np.nan, np.nan)
         else:
             lxy = (np.nan, np.nan)
             rxy = (np.nan, np.nan)
@@ -554,7 +530,16 @@ class tobii_controller:
                 rxy = self._get_psychopy_pos(
                     gaze_data['right_gaze_point_on_display_area'])
 
-            return (lxy, rxy)
+            if (np.nan not in lxy) and (np.nan not in rxy):
+                ave = ((lxy[0]+rxy[0])/2, (lxy[1]+rxy[1])/2)
+            elif np.nan not in lxy:
+                ave = lxy
+            elif np.nan not in rxy:
+                ave = rxy
+            else:
+                ave = (np.nan, np.nan)
+
+            return ave
 
     def get_current_pupil_size(self):
         """Get the newest pupil size.
@@ -631,11 +616,30 @@ class tobii_controller:
                 for k, v in self.numkey_dict.items()
                 if v < len(calibration_points)
             }
-
-        img = Image.new('RGBA', tuple(self.win.size))
-        img_draw = ImageDraw.Draw(img)
-
-        result_img = visual.SimpleImageStim(self.win, img, autoLog=False)
+        # prepare calibration stimuli
+        self.calibration_target_dot = visual.Circle(
+            self.win,
+            radius=self.calibration_dot_size,
+            fillColor=self.calibration_dot_color,
+            lineColor=self.calibration_dot_color)
+        self.calibration_target_disc = visual.Circle(
+            self.win,
+            radius=self.calibration_disc_size,
+            fillColor=self.calibration_disc_color,
+            lineColor=self.calibration_disc_color)
+        self.retry_marker = visual.Circle(
+            self.win,
+            radius=self.calibration_dot_size,
+            fillColor=self.calibration_dot_color,
+            lineColor=self.calibration_disc_color,
+            autoLog=False)
+        if self.win.units == 'norm':  # fix oval
+            self.calibration_target_dot.setSize(
+                [float(self.win.size[1]) / self.win.size[0], 1.0])
+            self.calibration_target_disc.setSize(
+                [float(self.win.size[1]) / self.win.size[0], 1.0])
+            self.retry_marker.setSize(
+                [float(self.win.size[1]) / self.win.size[0], 1.0])
         result_msg = visual.TextStim(
             self.win,
             pos=(0, -self.win.size[1] / 4),
@@ -660,58 +664,24 @@ class tobii_controller:
             # clear the display
             self.win.flip()
             self.update_calibration()
-
-            calibration_result = self.calibration.compute_and_apply()
+            self.calibration_result = self.calibration.compute_and_apply()
             self.win.flip()
 
-            img_draw.rectangle(((0, 0), tuple(self.win.size)),
-                               fill=(0, 0, 0, 0))
-            if calibration_result.status == tr.CALIBRATION_STATUS_FAILURE:
-                #computeCalibration failed.
-                pass
-            else:
-                if len(calibration_result.calibration_points) == 0:
-                    pass
-                else:
-                    for calibration_point in calibration_result.calibration_points:
-                        p = calibration_point.position_on_display_area
-                        for calibration_sample in calibration_point.calibration_samples:
-                            lp = calibration_sample.left_eye.position_on_display_area
-                            rp = calibration_sample.right_eye.position_on_display_area
-                            if calibration_sample.left_eye.validity == tr.VALIDITY_VALID_AND_USED:
-                                img_draw.line(((p[0] * self.win.size[0],
-                                                p[1] * self.win.size[1]),
-                                               (lp[0] * self.win.size[0],
-                                                lp[1] * self.win.size[1])),
-                                              fill=(0, 255, 0, 255))
-                            if calibration_sample.right_eye.validity == tr.VALIDITY_VALID_AND_USED:
-                                img_draw.line(((p[0] * self.win.size[0],
-                                                p[1] * self.win.size[1]),
-                                               (rp[0] * self.win.size[0],
-                                                rp[1] * self.win.size[1])),
-                                              fill=(255, 0, 0, 255))
-                        img_draw.ellipse(((p[0] * self.win.size[0] - 3,
-                                           p[1] * self.win.size[1] - 3),
-                                          (p[0] * self.win.size[0] + 3,
-                                           p[1] * self.win.size[1] + 3)),
-                                         outline=(0, 0, 0, 255))
-
+            result_img = self._show_calibration_result()
             result_msg.setText(
                 'Accept/Retry: {k}\n'
                 'Select/Deselect all points: 0\n'
                 'Select/Deselect recalibration points: 1-{p} key\n'
                 'Abort: esc'.format(k=decision_key, p=cp_num))
-            result_img.setImage(img)
 
             waitkey = True
             self.retry_points = []
-
             while waitkey:
                 for key in event.getKeys():
                     if key in [decision_key, 'escape']:
                         waitkey = False
                     elif key in self.numkey_dict:
-                        if key in [0, 'num_0']:
+                        if key in ["0", 'num_0']:
                             if len(self.retry_points) == cp_num:
                                 self.retry_points = []
                             else:
@@ -746,12 +716,50 @@ class tobii_controller:
             elif key == 'escape':
                 retval = False
                 in_calibration_loop = False
-            else:
-                raise RuntimeError('Calibration: Invalid key')
 
         self.calibration.leave_calibration_mode()
 
         return retval
+
+    def _show_calibration_result(self):
+        img = Image.new('RGBA', tuple(self.win.size))
+        img_draw = ImageDraw.Draw(img)
+        result_img = visual.SimpleImageStim(self.win, img, autoLog=False)
+        img_draw.rectangle(((0, 0), tuple(self.win.size)),
+                            fill=(0, 0, 0, 0))
+        if self.calibration_result.status == tr.CALIBRATION_STATUS_FAILURE:
+            #computeCalibration failed.
+            pass
+        else:
+            if len(self.calibration_result.calibration_points) == 0:
+                pass
+            else:
+                for calibration_point in self.calibration_result.calibration_points:
+                    p = calibration_point.position_on_display_area
+                    for calibration_sample in calibration_point.calibration_samples:
+                        lp = calibration_sample.left_eye.position_on_display_area
+                        rp = calibration_sample.right_eye.position_on_display_area
+                        if calibration_sample.left_eye.validity == tr.VALIDITY_VALID_AND_USED:
+                            img_draw.line(((p[0] * self.win.size[0],
+                                            p[1] * self.win.size[1]),
+                                            (lp[0] * self.win.size[0],
+                                            lp[1] * self.win.size[1])),
+                                            fill=(0, 255, 0, 255))
+                        if calibration_sample.right_eye.validity == tr.VALIDITY_VALID_AND_USED:
+                            img_draw.line(((p[0] * self.win.size[0],
+                                            p[1] * self.win.size[1]),
+                                            (rp[0] * self.win.size[0],
+                                            rp[1] * self.win.size[1])),
+                                            fill=(255, 0, 0, 255))
+                    img_draw.ellipse(((p[0] * self.win.size[0] - 3,
+                                        p[1] * self.win.size[1] - 3),
+                                        (p[0] * self.win.size[0] + 3,
+                                        p[1] * self.win.size[1] + 3)),
+                                        outline=(0, 0, 0, 255))
+
+        result_img.setImage(img)
+        return result_img
+
 
     def _update_calibration_auto(self):
         # start calibration
@@ -766,9 +774,9 @@ class tobii_controller:
             while True:
                 t = clock.getTime() * self.shrink_speed
                 self.calibration_target_disc.setRadius(
-                    [(np.sin(t)**2 + 0.2) * self.calibration_disc_size])
+                    [(np.sin(t)**2 + self.calibration_target_min) * self.calibration_disc_size])
                 self.calibration_target_dot.setRadius(
-                    [(np.sin(t)**2 + 0.2) * self.calibration_dot_size])
+                    [(np.sin(t)**2 + self.calibration_target_min) * self.calibration_dot_size])
                 self.calibration_target_disc.draw()
                 self.calibration_target_dot.draw()
                 if clock.getTime() >= self._shrink_sec:
@@ -852,7 +860,7 @@ class tobii_controller:
 
         self.eyetracker.subscribe_to(
             tr.EYETRACKER_GAZE_DATA, self._on_gaze_data, as_dictionary=True)
-        core.wait(1)  # wait a bit for the eye tracker to get ready
+        core.wait(0.5)  # wait a bit for the eye tracker to get ready
 
         b_show_status = True
 
@@ -899,7 +907,7 @@ class tobii_controller:
     @shrink_speed.setter
     def shrink_speed(self, value):
         self._shrink_speed = value
-        # adjust the second
+        # adjust the duration of shrinking
         self._shrink_sec = 3 / self._shrink_speed
 
     @property
@@ -927,12 +935,20 @@ class tobii_controller:
         self._calibration_disc_size = value
 
     @property
-    def calcalibration_disc_color(self):
-        return self._calcalibration_disc_color
+    def calibration_disc_color(self):
+        return self._calibration_disc_color
 
-    @calcalibration_disc_color.setter
-    def calcalibration_disc_color(self, value):
-        self._calcalibration_disc_color = value
+    @calibration_disc_color.setter
+    def calibration_disc_color(self, value):
+        self._calibration_disc_color = value
+
+    @property
+    def calibration_target_min(self):
+        return self._calibration_target_min
+
+    @calibration_target_min.setter
+    def calibration_target_min(self, value):
+        self._calibration_target_min = value
 
     @property
     def numkey_dict(self):
@@ -1021,7 +1037,7 @@ class infant_tobii_controller(tobii_controller):
                 self.targets[current_point_index].setPos(
                     self.original_calibration_points[current_point_index])
                 t = clock.getTime() * self.shrink_speed
-                newsize = [(np.sin(t)**2 + 0.2) * e
+                newsize = [(np.sin(t)**2 + self.calibration_target_min) * e
                            for e in self.target_original_size]
                 self.targets[current_point_index].setSize(newsize)
                 self.targets[current_point_index].draw()
@@ -1075,13 +1091,16 @@ class infant_tobii_controller(tobii_controller):
                 'Unable to load the calibration images.\n'
                 'Is the number of images equal to the number of calibration points?'
             )
-
-        # get original size of stimuli
         self.target_original_size = self.targets[0].size
-        img = Image.new('RGBA', tuple(self.win.size))
-        img_draw = ImageDraw.Draw(img)
-
-        result_img = visual.SimpleImageStim(self.win, img, autoLog=False)
+        self.retry_marker = visual.Circle(
+            self.win,
+            radius=self.calibration_dot_size,
+            fillColor=self.calibration_dot_color,
+            lineColor=self.calibration_disc_color,
+            autoLog=False)
+        if self.win.units == 'norm':  # fix oval
+            self.retry_marker.setSize(
+                [float(self.win.size[1]) / self.win.size[0], 1.0])
         result_msg = visual.TextStim(
             self.win,
             pos=(0, -self.win.size[1] / 4),
@@ -1099,7 +1118,6 @@ class infant_tobii_controller(tobii_controller):
         in_calibration_loop = True
         event.clearEvents()
         while in_calibration_loop:
-
             # randomization of calibration targets
             np.random.shuffle(self.targets)
             self.calibration_points = [
@@ -1109,58 +1127,24 @@ class infant_tobii_controller(tobii_controller):
             # clear the display
             self.win.flip()
             self.update_calibration()
-
-            calibration_result = self.calibration.compute_and_apply()
+            self.calibration_result = self.calibration.compute_and_apply()
             self.win.flip()
 
-            img_draw.rectangle(((0, 0), tuple(self.win.size)),
-                               fill=(0, 0, 0, 0))
-            if calibration_result.status == tr.CALIBRATION_STATUS_FAILURE:
-                #computeCalibration failed.
-                pass
-            else:
-                if len(calibration_result.calibration_points) == 0:
-                    pass
-                else:
-                    for calibration_point in calibration_result.calibration_points:
-                        p = calibration_point.position_on_display_area
-                        for calibration_sample in calibration_point.calibration_samples:
-                            lp = calibration_sample.left_eye.position_on_display_area
-                            rp = calibration_sample.right_eye.position_on_display_area
-                            if calibration_sample.left_eye.validity == tr.VALIDITY_VALID_AND_USED:
-                                img_draw.line(((p[0] * self.win.size[0],
-                                                p[1] * self.win.size[1]),
-                                               (lp[0] * self.win.size[0],
-                                                lp[1] * self.win.size[1])),
-                                              fill=(0, 255, 0, 255))
-                            if calibration_sample.right_eye.validity == tr.VALIDITY_VALID_AND_USED:
-                                img_draw.line(((p[0] * self.win.size[0],
-                                                p[1] * self.win.size[1]),
-                                               (rp[0] * self.win.size[0],
-                                                rp[1] * self.win.size[1])),
-                                              fill=(255, 0, 0, 255))
-                        img_draw.ellipse(((p[0] * self.win.size[0] - 3,
-                                           p[1] * self.win.size[1] - 3),
-                                          (p[0] * self.win.size[0] + 3,
-                                           p[1] * self.win.size[1] + 3)),
-                                         outline=(0, 0, 0, 255))
-
+            result_img = self._show_calibration_result()
             result_msg.setText(
                 'Accept/Retry: {k}\n'
                 'Select/Deselect all points: 0\n'
                 'Select/Deselect recalibration points: 1-{p} key\n'
                 'Abort: esc'.format(k=decision_key, p=cp_num))
-            result_img.setImage(img)
 
             waitkey = True
             self.retry_points = []
-
             while waitkey:
                 for key in event.getKeys():
                     if key in [decision_key, 'escape']:
                         waitkey = False
                     elif key in self.numkey_dict:
-                        if key in [0, 'num_0']:
+                        if key in ["0", 'num_0']:
                             if len(self.retry_points) == cp_num:
                                 self.retry_points = []
                             else:
@@ -1195,140 +1179,10 @@ class infant_tobii_controller(tobii_controller):
             elif key == 'escape':
                 retval = False
                 in_calibration_loop = False
-            else:
-                raise RuntimeError('Calibration: Invalid key')
 
         self.calibration.leave_calibration_mode()
 
         return retval
-
-    def show_status(self, att_stim, **kwargs):
-        """Infant-friendly procedure to adjust the participant's position.
-
-            This is an implementation of show_status in psychopy_tobii_controller.
-            It plays an interesting video to attract the participant and map
-            the relative position of the participant's eyes to the trackbox.
-            Press space to leave.
-
-        Args:
-            att_stim: the filename of the video to be played.
-            **kwargs: other key arguments for the MovieStim3 object.
-
-        Returns:
-            None
-        """
-        # to fix the audio
-        visual.MovieStim3._unload = _unload
-        attention_grabber = visual.MovieStim3(self.win, att_stim, **kwargs)
-
-        bgrect = visual.Rect(
-            self.win,
-            pos=(0, 0.4),
-            width=0.25,
-            height=0.2,
-            lineColor='white',
-            fillColor='black',
-            units='height',
-            autoLog=False)
-
-        leye = visual.Circle(
-            self.win,
-            size=0.02,
-            units='height',
-            lineColor=None,
-            fillColor='green',
-            autoLog=False)
-
-        reye = visual.Circle(
-            self.win,
-            size=0.02,
-            units='height',
-            lineColor=None,
-            fillColor='red',
-            autoLog=False)
-
-        zbar = visual.Rect(
-            self.win,
-            pos=(0, 0.28),
-            width=0.25,
-            height=0.03,
-            lineColor='green',
-            fillColor='green',
-            units='height',
-            autoLog=False)
-
-        zc = visual.Rect(
-            self.win,
-            pos=(0, 0.28),
-            width=0.01,
-            height=0.03,
-            lineColor='white',
-            fillColor='white',
-            units='height',
-            autoLog=False)
-
-        zpos = visual.Rect(
-            self.win,
-            pos=(0, 0.28),
-            width=0.008,
-            height=0.03,
-            lineColor='black',
-            fillColor='black',
-            units='height',
-            autoLog=False)
-
-        if self.eyetracker is None:
-            raise RuntimeError('Eyetracker is not found.')
-
-        self.eyetracker.subscribe_to(
-            tr.EYETRACKER_GAZE_DATA, self._on_gaze_data, as_dictionary=True)
-        core.wait(1)  # wait a bit for the eye tracker to get ready
-
-        att_timer = core.CountdownTimer(attention_grabber.duration)
-        playing = True
-        b_show_status = True
-        while b_show_status:
-            attention_grabber.play()
-            att_timer.reset()
-            while att_timer.getTime() > 0 and playing:
-                bgrect.draw()
-                zbar.draw()
-                zc.draw()
-                gaze_data = self.gaze_data[-1]
-                lv = gaze_data['left_gaze_point_validity']
-                rv = gaze_data['right_gaze_point_validity']
-                lx, ly, lz = gaze_data[
-                    'left_gaze_origin_in_trackbox_coordinate_system']
-                rx, ry, rz = gaze_data[
-                    'right_gaze_origin_in_trackbox_coordinate_system']
-                if lv:
-                    lx, ly = self._get_psychopy_pos_from_trackbox(
-                        [lx, ly], units='height')
-                    leye.setPos((lx * 0.25, ly * 0.2 + 0.4))
-                    leye.draw()
-                if rv:
-                    rx, ry = self._get_psychopy_pos_from_trackbox(
-                        [rx, ry], units='height')
-                    reye.setPos((rx * 0.25, ry * 0.2 + 0.4))
-                    reye.draw()
-                if lv or rv:
-                    zpos.setPos(((((lz * int(lv) + rz * int(rv)) /
-                                   (int(lv) + int(rv))) - 0.5) * 0.125, 0.28))
-                    zpos.draw()
-
-                for key in event.getKeys():
-                    if key == 'space':
-                        b_show_status = False
-                        playing = False
-                        break
-
-                attention_grabber.draw()
-                self.win.flip()
-            if b_show_status:
-                attention_grabber.loadMovie(att_stim)
-
-        attention_grabber.stop()
-        self.eyetracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA)
 
     # Collect looking time
     def collect_lt(self, max_time, min_away, blink_dur=1):
@@ -1393,95 +1247,3 @@ class infant_tobii_controller(tobii_controller):
         else:
             lt = max_time - np.sum(away_time)
             return (round(lt, 3))
-
-    def collect_lt_mov(self, movie, max_time, min_away, blink_dur=1):
-        """Collect looking time data and playing video
-
-            Collect and calculate looking time in runtime. Also end the trial
-            automatically when the participant look away.
-
-        Args:
-            movie: the MovieStim object to use.
-            max_time: maximum looking time in seconds.
-            min_away: minimum duration to stop in seconds.
-            blink_dur: the tolerable duration of missing data in seconds.
-
-        Returns:
-            lt: The looking time in the trial.
-        """
-
-        trial_timer = core.Clock()
-        absence_timer = core.Clock()
-        away_time = []
-
-        movie.play()
-        looking = True
-        trial_timer.reset()
-        absence_timer.reset()
-        while trial_timer.getTime() <= max_time:
-            gaze_data = self.gaze_data[-1]
-            lv = gaze_data['left_gaze_point_validity']
-            rv = gaze_data['right_gaze_point_validity']
-
-            if any((lv, rv)):
-                # if the last sample is missing
-                if not looking:
-                    away_dur = absence_timer.getTime()
-                    # if missing samples are larger than the threshold of termination
-                    if away_dur >= min_away:
-                        away_time.append(away_dur)
-                        lt = trial_timer.getTime() - np.sum(away_time)
-                        # stop the trial
-                        movie.stop()
-                        return (round(lt, 3))
-                    # if missing samples are larger than blink duration
-                    elif away_dur >= blink_dur:
-                        away_time.append(away_dur)
-                    # if missing samples are tolerable
-                    else:
-                        pass
-                looking = True
-                absence_timer.reset()
-            else:
-                if absence_timer.getTime() >= min_away:
-                    away_dur = absence_timer.getTime()
-                    away_time.append(away_dur)
-                    lt = trial_timer.getTime() - np.sum(away_time)
-                    # terminate the trial
-                    movie.stop()
-                    return (round(lt, 3))
-                else:
-                    pass
-                looking = False
-
-            movie.draw()
-            self.win.flip()
-        # if the loop is completed, return the looking time
-        else:
-            movie.stop()
-            lt = max_time - np.sum(away_time)
-            return (round(lt, 3))
-
-
-def _unload(self):
-    """Stop MovieStim3
-
-    Fix the problem of audio stream in PsychoPy < v3.0
-
-    """
-    try:
-        # remove textures from graphics card to prevent crash
-        self.clearTextures()
-    except Exception:
-        pass
-    try:
-        if self._mov is not None:
-            self._mov.close()
-    except AttributeError:
-        pass
-    self._mov = None
-    self._numpyFrame = None
-    if self._audioStream is not None:
-        self._audioStream.stop()
-    self._audioStream = None
-    self.status = FINISHED

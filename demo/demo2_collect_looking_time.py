@@ -27,7 +27,6 @@ CALISTIMS = [
 win = visual.Window(
     size=[1280, 1024],
     units='pix',
-    screen=1, # change it to the real monitor
     fullscr=True,
     allowGUI=False)
 
@@ -45,10 +44,16 @@ alltar = [tar_1, tar_2]
 # initialize tobii_controller to communicate with the eyetracker
 controller = infant_tobii_controller(win)
 
+grabber = visual.MovieStim3(win, "infant/seal-clip.mp4")
+grabber.setAutoDraw(True)
+grabber.play()
 # show the relative position of the subject to the eyetracker
-# stimuli in show_status are in 'height' units
 # Press space to exit
-controller.show_status("infant/seal-clip.mp4")
+controller.show_status()
+
+# stop the attention grabber
+grabber.setAutoDraw(False)
+grabber.stop()
 
 # How to use:
 # - Use 1~9 (depending on the number of calibration points) to present

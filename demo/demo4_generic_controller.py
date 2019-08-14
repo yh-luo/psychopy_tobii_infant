@@ -22,13 +22,15 @@ CALIPOINTS = [(x * DISPSIZE[0], y * DISPSIZE[1]) for x, y in CALINORMP]
 win = visual.Window(
     size=[1280, 1024],
     units='pix',
-    screen=1, # change it to the real monitor
     fullscr=True,
     allowGUI=False)
 
 # initialize tobii_controller to communicate with the eyetracker
 controller = tobii_controller(win)
-
+# adjust some properties
+controller.calibration_dot_color = (0, 0, 0)
+controller.calibration_disc_color = (-1, -1, -1)
+controller.calibration_target_min = 0.1
 # show the relative position of the subject to the eyetracker
 # stimuli in show_status are in 'height' units.
 # Press space to exit
@@ -36,14 +38,13 @@ controller.show_status()
 
 success = controller.run_calibration(CALIPOINTS)
 if not success:
-    win.close()
     core.quit()
 
 marker = visual.Rect(win, width=20, height=20, autoLog=False)
 
 # Start recording.
 # filename of the data file could be define in this method or when creating an
-# infant_tobii_controller instance
+# tobii_controller instance
 controller.start_recording('demo4-test.tsv')
 waitkey = True
 timer = core.Clock()
@@ -51,10 +52,9 @@ while waitkey:
     # Get the latest gaze position data.
     currentGazePosition = controller.get_current_gaze_position()
 
-    # Gaze position is a tuple: ((left_eye_x, left_eye_y), (right_eye_x, right_eye_y))
     # The value is numpy.nan if Tobii failed to detect gaze position.
-    if np.nan not in currentGazePosition[0]:
-        marker.setPos(currentGazePosition[0])
+    if np.nan not in currentGazePosition:
+        marker.setPos(currentGazePosition)
         marker.setLineColor('white')
     else:
         marker.setLineColor('red')

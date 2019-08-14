@@ -27,16 +27,22 @@ CALISTIMS = [
 win = visual.Window(
     size=[1280, 1024],
     units='pix',
-    screen=1, # change it to the real monitor
     fullscr=True,
     allowGUI=False)
 
 # initialize tobii_controller to communicate with the eyetracker
 controller = infant_tobii_controller(win)
 
+grabber = visual.MovieStim3(win, "infant/seal-clip.mp4")
+grabber.setAutoDraw(True)
+grabber.play()
 # show the relative position of the subject to the eyetracker
 # Press space to exit
-controller.show_status("infant/seal-clip.mp4")
+controller.show_status()
+
+# stop the attention grabber
+grabber.setAutoDraw(False)
+grabber.stop()
 
 # How to use:
 # - Use 1~9 (depending on the number of calibration points) to present
@@ -66,7 +72,7 @@ controller.start_recording('demo3-test.tsv')
 # start
 # let the monitor draw the movie automatically
 movie.setAutoDraw(True)
-lt = controller.collect_lt_mov(movie, 10, 2)
+lt = controller.collect_lt(10, 2)
 print('Looking time: %.3fs' % lt)
 # when finish, remove the movie
 movie.setAutoDraw(False)
