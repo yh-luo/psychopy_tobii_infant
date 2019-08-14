@@ -90,26 +90,6 @@ Currently tested on Python 3.5.6
 - [PsychoPy 1.90.3](http://www.psychopy.org/)
 - [tobii_research](https://pypi.python.org/pypi/tobii-research)
 
-## Releases
-
-### v0.4
-
-- Remove `collect_lt_mov`
-- Bug fixes
-- Add generic tobii controller, infant_tobii_controller now is a subclass of it.
-
-### v0.3
-
-- Rewrite data collection
-- Rewrite data output
-- Improve documentation
-
-### v0.2
-
-- Fix the coordinate systems
-
-### v0.1
-
 ## Demo
 
 ### demo1_calibration.py
@@ -150,8 +130,7 @@ This package is built upon/inspired by the following packages, for which credit 
 
 ## Citation
 
-At the moment, I do not have a formal publication for it. Since it may hopefully help my academic career (if I have one), please consider to cite both this package and PsychoPy:
+Please consider to cite PsychoPy to encourage open-source projects:
 
 (APA formatted)
-- Luo, Y.-H. (2018). psychopy_tobii_infant. Retrieved from https://github.com/yh-luo/psychopy_tobii_infant
 - Peirce, J. (2009). Generating stimuli for neuroscience using PsychoPy. Frontiers in Neuroinformatics, 2, 10. doi:10.3389/neuro.11.010.2008
