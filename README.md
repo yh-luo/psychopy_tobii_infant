@@ -87,6 +87,16 @@ Currently tested on Python 3.5.6
 - [PsychoPy 1.90.3](http://www.psychopy.org/)
 - [tobii_research](https://pypi.python.org/pypi/tobii-research)
 
+
+## Changelog
+
+### [0.5.0] 2019-10
+
+#### Removed
+
+- Redundant property getters and setters. Do not affect users.
+- Remove `embed_event`. The output file will always record the events in the end of data. Will only affect users if `embed_event` is used in the scripts.
+
 ## Demo
 
 ### demo1_calibration.py
