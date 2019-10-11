@@ -47,6 +47,9 @@ controller.numkey_dict = {
 # Press space to exit
 controller.show_status()
 
+# After automatic calibration:
+# - Choose the points to recalibrate with numkey_dict (default is 1-9, qwerty in this demo)
+# - Press decision_key (default is space) to accept the calibration or recalibrate.
 success = controller.run_calibration(CALIPOINTS)
 if not success:
     core.quit()

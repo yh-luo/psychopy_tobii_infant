@@ -90,6 +90,7 @@ controller = infant_tobii_controller(win)
 # use the customized calibration
 controller.update_calibration = types.MethodType(customized_update_calibration, controller)
 
+# setup the attention grabber during adjusting the participant's position
 grabber.setAutoDraw(True)
 grabber.play()
 # show the relative position of the subject to the eyetracker
@@ -106,7 +107,7 @@ grabber.stop()
 # - Press space to start collect calibration samples.
 # - Press return (Enter) to finish the calibration and show the result.
 # - Choose the points to recalibrate with 1~9.
-# - Press decision_key to accept the calibration or recalibrate.
+# - Press decision_key (default is space) to accept the calibration or recalibrate.
 success = controller.run_calibration(CALIPOINTS, CALISTIMS)
 if not success:
     core.quit()

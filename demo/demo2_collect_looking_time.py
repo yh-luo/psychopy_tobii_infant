@@ -44,6 +44,7 @@ alltar = [tar_1, tar_2]
 # initialize tobii_controller to communicate with the eyetracker
 controller = infant_tobii_controller(win)
 
+# setup the attention grabber during adjusting the participant's position
 grabber = visual.MovieStim3(win, "infant/seal-clip.mp4")
 grabber.setAutoDraw(True)
 grabber.play()
@@ -61,7 +62,7 @@ grabber.stop()
 # - Press space to start collect calibration samples.
 # - Press return (Enter) to finish the calibration and show the result.
 # - Choose the points to recalibrate with 1~9.
-# - Press decision_key to accept the calibration or recalibrate.
+# - Press decision_key (default is space) to accept the calibration or recalibrate.
 success = controller.run_calibration(CALIPOINTS, CALISTIMS)
 if not success:
     core.quit()
