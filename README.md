@@ -10,7 +10,7 @@ This package was based on [psychopy_tobii_controller](https://github.com/hsogo/p
 
 - This project is not a stand-alone program. It is an implementation of PsychoPy for Tobii eye trackers.
 - This project is unofficial and under development.
-- Test the scripts thoroughly before jump into data collection!
+- Test the scripts thoroughly before jumping into data collection!
 
 ## Author
 
@@ -19,11 +19,8 @@ Yu-Han Luo
 ## Installation
 
 1. Clone or download this folder
-2. Navigate to the folder
-3. Install the package with `pip`
-    ```python
-    pip install .
-    ```
+2. Install the package with `pip install .` or put the folder in your project
+
 
 ## Basic usage
 
@@ -52,7 +49,7 @@ controller.show_status()
 # - Press space to start collect calibration samples.
 # - Press return (Enter) to finish the calibration and show the result.
 # - Choose the points to recalibrate with 1~9.
-# - Press decision_key to accept the calibration or recalibrate.
+# - Press decision_key (default to Space) to accept the calibration or recalibrate.
 # stimuli to use in calibration
 # The number of stimuli must be the same or larger than the calibration points.
 
@@ -114,6 +111,14 @@ Currently tested on Python 3.5.6
 1. Show the relative position of the subject to the eyetracker
 2. Adjust parameters of calibration stimuli
 3. Run five-points calibration automatically
+
+
+### demo5_customized_calibration.py
+
+1. Show the relative position of the subject to the eyetracker
+2. Use customized calibration procedure to attract the participant's attention
+   - visual stimulus shriking and a sound playing during calibration
+3. Run five-points calibration
 
 ## License
 
