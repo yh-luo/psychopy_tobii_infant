@@ -133,7 +133,7 @@ Currently tested on Python 3.5.6
    - visual stimulus shriking and a sound playing during calibration
 3. Run five-points calibration
 
-### demo6_calibration.py
+### demo6_calibration_with_sound.py
 
 1. Show the relative position of the subject to the eyetracker
 2. Run five-points calibration with sound
