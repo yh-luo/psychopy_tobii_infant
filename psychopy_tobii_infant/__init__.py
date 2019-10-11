@@ -9,26 +9,9 @@ from psychopy.tools.monitorunittools import deg2cm, deg2pix, pix2cm, pix2deg, cm
 from PIL import Image
 from PIL import ImageDraw
 
-default_calibration_dot_size = {
-    'norm': 0.02,
-    'height': 0.01,
-    'pix': 10.0,
-    'degFlatPos': 0.25,
-    'deg': 0.25,
-    'degFlat': 0.25,
-    'cm': 0.25
-}
-default_calibration_disc_size = {
-    'norm': 0.08,
-    'height': 0.04,
-    'pix': 40.0,
-    'degFlatPos': 1.0,
-    'deg': 1.0,
-    'degFlat': 1.0,
-    'cm': 1.0
-}
+class tobii_controller:
 
-default_key_index_dict = {
+    default_numkey_dict = {
     "0": -1,
     'num_0': -1,
     "1": 0,
@@ -49,18 +32,31 @@ default_key_index_dict = {
     'num_8': 7,
     "9": 8,
     'num_9': 8
-}
-
-
-class tobii_controller:
-
-    _numkey_dict = default_key_index_dict.copy()
+    }
+    default_calibration_dot_size = {
+        'norm': 0.02,
+        'height': 0.01,
+        'pix': 10.0,
+        'degFlatPos': 0.25,
+        'deg': 0.25,
+        'degFlat': 0.25,
+        'cm': 0.25
+    }
+    default_calibration_disc_size = {
+        'norm': 0.08,
+        'height': 0.04,
+        'pix': 40.0,
+        'degFlatPos': 1.0,
+        'deg': 1.0,
+        'degFlat': 1.0,
+        'cm': 1.0
+    }
     _shrink_speed = 1.5
     _shrink_sec = 3 / _shrink_speed
-    _calibration_dot_color = (0, 0, 0)
-    _calibration_disc_color = (-1, -1, 0)
-    _calibration_target_min = 0.2
-    _update_calibration = None
+    calibration_dot_color = (0, 0, 0)
+    calibration_disc_color = (-1, -1, 0)
+    calibration_target_min = 0.2
+    update_calibration = None
 
     def __init__(self, win, id=0, filename='gaze_TOBII_output.tsv'):
         """Tobii controller for PsychoPy.
@@ -74,35 +70,33 @@ class tobii_controller:
 
         Attributes:
             shrink_speed: the shrinking speed of target in calibration.
-                Defaults to 1.5.
+                Default is 1.5.
             calibration_dot_size: the size of the central dot in the
-                calibration target. Defaults to default_calibration_dot_size
+                calibration target. Default is default_calibration_dot_size
                 according to the units of self.win.
             calibration_dot_color: the color of the central dot in the
-                calibration target. Defaults to grey.
+                calibration target. Default is grey.
             calibration_disc_size: the size of the disc in the
-                calibration target. Defaults to default_calibration_disc_size
+                calibration target. Default is default_calibration_disc_size
                 according to the units of self.win.
             calibration_disc_color: the color of the disc in the
-                calibration target. Defaults to deep blue.
+                calibration target. Default is deep blue.
             calibration_target_min: the minimum size of the calibration target.
-                Defaults to 0.2.
-            numkey_dict: keys used for calibration. Defaults to the number pad.
+                Default is 0.2.
+            numkey_dict: keys used for calibration. Default is the number pad.
+                If it is changed, the keys in calibration results will not
+                update accordingly (my bad), be cautious!
             update_calibration: the presentation of calibration target.
-                Defaults to auto calibration.
+                Default is auto calibration.
         """
         self.eyetracker_id = id
         self.win = win
         self.filename = filename
-        self._calibration_dot_size = default_calibration_dot_size[self.win.
+        self.numkey_dict = self.default_numkey_dict
+        self.calibration_dot_size = self.default_calibration_dot_size[self.win.
                                                                   units]
-        self._calibration_disc_size = default_calibration_disc_size[self.win.
+        self.calibration_disc_size = self.default_calibration_disc_size[self.win.
                                                                     units]
-        self.calibration_dot_size = self._calibration_dot_size
-        self.calibration_disc_size = self._calibration_disc_size
-        self.calibration_dot_color = self._calibration_dot_color
-        self.calibration_disc_color = self._calibration_disc_color
-        self.calibration_target_min = self._calibration_target_min
 
         eyetrackers = tr.find_all_eyetrackers()
 
@@ -271,39 +265,21 @@ class tobii_controller:
             None
         """
         # yapf: disable
-        if self.embed_event:
-            self.datafile.write('\t'.join([
-                'TimeStamp',
-                'GazePointXLeft',
-                'GazePointYLeft',
-                'ValidityLeft',
-                'GazePointXRight',
-                'GazePointYRight',
-                'ValidityRight',
-                'GazePointX',
-                'GazePointY',
-                'PupilSizeLeft',
-                'PupilValidityLeft',
-                'PupilSizeRight',
-                'PupilValidityRight',
-                'Event'
-            ]) + '\n')
-        else:
-            self.datafile.write('\t'.join([
-                'TimeStamp',
-                'GazePointXLeft',
-                'GazePointYLeft',
-                'ValidityLeft',
-                'GazePointXRight',
-                'GazePointYRight',
-                'ValidityRight',
-                'GazePointX',
-                'GazePointY',
-                'PupilSizeLeft',
-                'PupilValidityLeft',
-                'PupilSizeRight',
-                'PupilValidityRight'
-            ]) + '\n')
+        self.datafile.write('\t'.join([
+            'TimeStamp',
+            'GazePointXLeft',
+            'GazePointYLeft',
+            'ValidityLeft',
+            'GazePointXRight',
+            'GazePointYRight',
+            'ValidityRight',
+            'GazePointX',
+            'GazePointY',
+            'PupilSizeLeft',
+            'PupilValidityLeft',
+            'PupilSizeRight',
+            'PupilValidityRight'
+        ]) + '\n')
         self._flush_to_file()
         # yapf: enable
 
@@ -405,13 +381,9 @@ class tobii_controller:
         for gaze_data in self.gaze_data:
             output = self._convert_tobii_record(gaze_data)
             self._write_record(output)
-            # if there's a corresponding event, write it.
-            if self.embed_event:
-                self._write_event(output)
-            else:
-                self.datafile.write('\n')
+            self.datafile.write('\n')
         else:
-            # write the remained events in the end of data
+            # write the events in the end of data
             for event in self.event_data:
                 self.datafile.write('%.1f\t%s\n' % (event[0], event[1]))
         self.datafile.write('Session End\n')
@@ -457,15 +429,13 @@ class tobii_controller:
 
         self._flush_to_file()
 
-    def start_recording(self, filename=None, newfile=True, embed_event=False):
+    def start_recording(self, filename=None, newfile=True):
         """Start recording
 
         Args:
             filename: the name of the data file. If None, use default name.
-                Defaults to None.
-            newfile: open a new file to save data. Defaults to True.
-            embed_event: should the file contains the event column.
-                Defaults to False.
+                Default is None.
+            newfile: open a new file to save data. Default is True.
 
         Returns:
             None
@@ -478,7 +448,6 @@ class tobii_controller:
         if newfile:
             self._open_datafile()
 
-        self.embed_event = embed_event
         self.gaze_data = []
         self.event_data = []
         self.eyetracker.subscribe_to(
@@ -681,7 +650,7 @@ class tobii_controller:
                     if key in [decision_key, 'escape']:
                         waitkey = False
                     elif key in self.numkey_dict:
-                        if key in ["0", 'num_0']:
+                        if self.numkey_dict[key] == -1:
                             if len(self.retry_points) == cp_num:
                                 self.retry_points = []
                             else:
@@ -911,61 +880,12 @@ class tobii_controller:
         self._shrink_sec = 3 / self._shrink_speed
 
     @property
-    def calibration_dot_size(self):
-        return self._calibration_dot_size
+    def shrink_sec(self):
+        return self._shrink_sec
 
-    @calibration_dot_size.setter
-    def calibration_dot_size(self, value):
-        self._calibration_dot_size = value
-
-    @property
-    def calibration_dot_color(self):
-        return self._calibration_dot_color
-
-    @calibration_dot_color.setter
-    def calibration_dot_color(self, value):
-        self._calibration_dot_color = value
-
-    @property
-    def calibration_disc_size(self):
-        return self._calibration_disc_size
-
-    @calibration_disc_size.setter
-    def calibration_disc_size(self, value):
-        self._calibration_disc_size = value
-
-    @property
-    def calibration_disc_color(self):
-        return self._calibration_disc_color
-
-    @calibration_disc_color.setter
-    def calibration_disc_color(self, value):
-        self._calibration_disc_color = value
-
-    @property
-    def calibration_target_min(self):
-        return self._calibration_target_min
-
-    @calibration_target_min.setter
-    def calibration_target_min(self, value):
-        self._calibration_target_min = value
-
-    @property
-    def numkey_dict(self):
-        return self._numkey_dict
-
-    @numkey_dict.setter
-    def numkey_dict(self, value):
-        self._numkey_dict = value
-
-    @property
-    def update_calibration(self):
-        return self._update_calibration
-
-    @update_calibration.setter
-    def update_calibration(self, value):
-        self._update_calibration = value
-
+    @shrink_sec.setter
+    def shrink_sec(self, value):
+        self._shrink_sec = value
 
 class infant_tobii_controller(tobii_controller):
     def __init__(self, win, id=0, filename='gaze_TOBII_output.tsv'):
@@ -980,8 +900,8 @@ class infant_tobii_controller(tobii_controller):
 
         Attributes:
             shrink_speed: the shrinking speed of target in calibration.
-                Defaults to 1.
-            numkey_dict: keys used for calibration. Defaults to the number pad.
+                Default is 1.
+            numkey_dict: keys used for calibration. Default is the number pad.
         """
         super().__init__(win, id, filename)
         self.update_calibration = self._update_calibration_infant
@@ -996,12 +916,12 @@ class infant_tobii_controller(tobii_controller):
             An implementation of run_calibration() in psychopy_tobii_controller.
 
         Args:
-            collect_key: the key to start collecting samples. Defaults to space.
+            collect_key: the key to start collecting samples. Default is space.
             exit_key: the key to finish and leave the current calibration
                 procedure. It should not be confused with `decision_key`, which
                 is used to leave the whole calibration process. `exit_key` is
                 used to leave the current calibration, the user may recalibrate
-                or accept the results afterwards. Defaults to return (Enter)
+                or accept the results afterwards. Default is return (Enter)
 
         Returns:
             None
@@ -1144,7 +1064,7 @@ class infant_tobii_controller(tobii_controller):
                     if key in [decision_key, 'escape']:
                         waitkey = False
                     elif key in self.numkey_dict:
-                        if key in ["0", 'num_0']:
+                        if self.numkey_dict[key] == -1:
                             if len(self.retry_points) == cp_num:
                                 self.retry_points = []
                             else:

@@ -27,10 +27,21 @@ win = visual.Window(
 
 # initialize tobii_controller to communicate with the eyetracker
 controller = tobii_controller(win)
-# adjust some properties
+# adjust properties
 controller.calibration_dot_color = (0, 0, 0)
 controller.calibration_disc_color = (-1, -1, -1)
 controller.calibration_target_min = 0.1
+controller.shrink_speed = 2
+# change the keys used for 5-points calibration
+controller.numkey_dict = {
+    "q": -1,
+    "w": 0,
+    "e": 1,
+    "r": 2,
+    "t": 3,
+    "y": 4,
+}
+
 # show the relative position of the subject to the eyetracker
 # stimuli in show_status are in 'height' units.
 # Press space to exit
