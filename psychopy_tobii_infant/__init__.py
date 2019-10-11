@@ -938,6 +938,10 @@ class infant_tobii_controller(tobii_controller):
             for key in keys:
                 if key in self.numkey_dict:
                     current_point_index = self.numkey_dict[key]
+                    # play the sound if it exists
+                    if self._audio is not None:
+                        if current_point_index in self.retry_points:
+                            self._audio.play()
                 elif key == collect_key:
                     # allow the participant to focus
                     core.wait(0.5)
@@ -947,6 +951,8 @@ class infant_tobii_controller(tobii_controller):
                             self.
                             original_calibration_points[current_point_index])
                         current_point_index = -1
+                        # stop the sound
+                        self._audio.stop()
                 elif key == exit_key:
                     # exit calibration when return is presssed
                     in_calibration = False
@@ -966,6 +972,7 @@ class infant_tobii_controller(tobii_controller):
     def run_calibration(self,
                         calibration_points,
                         infant_stims,
+                        audio=None,
                         decision_key='space'):
         """Run calibration
 
@@ -1011,6 +1018,9 @@ class infant_tobii_controller(tobii_controller):
                 'Unable to load the calibration images.\n'
                 'Is the number of images equal to the number of calibration points?'
             )
+
+        self._audio = audio
+            
         self.target_original_size = self.targets[0].size
         self.retry_marker = visual.Circle(
             self.win,
