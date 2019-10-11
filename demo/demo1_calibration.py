@@ -64,6 +64,8 @@ marker = visual.Rect(win, width=20, height=20, autoLog=False)
 controller.start_recording('demo1-test.tsv')
 waitkey = True
 timer = core.Clock()
+
+# Press space to leave
 while waitkey:
     # Get the latest gaze position data.
     currentGazePosition = controller.get_current_gaze_position()

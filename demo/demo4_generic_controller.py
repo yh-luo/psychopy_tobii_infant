@@ -34,7 +34,7 @@ controller.calibration_target_min = 0.1
 controller.shrink_speed = 2
 # change the keys used for 5-points calibration
 controller.numkey_dict = {
-    "q": -1,
+    "q": -1, # -1 for select/deselect all calibration points to retry in calibration results
     "w": 0,
     "e": 1,
     "r": 2,
@@ -59,6 +59,8 @@ marker = visual.Rect(win, width=20, height=20, autoLog=False)
 controller.start_recording('demo4-test.tsv')
 waitkey = True
 timer = core.Clock()
+
+# Press space to leave
 while waitkey:
     # Get the latest gaze position data.
     currentGazePosition = controller.get_current_gaze_position()
