@@ -92,6 +92,10 @@ Currently tested on Python 3.5.6
 
 ### [0.5.0] 2019-10
 
+#### Added
+
+- `audio` parameter in `psychopy_tobii_infant.infant_tobii_controller.run_calibration()`. Users can provide a psychopy.sound.Sound object to play during calibration.
+
 #### Removed
 
 - Redundant property getters and setters. Do not affect users.
@@ -119,9 +123,8 @@ Currently tested on Python 3.5.6
 ### demo4_generic_controller.py
 
 1. Show the relative position of the subject to the eyetracker
-2. Adjust parameters of calibration stimuli
+2. Adjust parameters of calibration procedure
 3. Run five-points calibration automatically
-
 
 ### demo5_customized_calibration.py
 
@@ -129,6 +132,11 @@ Currently tested on Python 3.5.6
 2. Use customized calibration procedure to attract the participant's attention
    - visual stimulus shriking and a sound playing during calibration
 3. Run five-points calibration
+
+### demo6_calibration.py
+
+1. Show the relative position of the subject to the eyetracker
+2. Run five-points calibration with sound
 
 ## License
 
