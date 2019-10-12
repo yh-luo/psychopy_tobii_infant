@@ -914,8 +914,125 @@ class tobii_controller:
 
             self.win.flip()
 
-        self.eyetracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA)
+        self.eyetracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA, self._on_gaze_data)
 
+    def show_position(self):
+        """Showing the participant's gaze position in track box. New in tobii-research 1.6.0
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+
+        bgrect = visual.Rect(
+            self.win,
+            pos=(0, 0.4),
+            width=0.25,
+            height=0.2,
+            lineColor="white",
+            fillColor="black",
+            units="height",
+            autoLog=False,
+        )
+
+        leye = visual.Circle(
+            self.win,
+            size=0.02,
+            units="height",
+            lineColor=None,
+            fillColor="green",
+            autoLog=False,
+        )
+
+        reye = visual.Circle(
+            self.win,
+            size=0.02,
+            units="height",
+            lineColor=None,
+            fillColor="red",
+            autoLog=False,
+        )
+
+        zbar = visual.Rect(
+            self.win,
+            pos=(0, 0.28),
+            width=0.25,
+            height=0.03,
+            lineColor="green",
+            fillColor="green",
+            units="height",
+            autoLog=False,
+        )
+
+        zc = visual.Rect(
+            self.win,
+            pos=(0, 0.28),
+            width=0.01,
+            height=0.03,
+            lineColor="white",
+            fillColor="white",
+            units="height",
+            autoLog=False,
+        )
+
+        zpos = visual.Rect(
+            self.win,
+            pos=(0, 0.28),
+            width=0.008,
+            height=0.03,
+            lineColor="black",
+            fillColor="black",
+            units="height",
+            autoLog=False,
+        )
+
+        if self.eyetracker is None:
+            raise RuntimeError("Eyetracker is not found.")
+
+        self.eyetracker.subscribe_to(
+            tr.EYETRACKER_USER_POSITION_GUIDE, self._on_gaze_data, as_dictionary=True
+        )
+        core.wait(0.5)  # wait a bit for the eye tracker to get ready
+
+        b_show_status = True
+
+        while b_show_status:
+            bgrect.draw()
+            zbar.draw()
+            zc.draw()
+            gaze_data = self.gaze_data[-1]
+            lv = gaze_data["left_user_position_validity"]
+            rv = gaze_data["right_user_position_validity"]
+            lx, ly, lz = gaze_data["left_user_position"]
+            rx, ry, rz = gaze_data["right_user_position"]
+            if lv:
+                lx, ly = self._get_psychopy_pos_from_trackbox([lx, ly], units="height")
+                leye.setPos((lx * 0.25, ly * 0.2 + 0.4))
+                leye.draw()
+            if rv:
+                rx, ry = self._get_psychopy_pos_from_trackbox([rx, ry], units="height")
+                reye.setPos((rx * 0.25, ry * 0.2 + 0.4))
+                reye.draw()
+            if lv or rv:
+                zpos.setPos(
+                    (
+                        (((lz * int(lv) + rz * int(rv)) / (int(lv) + int(rv))) - 0.5)
+                        * 0.125,
+                        0.28,
+                    )
+                )
+                zpos.draw()
+
+            for key in event.getKeys():
+                if key == "space":
+                    b_show_status = False
+                    break
+
+            self.win.flip()
+
+        self.eyetracker.unsubscribe_from(tr.EYETRACKER_USER_POSITION_GUIDE, self._on_gaze_data)
     # property getters and setters for parameter changes
     @property
     def shrink_speed(self):
