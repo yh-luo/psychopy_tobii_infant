@@ -85,7 +85,7 @@ Currently tested on Python 3.5.6
 ### Dependency
 
 - [PsychoPy 1.90.3](http://www.psychopy.org/)
-- [tobii_research](https://pypi.python.org/pypi/tobii-research)
+- [tobii_research < 1.7.0](https://pypi.python.org/pypi/tobii-research)
 
 
 ## Changelog
