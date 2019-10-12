@@ -10,6 +10,8 @@ from PIL import Image
 from PIL import ImageDraw
 
 
+__version__ = "0.5.1"
+
 class tobii_controller:
     """Tobii controller for PsychoPy.
 
@@ -917,7 +919,12 @@ class tobii_controller:
         self.eyetracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA, self._on_gaze_data)
 
     def show_position(self):
-        """Showing the participant's gaze position in track box. New in tobii-research 1.6.0
+        """Showing the participant's gaze position in track box.
+        
+        New in tobii-research 1.6.0. This method exist to prevent breaking
+        show_status(). According to Tobii Pro SDK, this method would more
+        lightweight since EYETRACKER_USER_POSITION_GUIDE, instead of
+        EYETRACKER_GAZE_DATA, is used for showing the position of the user.
 
         Args:
             None

@@ -1,10 +1,11 @@
+import psychopy_tobii_infant
 from setuptools import setup
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='psychopy_tobii_infant',
-      version='0.5.0',
+      version=psychopy_tobii_infant.__version__,
       description='Infant-friendly eyetracking',
       long_description=long_description,
       long_description_content_type="text/markdown",
