@@ -1001,7 +1001,8 @@ class infant_tobii_controller(tobii_controller):
                         )
                         current_point_index = -1
                         # stop the sound
-                        self._audio.stop()
+                        if self._audio is not None:
+                            self._audio.stop()
                 elif key == exit_key:
                     # exit calibration when return is presssed
                     in_calibration = False
