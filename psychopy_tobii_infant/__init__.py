@@ -427,7 +427,7 @@ class tobii_controller:
             "Recording time:\t" + datetime.datetime.now().strftime("%H:%M:%S") + "\n"
         )
         self.datafile.write("Recording resolution:\t%d x %d\n" % tuple(self.win.size))
-        self.datafile.write("PsychoPy units: {}".format(self.win.units))
+        self.datafile.write("PsychoPy units:\t{}\n".format(self.win.units))
         self._flush_to_file()
 
     def start_recording(self, filename=None, newfile=True):

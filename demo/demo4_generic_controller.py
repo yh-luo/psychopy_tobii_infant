@@ -88,6 +88,37 @@ while waitkey:
 
 # stop recording
 controller.stop_recording()
+
+# To demonstrate the newfile parameter in start_recording()
+controller.start_recording(newfile=False)
+
+waitkey = True
+# Press space to leave
+while waitkey:
+    # Get the latest gaze position data.
+    currentGazePosition = controller.get_current_gaze_position()
+
+    # The value is numpy.nan if Tobii failed to detect gaze position.
+    if np.nan not in currentGazePosition:
+        marker.setPos(currentGazePosition)
+        marker.setLineColor('white')
+    else:
+        marker.setLineColor('red')
+    keys = event.getKeys()
+    if 'space' in keys:
+        waitkey = False
+    elif len(keys) >= 1:
+        # Record the pressed key to the data file.
+        controller.record_event(keys[0])
+        print('pressed {k} at {t} ms'.format(
+            k=keys[0], t=timer.getTime() * 1000))
+
+    marker.draw()
+    win.flip()
+
+# stop recording
+controller.stop_recording()
+
 # close the file
 controller.close()
 
