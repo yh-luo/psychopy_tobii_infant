@@ -411,11 +411,6 @@ class tobii_controller:
         Returns:
             None
         """
-        try:
-            self.close()
-        except AttributeError:
-            pass
-
         self.datafile = open(self.filename, "w")
         self.datafile.write(
             "Recording date:\t" + datetime.datetime.now().strftime("%Y/%m/%d") + "\n"
@@ -439,10 +434,8 @@ class tobii_controller:
             None
         """
         if filename is not None:
-            if type(filename) == str:
-                self.filename = filename
-            else:
-                raise ValueError("filename should be string")
+            self.filename = filename
+
         if newfile:
             self._open_datafile()
 
@@ -563,10 +556,8 @@ class tobii_controller:
         Returns:
             None
         """
-        try:
-            self.datafile.close()
-        except AttributeError:
-            raise AttributeError("No opened file to close.")
+        self.datafile.close()
+
 
     def run_calibration(self, calibration_points, decision_key="space"):
         """Run calibration
