@@ -12,6 +12,7 @@ from PIL import ImageDraw
 
 __version__ = "0.6.0"
 
+
 class tobii_controller:
     """Tobii controller for PsychoPy.
 
@@ -136,8 +137,7 @@ class tobii_controller:
             p: Gaze position (x, y) in Tobii ADCS.
 
         Returns:
-            Gaze position in PsychoPy coordinate systems. For example:
-            (0,0).
+            Gaze position in PsychoPy coordinate systems. For example: (0,0).
         """
 
         if self.win.units == "norm":
@@ -400,12 +400,7 @@ class tobii_controller:
         Returns:
             None
         """
-
-        if (
-            self.calibration.collect_data(*self._get_tobii_pos(p))
-            != tr.CALIBRATION_STATUS_SUCCESS
-        ):
-            self.calibration.collect_data(*self._get_tobii_pos(p))
+        self.calibration.collect_data(*self._get_tobii_pos(p))
 
     def _open_datafile(self):
         """Open a file for gaze data.
@@ -470,13 +465,14 @@ class tobii_controller:
             None
         """
         if self.recording:
-            self.eyetracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA, self._on_gaze_data)
+            self.eyetracker.unsubscribe_from(
+                tr.EYETRACKER_GAZE_DATA, self._on_gaze_data
+            )
             self.recording = False
-            # time correction for event data
-            # self.event_data = list(
-            #     map(lambda x: ((x[0] - self.t0) / 1000.0, x[1]), self.event_data)
-            # )
-            self.event_data = [((x[0]-self.t0)/1000, x[1]) for x in self.event_data]
+            # time correction for event datas
+            self.event_data = [
+                ((x[0] - self.t0) / 1000.0, x[1]) for x in self.event_data
+            ]
             self._flush_data()
         else:
             print("A recording has not been started. Do nothing now...")
@@ -488,8 +484,8 @@ class tobii_controller:
             None
 
         Returns:
-            A tuple of the newest gaze position in PsychoPy coordinate system. For example:
-            (0, 0).
+            A tuple of the newest gaze position in PsychoPy coordinate system.
+            For example: (0, 0).
         """
 
         if not self.gaze_data:
@@ -525,8 +521,8 @@ class tobii_controller:
             None
 
         Returns:
-            A tuple of the newest pupil diameter reported by the eye-tracker. For example
-            (4, 4).
+            A tuple of the newest pupil diameter reported by the eye-tracker.
+            For example: (4, 4).
         """
 
         if not self.gaze_data:
@@ -915,7 +911,9 @@ class tobii_controller:
 
             self.win.flip()
 
-        self.eyetracker.unsubscribe_from(tr.EYETRACKER_USER_POSITION_GUIDE, self._on_gaze_data)
+        self.eyetracker.unsubscribe_from(
+            tr.EYETRACKER_USER_POSITION_GUIDE, self._on_gaze_data
+        )
 
     # property getters and setters for parameter changes
     @property
