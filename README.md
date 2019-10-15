@@ -72,10 +72,6 @@ win.close()
 core.quit()
 ```
 
-+ Demo stimuli released under Creative Commons CC0, aka no copyright:
-  + [infant/](https://bit.ly/2BnAGwG)
-  + [stim/](https://bit.ly/2SQAOf9)
-
 ## Requirements
 
 ### Python 3.5.x or 3.6.x
@@ -85,32 +81,16 @@ Currently tested on Python 3.6.9 and Python 3.5.7
 ### Dependency
 
 - [PsychoPy](http://www.psychopy.org/)
-  - supports both PsychoPy2 (tested on 1.90.3, should work on older version of PsychoPy) and PsychoPy 3
+  - supports both PsychoPy2 (tested on 1.90.3, should work on older version) and PsychoPy 3 (tested on 3.2.3)
 - [tobii-research](https://pypi.python.org/pypi/tobii-research)
-  - >= 1.6.0 for Python 3.5
-  - >= 1.7.0 for Python 3.6
-
-## Changelog
-
-### [0.6.0] 2019-10
-
-#### Improvements
-
-+ Python 3.6 support
-  + `tobii_research`, started from v1.7, now supports Python 3.6 (yay!).
-
-### [0.5.0] 2019-10
-
-#### Added
-
-- `audio` parameter in `psychopy_tobii_infant.infant_tobii_controller.run_calibration()`. Users can provide a psychopy.sound.Sound object to play during calibration.
-
-#### Removed
-
-- Redundant property getters and setters. Do not affect users.
-- Remove `embed_event`. The output file will always record the events in the end of data. Will only affect users if `embed_event` is used in the scripts.
+  - `>=1.6.0` for Python 3.5
+  - `>=1.7.0` for Python 3.6
 
 ## Demo
+
+Demo stimuli released under Creative Commons CC0, aka no copyright:
++ [infant/](https://bit.ly/2BnAGwG)
++ [stim/](https://bit.ly/2SQAOf9)
 
 ### demo1_calibration.py
 
@@ -146,6 +126,26 @@ Currently tested on Python 3.6.9 and Python 3.5.7
 
 1. Show the relative position of the subject to the eyetracker
 2. Run five-points calibration with sound
+
+## Changelog
+
+### [0.6.0] 2019-10
+
+#### Improvements
+
++ Python 3.6 support
+  + `tobii-research`, started from v1.7, now supports Python 3.6 (yay!).
+
+### [0.5.0] 2019-10
+
+#### Added
+
+- `audio` parameter in `psychopy_tobii_infant.infant_tobii_controller.run_calibration()`. Users can provide a psychopy.sound.Sound object to play during calibration.
+
+#### Removed
+
+- Redundant property getters and setters. Do not affect users.
+- Remove `embed_event`. The output file will always record the events in the end of data. Will only affect users if `embed_event` is used in the scripts.
 
 ## License
 
