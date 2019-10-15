@@ -121,4 +121,5 @@ controller.stop_recording()
 # close the file
 controller.close()
 
+win.close()
 core.quit()

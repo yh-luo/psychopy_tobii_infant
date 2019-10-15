@@ -5,6 +5,7 @@ import types
 from psychopy import visual, event, core, prefs
 prefs.general['audioLib'] = ['sounddevice']
 from psychopy import sound
+
 from psychopy_tobii_infant import infant_tobii_controller
 
 ###############################################################################
@@ -151,4 +152,5 @@ controller.stop_recording()
 # close the file
 controller.close()
 
+win.close()
 core.quit()
