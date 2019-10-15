@@ -21,12 +21,11 @@ Yu-Han Luo
 1. Clone or download this folder
 2. Install the package with `pip install .` or put the folder in your project
 
-
 ## Basic usage
 
 ```python
 import os
-from psychopy import visual, event, core
+from psychopy import visual, core
 
 from psychopy_tobii_infant import infant_tobii_controller
 
@@ -69,6 +68,7 @@ controller.stop_recording()
 controller.close()
 
 # shut down the experiment
+win.close()
 core.quit()
 ```
 
@@ -78,17 +78,26 @@ core.quit()
 
 ## Requirements
 
-### Python 3.5.x
+### Python 3.5.x or 3.6.x
 
-Currently tested on Python 3.5.6
+Currently tested on Python 3.6.9 and Python 3.5.7
 
 ### Dependency
 
-- [PsychoPy 1.90.3](http://www.psychopy.org/)
-- [tobii_research < 1.7.0](https://pypi.python.org/pypi/tobii-research)
-
+- [PsychoPy](http://www.psychopy.org/)
+  - supports both PsychoPy2 (tested on 1.90.3, should work on older version of PsychoPy) and PsychoPy 3
+- [tobii-research](https://pypi.python.org/pypi/tobii-research)
+  - >= 1.6.0 for Python 3.5
+  - >= 1.7.0 for Python 3.6
 
 ## Changelog
+
+### [0.6.0] 2019-10
+
+#### Improvements
+
++ Python 3.6 support
+  + `tobii_research`, started from v1.7, now supports Python 3.6 (yay!).
 
 ### [0.5.0] 2019-10
 
