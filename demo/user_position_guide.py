@@ -2,8 +2,7 @@
 import numpy as np
 import os
 
-from psychopy import visual, event, core, prefs
-prefs.general['audioLib'] = ['sounddevice']
+from psychopy import visual, event, core
 
 from psychopy_tobii_infant import tobii_controller
 
