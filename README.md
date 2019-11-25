@@ -9,7 +9,7 @@ This package was based on [psychopy_tobii_controller](https://github.com/hsogo/p
 ## Cautions
 
 - This project is not a stand-alone program. It is an implementation of PsychoPy for Tobii eye trackers.
-- This project is unofficial and under development.
+- This project is unofficial.
 - Test the scripts thoroughly before jumping into data collection!
 
 ## Author
@@ -76,7 +76,7 @@ core.quit()
 
 ### Python 3.5.x or 3.6.x
 
-Currently tested on Python 3.6.9 and Python 3.5.7
+Currently tested on Python 3.5.7 and Python 3.6.9
 
 ### Dependency
 
