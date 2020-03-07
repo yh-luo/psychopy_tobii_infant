@@ -30,7 +30,7 @@ class TestCoord:
         ]
         psy_points = self.psy_points["norm"]
         for trans_point, psy_point in zip(trans_points, psy_points):
-            trans_point = tuple(round(pos, 2) for pos in trans_point)
+            trans_point = tuple(round(pos, 4) for pos in trans_point)
             assert trans_point == psy_point
 
     def test_get_psychopy_pos_height(self):
@@ -40,7 +40,7 @@ class TestCoord:
         ]
         psy_points = self.psy_points["height"]
         for trans_point, psy_point in zip(trans_points, psy_points):
-            trans_point = tuple(round(pos, 2) for pos in trans_point)
+            trans_point = tuple(round(pos, 4) for pos in trans_point)
             assert trans_point == psy_point
 
     def test_get_tobii_pos_norm(self):
@@ -50,7 +50,7 @@ class TestCoord:
             for point in psy_points
         ]
         for trans_point, tobii_point in zip(trans_points, self.tobii_points):
-            trans_point = tuple(round(pos, 2) for pos in trans_point)
+            trans_point = tuple(round(pos, 4) for pos in trans_point)
             assert trans_point == tobii_point
 
     def test_get_tobii_pos_height(self):
@@ -60,7 +60,7 @@ class TestCoord:
             for point in psy_points
         ]
         for trans_point, tobii_point in zip(trans_points, self.tobii_points):
-            trans_point = tuple(round(pos, 2) for pos in trans_point)
+            trans_point = tuple(round(pos, 4) for pos in trans_point)
             assert trans_point == tobii_point
 
     def test_pix2tobii(self):
@@ -69,7 +69,7 @@ class TestCoord:
             self.controller._pix2tobii(point) for point in psy_points
         ]
         for trans_point, tobii_point in zip(trans_points, self.tobii_points):
-            trans_point = tuple(round(pos, 2) for pos in trans_point)
+            trans_point = tuple(round(pos, 4) for pos in trans_point)
             assert trans_point == tobii_point
 
     def test_tobii2pix(self):

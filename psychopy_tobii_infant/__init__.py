@@ -147,8 +147,7 @@ class tobii_controller:
             return ((p[0] - 0.5) * (self.win.size[0] / self.win.size[1]),
                     -p[1] + 0.5)
         elif units in ["pix", "cm", "deg", "degFlat", "degFlatPos"]:
-            p_pix = (round((p[0] - 0.5) * self.win.size[0]),
-                     round((-p[1] + 0.5) * self.win.size[1]))
+            p_pix = self._tobii2pix(p)
             if units == "pix":
                 return p_pix
             elif units == "cm":
@@ -216,8 +215,8 @@ class tobii_controller:
 
     def _tobii2pix(self, p):
         """Convert Tobii ADCS to PsychoPy pixel coordinates.
-            # FIXME:
-            Called by _get_tobii_pos.
+
+            Called by _get_psychopy_pos.
 
         Args:
             p: Gaze position (x, y) in Tobii ADCS.
