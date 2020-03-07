@@ -128,43 +128,41 @@ class tobii_controller:
         """
         self.gaze_data.append(gaze_data)
 
-    def _get_psychopy_pos(self, p):
+    def _get_psychopy_pos(self, p, units=None):
         """Convert Tobii ADCS coordinates to PsychoPy coordinates.
 
         Args:
             p: Gaze position (x, y) in Tobii ADCS.
+            units: The PsychoPy coordinate system to use.
 
         Returns:
             Gaze position in PsychoPy coordinate systems. For example: (0,0).
         """
 
-        if self.win.units == "norm":
+        if units is None:
+            units = self.win.units
+
+        if units == "norm":
             return (2 * p[0] - 1, -2 * p[1] + 1)
-        elif self.win.units == "height":
+        elif units == "height":
             return ((p[0] - 0.5) * (self.win.size[0] / self.win.size[1]),
                     -p[1] + 0.5)
-        elif self.win.units in ["pix", "cm", "deg", "degFlat", "degFlatPos"]:
-            p_pix = ((p[0] - 0.5) * self.win.size[0],
-                     (-p[1] + 0.5) * self.win.size[1])
-            if self.win.units == "pix":
+        elif units in ["pix", "cm", "deg", "degFlat", "degFlatPos"]:
+            p_pix = (round((p[0] - 0.5) * self.win.size[0]),
+                     round((-p[1] + 0.5) * self.win.size[1]))
+            if units == "pix":
                 return p_pix
-            elif self.win.units == "cm":
-                return (
-                    pix2cm(p_pix[0], self.win.monitor),
-                    pix2cm(p_pix[1], self.win.monitor),
-                )
-            elif self.win.units == "deg":
-                return (
-                    pix2deg(p_pix[0], self.win.monitor),
-                    pix2deg(p_pix[1], self.win.monitor),
-                )
+            elif units == "cm":
+                return tuple(pix2cm(pos, self.win.monitor) for pos in p_pix)
+            elif units == "deg":
+                tuple(pix2deg(pos, self.win.monitor) for pos in p_pix)
             else:
-                return pix2deg(np.array(p_pix),
-                               self.win.monitor,
-                               correctFlat=True)
+                return tuple(
+                    pix2deg(np.array(p_pix),
+                            self.win.monitor,
+                            correctFlat=True))
         else:
-            raise ValueError("unit ({}) is not supported.".format(
-                self.win.units))
+            raise ValueError("unit ({}) is not supported.".format(units))
 
     def _get_tobii_pos(self, p):
         """Convert PsychoPy coordinates to Tobii ADCS coordinates.
@@ -177,7 +175,7 @@ class tobii_controller:
         """
 
         if self.win.units == "norm":
-            return ((p[0] + 1) / 2, (p[1] - 1) / -2)
+            return (p[0] / 2 + 0.5, p[1] / -2 + 0.5)
         elif self.win.units == "height":
             return (p[0] * (self.win.size[1] / self.win.size[0]) + 0.5,
                     -p[1] + 0.5)
@@ -196,7 +194,7 @@ class tobii_controller:
                 p_pix = deg2pix(np.array(p),
                                 self.win.monitor,
                                 correctFlat=True)
-
+            p_pix = tuple(round(pos) for pos in p_pix)
             return self._pix2tobii(p_pix)
         else:
             raise ValueError("unit ({}) is not supported".format(
@@ -238,28 +236,23 @@ class tobii_controller:
                     -p[1] + 0.5)
         elif units in ["pix", "cm", "deg", "degFlat", "degFlatPos"]:
             p_pix = (
-                (-2 * p[0] + 1) * self.win.size[0] / 2,
-                (-2 * p[1] + 1) * self.win.size[1] / 2,
+                round((-p[0] + 0.5) * self.win.size[0]),
+                round((-p[1] + 0.5) * self.win.size[1]),
             )
             if units == "pix":
-                return tuple([round(p) for p in p_pix])
+                return p_pix
             elif units == "cm":
-                return (
-                    pix2cm(p_pix[0], self.win.monitor),
-                    pix2cm(p_pix[1], self.win.monitor),
-                )
+                return tuple(pix2cm(pos, self.win.monitor) for pos in p_pix)
             elif units == "deg":
-                return (
-                    pix2deg(p_pix[0], self.win.monitor),
-                    pix2deg(p_pix[1], self.win.monitor),
-                )
+
+                return tuple(pix2deg(pos, self.win.monitor) for pos in p_pix)
             else:
-                return pix2deg(np.array(p_pix),
-                               self.win.monitor,
-                               correctFlat=True)
+                return tuple(
+                    pix2deg(np.array(p_pix),
+                            self.win.monitor,
+                            correctFlat=True))
         else:
-            raise ValueError("unit ({}) is not supported.".format(
-                self.win.units))
+            raise ValueError("unit ({}) is not supported.".format(units))
 
     def _flush_to_file(self):
         """Write data to disk.
