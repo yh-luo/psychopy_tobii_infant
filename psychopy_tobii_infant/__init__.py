@@ -138,7 +138,6 @@ class tobii_controller:
         Returns:
             Gaze position in PsychoPy coordinate systems. For example: (0,0).
         """
-
         if units is None:
             units = self.win.units
 
@@ -164,41 +163,43 @@ class tobii_controller:
         else:
             raise ValueError("unit ({}) is not supported.".format(units))
 
-    def _get_tobii_pos(self, p):
+    def _get_tobii_pos(self, p, units=None):
         """Convert PsychoPy coordinates to Tobii ADCS coordinates.
 
         Args:
             p: Gaze position (x, y) in PsychoPy coordinate systems.
+            units: The PsychoPy coordinate system of p.
 
         Returns:
             Gaze position in Tobii ADCS. For example: (0,0).
         """
+        if units is None:
+            units = self.win.units
 
-        if self.win.units == "norm":
+        if units == "norm":
             return (p[0] / 2 + 0.5, p[1] / -2 + 0.5)
-        elif self.win.units == "height":
+        elif units == "height":
             return (p[0] * (self.win.size[1] / self.win.size[0]) + 0.5,
                     -p[1] + 0.5)
-        elif self.win.units == "pix":
+        elif units == "pix":
             return self._pix2tobii(p)
-        elif self.win.units in ["cm", "deg", "degFlat", "degFlatPos"]:
-            if self.win.units == "cm":
+        elif units in ["cm", "deg", "degFlat", "degFlatPos"]:
+            if units == "cm":
                 p_pix = (cm2pix(p[0], self.win.monitor),
                          cm2pix(p[1], self.win.monitor))
-            elif self.win.units == "deg":
+            elif units == "deg":
                 p_pix = (
                     deg2pix(p[0], self.win.monitor),
                     deg2pix(p[1], self.win.monitor),
                 )
-            elif self.win.units in ["degFlat", "degFlatPos"]:
+            elif units in ["degFlat", "degFlatPos"]:
                 p_pix = deg2pix(np.array(p),
                                 self.win.monitor,
                                 correctFlat=True)
             p_pix = tuple(round(pos) for pos in p_pix)
             return self._pix2tobii(p_pix)
         else:
-            raise ValueError("unit ({}) is not supported".format(
-                self.win.units))
+            raise ValueError("unit ({}) is not supported".format(units))
 
     def _pix2tobii(self, p):
         """Convert PsychoPy pixel coordinates to Tobii ADCS.
@@ -212,6 +213,20 @@ class tobii_controller:
             Gaze position in Tobii ADCS. For example: (0,0).
         """
         return (p[0] / self.win.size[0] + 0.5, -p[1] / self.win.size[1] + 0.5)
+
+    def _tobii2pix(self, p):
+        """Convert Tobii ADCS to PsychoPy pixel coordinates.
+            # FIXME:
+            Called by _get_tobii_pos.
+
+        Args:
+            p: Gaze position (x, y) in Tobii ADCS.
+
+        Returns:
+            Gaze position in PsychoPy pixels coordinate system. For example: (0,0).
+        """
+        return (round(self.win.size[0] * (p[0] - 0.5)),
+                round(-self.win.size[1] * (p[1] - 0.5)))
 
     def _get_psychopy_pos_from_trackbox(self, p, units=None):
         """Convert Tobii TBCS coordinates to PsychoPy coordinates.
