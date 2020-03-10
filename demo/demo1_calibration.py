@@ -1,9 +1,7 @@
-#!/usr/bin/env python
-import numpy as np
 import os
 
-from psychopy import visual, event, core, prefs
-prefs.general['audioLib'] = ['sounddevice']
+import numpy as np
+from psychopy import core, event, visual
 
 from psychopy_tobii_infant import infant_tobii_controller
 
@@ -25,11 +23,10 @@ CALISTIMS = [
 ###############################################################################
 # Demo
 # create a Window to control the monitor
-win = visual.Window(
-    size=[1280, 1024],
-    units='pix',
-    fullscr=True,
-    allowGUI=False)
+win = visual.Window(size=[1280, 1024],
+                    units='pix',
+                    fullscr=True,
+                    allowGUI=False)
 
 # initialize tobii_controller to communicate with the eyetracker
 controller = infant_tobii_controller(win)
@@ -83,8 +80,8 @@ while waitkey:
     elif len(keys) >= 1:
         # Record the pressed key to the data file.
         controller.record_event(keys[0])
-        print('pressed {k} at {t} ms'.format(
-            k=keys[0], t=timer.getTime() * 1000))
+        print('pressed {k} at {t} ms'.format(k=keys[0],
+                                             t=timer.getTime() * 1000))
 
     marker.draw()
     win.flip()
