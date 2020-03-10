@@ -344,9 +344,9 @@ class tobii_controller:
                 or record["right_pupil_validity"]):  # not detected
             pup = np.nan
         elif not record["left_pupil_validity"]:
-            pup = record["left_pupil_diameter"]  # use right pupil
+            pup = record["right_pupil_diameter"]  # use right pupil
         elif not record["right_pupil_validity"]:
-            pup = record["right_pupil_diameter"]  # use left pupil
+            pup = record["left_pupil_diameter"]  # use left pupil
         else:
             pup = (record["left_pupil_diameter"] +
                    record["right_pupil_diameter"]) / 2.0
@@ -538,9 +538,9 @@ class tobii_controller:
                     or gaze_data["right_pupil_validity"]):  # not detected
                 pup = np.nan
             elif not gaze_data["left_pupil_validity"]:
-                pup = gaze_data["left_pupil_diameter"]  # use right pupil
+                pup = gaze_data["right_pupil_diameter"]  # use right pupil
             elif not gaze_data["right_pupil_validity"]:
-                pup = gaze_data["right_pupil_diameter"]  # use left pupil
+                pup = gaze_data["left_pupil_diameter"]  # use left pupil
             else:
                 pup = ((gaze_data["left_pupil_diameter"] +
                         gaze_data["right_pupil_diameter"]) / 2.0)
