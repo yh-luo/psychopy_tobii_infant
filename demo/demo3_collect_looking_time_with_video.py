@@ -1,8 +1,6 @@
-#!/usr/bin/env python
 import os
 
-from psychopy import visual, event, core, prefs
-prefs.general['audioLib'] = ['sounddevice']
+from psychopy import core, event, visual
 
 from psychopy_tobii_infant import infant_tobii_controller
 

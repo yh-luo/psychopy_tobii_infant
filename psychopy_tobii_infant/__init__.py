@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import os
 
 import numpy as np
@@ -8,7 +8,7 @@ from psychopy import core, event, visual
 from psychopy.tools.monitorunittools import (cm2pix, deg2cm, deg2pix, pix2cm,
                                              pix2deg)
 
-__version__ = "0.6.0"
+__version__ = "0.6.1"
 
 
 class tobii_controller:
@@ -42,7 +42,6 @@ class tobii_controller:
         update_calibration: the presentation of calibration target.
             Default is auto calibration.
     """
-
     _default_numkey_dict = {
         "0": -1,
         "num_0": -1,
@@ -91,7 +90,6 @@ class tobii_controller:
     update_calibration = None
 
     def __init__(self, win, id=0, filename="gaze_TOBII_output.tsv"):
-
         self.eyetracker_id = id
         self.win = win
         self.filename = filename
@@ -128,79 +126,77 @@ class tobii_controller:
         """
         self.gaze_data.append(gaze_data)
 
-    def _get_psychopy_pos(self, p):
+    def _get_psychopy_pos(self, p, units=None):
         """Convert Tobii ADCS coordinates to PsychoPy coordinates.
 
         Args:
             p: Gaze position (x, y) in Tobii ADCS.
+            units: The PsychoPy coordinate system to use.
 
         Returns:
             Gaze position in PsychoPy coordinate systems. For example: (0,0).
         """
+        if units is None:
+            units = self.win.units
 
-        if self.win.units == "norm":
+        if units == "norm":
             return (2 * p[0] - 1, -2 * p[1] + 1)
-        elif self.win.units == "height":
+        elif units == "height":
             return ((p[0] - 0.5) * (self.win.size[0] / self.win.size[1]),
                     -p[1] + 0.5)
-        elif self.win.units in ["pix", "cm", "deg", "degFlat", "degFlatPos"]:
-            p_pix = ((p[0] - 0.5) * self.win.size[0],
-                     (-p[1] + 0.5) * self.win.size[1])
-            if self.win.units == "pix":
+        elif units in ["pix", "cm", "deg", "degFlat", "degFlatPos"]:
+            p_pix = self._tobii2pix(p)
+            if units == "pix":
                 return p_pix
-            elif self.win.units == "cm":
-                return (
-                    pix2cm(p_pix[0], self.win.monitor),
-                    pix2cm(p_pix[1], self.win.monitor),
-                )
-            elif self.win.units == "deg":
-                return (
-                    pix2deg(p_pix[0], self.win.monitor),
-                    pix2deg(p_pix[1], self.win.monitor),
-                )
+            elif units == "cm":
+                return tuple(pix2cm(pos, self.win.monitor) for pos in p_pix)
+            elif units == "deg":
+                tuple(pix2deg(pos, self.win.monitor) for pos in p_pix)
             else:
-                return pix2deg(np.array(p_pix),
-                               self.win.monitor,
-                               correctFlat=True)
+                return tuple(
+                    pix2deg(np.array(p_pix),
+                            self.win.monitor,
+                            correctFlat=True))
         else:
-            raise ValueError("unit ({}) is not supported.".format(
-                self.win.units))
+            raise ValueError("unit ({}) is not supported.".format(units))
 
-    def _get_tobii_pos(self, p):
+    def _get_tobii_pos(self, p, units=None):
         """Convert PsychoPy coordinates to Tobii ADCS coordinates.
 
         Args:
             p: Gaze position (x, y) in PsychoPy coordinate systems.
+            units: The PsychoPy coordinate system of p.
 
         Returns:
             Gaze position in Tobii ADCS. For example: (0,0).
         """
+        if units is None:
+            units = self.win.units
 
-        if self.win.units == "norm":
-            return ((p[0] + 1) / 2, (p[1] - 1) / -2)
-        elif self.win.units == "height":
+        if units == "norm":
+            return (p[0] / 2 + 0.5, p[1] / -2 + 0.5)
+        elif units == "height":
             return (p[0] * (self.win.size[1] / self.win.size[0]) + 0.5,
                     -p[1] + 0.5)
-        elif self.win.units == "pix":
+        elif units == "pix":
             return self._pix2tobii(p)
-        elif self.win.units in ["cm", "deg", "degFlat", "degFlatPos"]:
-            if self.win.units == "cm":
+        elif units in ["cm", "deg", "degFlat", "degFlatPos"]:
+            if units == "cm":
                 p_pix = (cm2pix(p[0], self.win.monitor),
                          cm2pix(p[1], self.win.monitor))
-            elif self.win.units == "deg":
+            elif units == "deg":
                 p_pix = (
                     deg2pix(p[0], self.win.monitor),
                     deg2pix(p[1], self.win.monitor),
                 )
-            elif self.win.units in ["degFlat", "degFlatPos"]:
+            elif units in ["degFlat", "degFlatPos"]:
                 p_pix = deg2pix(np.array(p),
                                 self.win.monitor,
                                 correctFlat=True)
-
+            p_pix = tuple(round(pos) for pos in p_pix)
             return self._pix2tobii(p_pix)
         else:
-            raise ValueError("unit ({}) is not supported".format(
-                self.win.units))
+            raise ValueError("unit ({}) is not supported".format(units))
 
     def _pix2tobii(self, p):
         """Convert PsychoPy pixel coordinates to Tobii ADCS.
@@ -215,6 +211,20 @@ class tobii_controller:
         """
         return (p[0] / self.win.size[0] + 0.5, -p[1] / self.win.size[1] + 0.5)
 
+    def _tobii2pix(self, p):
+        """Convert Tobii ADCS to PsychoPy pixel coordinates.
+
+            Called by _get_psychopy_pos.
+
+        Args:
+            p: Gaze position (x, y) in Tobii ADCS.
+
+        Returns:
+            Gaze position in PsychoPy pixels coordinate system. For example: (0,0).
+        """
+        return (round(self.win.size[0] * (p[0] - 0.5)),
+                round(-self.win.size[1] * (p[1] - 0.5)))
+
     def _get_psychopy_pos_from_trackbox(self, p, units=None):
         """Convert Tobii TBCS coordinates to PsychoPy coordinates.
 
@@ -227,7 +237,6 @@ class tobii_controller:
         Returns:
             Gaze position in PsychoPy coordinate systems. For example: (0,0).
         """
-
         if units is None:
             units = self.win.units
 
@@ -238,28 +247,22 @@ class tobii_controller:
                     -p[1] + 0.5)
         elif units in ["pix", "cm", "deg", "degFlat", "degFlatPos"]:
             p_pix = (
-                (-2 * p[0] + 1) * self.win.size[0] / 2,
-                (-2 * p[1] + 1) * self.win.size[1] / 2,
+                round((-p[0] + 0.5) * self.win.size[0]),
+                round((-p[1] + 0.5) * self.win.size[1]),
             )
             if units == "pix":
-                return tuple([round(p) for p in p_pix])
+                return p_pix
             elif units == "cm":
-                return (
-                    pix2cm(p_pix[0], self.win.monitor),
-                    pix2cm(p_pix[1], self.win.monitor),
-                )
+                return tuple(pix2cm(pos, self.win.monitor) for pos in p_pix)
             elif units == "deg":
-                return (
-                    pix2deg(p_pix[0], self.win.monitor),
-                    pix2deg(p_pix[1], self.win.monitor),
-                )
+                return tuple(pix2deg(pos, self.win.monitor) for pos in p_pix)
             else:
-                return pix2deg(np.array(p_pix),
-                               self.win.monitor,
-                               correctFlat=True)
+                return tuple(
+                    pix2deg(np.array(p_pix),
+                            self.win.monitor,
+                            correctFlat=True))
         else:
-            raise ValueError("unit ({}) is not supported.".format(
-                self.win.units))
+            raise ValueError("unit ({}) is not supported.".format(units))
 
     def _flush_to_file(self):
         """Write data to disk.
@@ -273,8 +276,72 @@ class tobii_controller:
         self.datafile.flush()  # internal buffer to RAM
         os.fsync(self.datafile.fileno())  # RAM file cache to disk
 
-    def _write_header(self):
-        """Write the header to the data file.
+    def _write_record(self, record):
+        """Write the Tobii output to the data file.
+
+        Args:
+            record: reformed gaze data
+
+        Returns:
+            None
+        """
+        self.datafile.write(
+            "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}\t{11}\t{12}\t{13}"
+            .format(*record))
+
+    def _convert_tobii_record(self, record):
+        """Convert tobii coordinates to output style.
+
+        Args:
+            record: raw gaze data
+
+        Returns:
+            reformed gaze data
+        """
+        lp = self._get_psychopy_pos(record["left_gaze_point_on_display_area"])
+        rp = self._get_psychopy_pos(record["right_gaze_point_on_display_area"])
+
+        # gaze
+        if not (record["left_gaze_point_validity"]
+                or record["right_gaze_point_validity"]):  # not detected
+            ave = (np.nan, np.nan)
+        elif not record["left_gaze_point_validity"]:
+            ave = rp  # use right eye
+        elif not record["right_gaze_point_validity"]:
+            ave = lp  # use left eye
+        else:
+            ave = ((lp[0] + rp[0]) / 2.0, (lp[1] + rp[1]) / 2.0)
+
+        # pupil
+        if not (record["left_pupil_validity"]
+                or record["right_pupil_validity"]):  # not detected
+            pup = np.nan
+        elif not record["left_pupil_validity"]:
+            pup = record["right_pupil_diameter"]  # use right pupil
+        elif not record["right_pupil_validity"]:
+            pup = record["left_pupil_diameter"]  # use left pupil
+        else:
+            pup = (record["left_pupil_diameter"] +
+                   record["right_pupil_diameter"]) / 2.0
+
+        return [
+            round((record["system_time_stamp"] - self.t0) / 1000.0, 1),
+            round(lp[0], 4),
+            round(lp[1], 4),
+            int(record["left_gaze_point_validity"]),
+            round(rp[0], 4),
+            round(rp[1], 4),
+            int(record["right_gaze_point_validity"]),
+            round(ave[0], 4),
+            round(ave[1], 4),
+            round(record["left_pupil_diameter"], 4),
+            int(record["left_pupil_validity"]),
+            round(record["right_pupil_diameter"], 4),
+            int(record["right_pupil_validity"]),
+            round(pup, 4)] # yapf: disable
+
+    def _flush_data(self):
+        """Wrapper for writing the header and data to the data file.
 
         Args:
             None
@@ -282,7 +349,18 @@ class tobii_controller:
         Returns:
             None
         """
+        if not self.gaze_data:
+            # do nothing when there's no data
+            print("No data were collected. Do nothing now...")
+            return
 
+        if self.recording:
+            # do nothing while recording
+            print("Still recording. Do nothing now...")
+            return
+
+        self.datafile.write("Session Start\n")
+        # write header
         self.datafile.write("\t".join([
             "TimeStamp",
             "GazePointXLeft",
@@ -297,95 +375,9 @@ class tobii_controller:
             "PupilValidityLeft",
             "PupilSizeRight",
             "PupilValidityRight",
-        ]) + "\n")
+            "PupilSize"]) + "\n") # yapf: disable
         self._flush_to_file()
 
-    def _write_record(self, record):
-        """Write the Tobii output to the data file.
-
-        Args:
-            record: reformed gaze data
-
-        Returns:
-            None
-        """
-
-        format_string = (
-            "%.1f\t"  # TimeStamp
-            "%.4f\t"  # GazePointXLeft
-            "%.4f\t"  # GazePointYLeft
-            "%d\t"    # ValidityLeft
-            "%.4f\t"  # GazePointXRight
-            "%.4f\t"  # GazePointYRight
-            "%d\t"    # ValidityRight
-            "%.4f\t"  # GazePointX
-            "%.4f\t"  # GazePointY
-            "%.4f\t"  # PupilSizeLeft
-            "%d\t"    # PupilValidityLeft
-            "%.4f\t"  # PupilSizeRight
-            "%d\t"    # PupilValidityRight
-        )  # yapf: disable
-        # write data
-        self.datafile.write(format_string % record)
-
-    def _convert_tobii_record(self, record):
-        """Convert tobii coordinates to output style.
-
-        Args:
-            record: raw gaze data
-
-        Returns:
-            reformed gaze data
-        """
-
-        lp = self._get_psychopy_pos(record["left_gaze_point_on_display_area"])
-        rp = self._get_psychopy_pos(record["right_gaze_point_on_display_area"])
-
-        if not (record["left_gaze_point_validity"]
-                or record["right_gaze_point_validity"]):  # not detected
-            ave = (np.nan, np.nan)
-        elif not record["left_gaze_point_validity"]:
-            ave = rp  # use right eye
-        elif not record["right_gaze_point_validity"]:
-            ave = lp  # use left eye
-        else:
-            ave = ((lp[0] + rp[0]) / 2.0, (lp[1] + rp[1]) / 2.0)
-
-        return (
-            (record["system_time_stamp"] - self.t0) / 1000.0,
-            lp[0],
-            lp[1],
-            record["left_gaze_point_validity"],
-            rp[0],
-            rp[1],
-            record["right_gaze_point_validity"],
-            ave[0],
-            ave[1],
-            record["left_pupil_diameter"],
-            record["left_pupil_validity"],
-            record["right_pupil_diameter"],
-            record["right_pupil_validity"],
-        )
-
-    def _flush_data(self):
-        """Wrapper for writing the header and data to the data file.
-
-        Args:
-            None
-
-        Returns:
-            None
-        """
-        if not self.gaze_data:
-            # do nothing when there's no data
-            return
-
-        if self.recording:
-            # do nothing while recording
-            return
-
-        self.datafile.write("Session Start\n")
-        self._write_header()
         for gaze_data in self.gaze_data:
             output = self._convert_tobii_record(gaze_data)
             self._write_record(output)
@@ -393,7 +385,7 @@ class tobii_controller:
         else:
             # write the events in the end of data
             for event in self.event_data:
-                self.datafile.write("%.1f\t%s\n" % (event[0], event[1]))
+                self.datafile.write("{0}\t{1}\n".format(*event))
         self.datafile.write("Session End\n")
         self._flush_to_file()
 
@@ -418,14 +410,12 @@ class tobii_controller:
             None
         """
         self.datafile = open(self.filename, "w")
-        self.datafile.write("Recording date:\t" +
-                            datetime.datetime.now().strftime("%Y/%m/%d") +
-                            "\n")
-        self.datafile.write("Recording time:\t" +
-                            datetime.datetime.now().strftime("%H:%M:%S") +
-                            "\n")
-        self.datafile.write("Recording resolution:\t%d x %d\n" %
-                            tuple(self.win.size))
+        self.datafile.write("Recording date:\t{}\n".format(
+            datetime.now().strftime("%Y/%m/%d")))
+        self.datafile.write("Recording time:\t{}\n".format(
+            datetime.now().strftime("%H:%M:%S")))
+        self.datafile.write(
+            "Recording resolution:\t{} x {}\n".format(*self.win.size))
         self.datafile.write("PsychoPy units:\t{}\n".format(self.win.units))
         self._flush_to_file()
 
@@ -452,8 +442,8 @@ class tobii_controller:
                                      self._on_gaze_data,
                                      as_dictionary=True)
         core.wait(0.5)  # wait a bit for the eye tracker to get ready
-        self.t0 = tr.get_system_time_stamp()
         self.recording = True
+        self.t0 = tr.get_system_time_stamp()
 
     def stop_recording(self):
         """Stop recording.
@@ -469,7 +459,7 @@ class tobii_controller:
                                              self._on_gaze_data)
             self.recording = False
             # time correction for event datas
-            self.event_data = [((x[0] - self.t0) / 1000.0, x[1])
+            self.event_data = [(round((x[0] - self.t0) / 1000.0, 1), x[1])
                                for x in self.event_data]
             self._flush_data()
         else:
@@ -485,30 +475,25 @@ class tobii_controller:
             A tuple of the newest gaze position in PsychoPy coordinate system.
             For example: (0, 0).
         """
-
         if not self.gaze_data:
             return (np.nan, np.nan)
         else:
-            lxy = (np.nan, np.nan)
-            rxy = (np.nan, np.nan)
             gaze_data = self.gaze_data[-1]
-            if gaze_data["left_gaze_point_validity"]:
-                lxy = self._get_psychopy_pos(
-                    gaze_data["left_gaze_point_on_display_area"])
-            if gaze_data["right_gaze_point_validity"]:
-                rxy = self._get_psychopy_pos(
-                    gaze_data["right_gaze_point_on_display_area"])
-
-            if (np.nan not in lxy) and (np.nan not in rxy):
-                ave = ((lxy[0] + rxy[0]) / 2, (lxy[1] + rxy[1]) / 2)
-            elif np.nan not in lxy:
-                ave = lxy
-            elif np.nan not in rxy:
-                ave = rxy
+            lp = self._get_psychopy_pos(
+                gaze_data["left_gaze_point_on_display_area"])
+            rp = self._get_psychopy_pos(
+                gaze_data["right_gaze_point_on_display_area"])
+            if not (gaze_data["left_gaze_point_validity"]
+                    or gaze_data["right_gaze_point_validity"]):  # not detected
+                return (np.nan, np.nan)
+            elif not gaze_data["left_gaze_point_validity"]:
+                ave = rp  # use right eye
+            elif not gaze_data["right_gaze_point_validity"]:
+                ave = lp  # use left eye
             else:
-                ave = (np.nan, np.nan)
+                ave = ((lp[0] + rp[0]) / 2.0, (lp[1] + rp[1]) / 2.0)
 
-            return ave
+            return tuple(round(pos, 4) for pos in ave)
 
     def get_current_pupil_size(self):
         """Get the newest pupil size.
@@ -520,19 +505,22 @@ class tobii_controller:
             A tuple of the newest pupil diameter reported by the eye-tracker.
             For example: (4, 4).
         """
-
         if not self.gaze_data:
-            return (np.nan, np.nan)
+            return np.nan
         else:
-            lp = np.nan
-            rp = np.nan
             gaze_data = self.gaze_data[-1]
-            if gaze_data["left_pupil_validity"]:
-                lp = gaze_data["left_pupil_diameter"]
-            if gaze_data["right_pupil_validity"]:
-                rp = gaze_data["right_pupil_diameter"]
+            if not (gaze_data["left_pupil_validity"]
+                    or gaze_data["right_pupil_validity"]):  # not detected
+                pup = np.nan
+            elif not gaze_data["left_pupil_validity"]:
+                pup = gaze_data["right_pupil_diameter"]  # use right pupil
+            elif not gaze_data["right_pupil_validity"]:
+                pup = gaze_data["left_pupil_diameter"]  # use left pupil
+            else:
+                pup = ((gaze_data["left_pupil_diameter"] +
+                        gaze_data["right_pupil_diameter"]) / 2.0)
 
-            return (lp, rp)
+            return round(pup, 4)
 
     def record_event(self, event):
         """Record events with timestamp.
@@ -788,7 +776,6 @@ class tobii_controller:
         Returns:
             None
         """
-
         bgrect = visual.Rect(
             self.win,
             pos=(0, 0.4),
@@ -843,7 +830,7 @@ class tobii_controller:
         zpos = visual.Rect(
             self.win,
             pos=(0, 0.28),
-            width=0.008,
+            width=0.005,
             height=0.03,
             lineColor="black",
             fillColor="black",
@@ -873,17 +860,17 @@ class tobii_controller:
             if lv:
                 lx, ly = self._get_psychopy_pos_from_trackbox([lx, ly],
                                                               units="height")
-                leye.setPos((lx * 0.25, ly * 0.2 + 0.4))
+                leye.setPos((round(lx * 0.25, 4), round(ly * 0.2 + 0.4, 4)))
                 leye.draw()
             if rv:
                 rx, ry = self._get_psychopy_pos_from_trackbox([rx, ry],
                                                               units="height")
-                reye.setPos((rx * 0.25, ry * 0.2 + 0.4))
+                reye.setPos((round(rx * 0.25, 4), round(ry * 0.2 + 0.4, 4)))
                 reye.draw()
             if lv or rv:
                 zpos.setPos((
-                    (((lz * int(lv) + rz * int(rv)) /
-                      (int(lv) + int(rv))) - 0.5) * 0.125,
+                    round((((lz * int(lv) + rz * int(rv)) /
+                            (int(lv) + int(rv))) - 0.5) * 0.125, 4),
                     0.28,
                 ))
                 zpos.draw()
@@ -934,7 +921,6 @@ class infant_tobii_controller(tobii_controller):
         numkey_dict: keys used for calibration. Default is the number pad.
     """
     def __init__(self, win, id=0, filename="gaze_TOBII_output.tsv"):
-
         super().__init__(win, id, filename)
         self.update_calibration = self._update_calibration_infant
         # slower for infants
@@ -958,7 +944,6 @@ class infant_tobii_controller(tobii_controller):
         Returns:
             None
         """
-
         # start calibration
         event.clearEvents()
         current_point_index = -1
@@ -1166,7 +1151,6 @@ class infant_tobii_controller(tobii_controller):
         Returns:
             lt (float): The looking time in the trial.
         """
-
         trial_timer = core.Clock()
         absence_timer = core.Clock()
         away_time = []

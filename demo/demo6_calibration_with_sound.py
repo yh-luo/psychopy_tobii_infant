@@ -1,10 +1,7 @@
-#!/usr/bin/env python
-import numpy as np
 import os
 
-from psychopy import visual, event, core, prefs
-prefs.general['audioLib'] = ['sounddevice']
-from psychopy import sound
+import numpy as np
+from psychopy import core, event, sound, visual
 
 from psychopy_tobii_infant import infant_tobii_controller
 
@@ -27,11 +24,10 @@ SOUNDSTIM = 'infant/wawa.wav'
 ###############################################################################
 # Demo
 # create a Window to control the monitor
-win = visual.Window(
-    size=[1280, 1024],
-    units='pix',
-    fullscr=True,
-    allowGUI=False)
+win = visual.Window(size=[1280, 1024],
+                    units='pix',
+                    fullscr=True,
+                    allowGUI=False)
 
 # initialize tobii_controller to communicate with the eyetracker
 controller = infant_tobii_controller(win)
@@ -58,7 +54,9 @@ grabber.stop()
 # - Press return (Enter) to finish the calibration and show the result.
 # - Choose the points to recalibrate with 1~9.
 # - Press decision_key (default is space) to accept the calibration or recalibrate.
-success = controller.run_calibration(CALIPOINTS, CALISTIMS, audio=calibration_sound) # use audio parameter to define the sound object to use
+success = controller.run_calibration(
+    CALIPOINTS, CALISTIMS, audio=calibration_sound
+)  # use audio parameter to define the sound object to use
 if not success:
     core.quit()
 
@@ -88,8 +86,8 @@ while waitkey:
     elif len(keys) >= 1:
         # Record the pressed key to the data file.
         controller.record_event(keys[0])
-        print('pressed {k} at {t} ms'.format(
-            k=keys[0], t=timer.getTime() * 1000))
+        print('pressed {k} at {t} ms'.format(k=keys[0],
+                                             t=timer.getTime() * 1000))
 
     marker.draw()
     win.flip()

@@ -1,8 +1,7 @@
-#!/usr/bin/env python
-import numpy as np
 import os
 
-from psychopy import visual, event, core
+import numpy as np
+from psychopy import core, event, visual
 
 from psychopy_tobii_infant import tobii_controller
 
@@ -18,11 +17,10 @@ CALIPOINTS = [(x * DISPSIZE[0], y * DISPSIZE[1]) for x, y in CALINORMP]
 ###############################################################################
 # Demo
 # create a Window to control the monitor
-win = visual.Window(
-    size=[1280, 1024],
-    units='pix',
-    fullscr=True,
-    allowGUI=False)
+win = visual.Window(size=[1280, 1024],
+                    units='pix',
+                    fullscr=True,
+                    allowGUI=False)
 
 # initialize tobii_controller to communicate with the eyetracker
 controller = tobii_controller(win)
@@ -33,7 +31,8 @@ controller.calibration_target_min = 0.1
 controller.shrink_speed = 2
 # change the keys used for 5-points calibration
 controller.numkey_dict = {
-    "q": -1, # -1 for select/deselect all calibration points to retry in calibration results
+    "q":
+    -1,  # -1 for select/deselect all calibration points to retry in calibration results
     "w": 0,
     "e": 1,
     "r": 2,
@@ -79,8 +78,8 @@ while waitkey:
     elif len(keys) >= 1:
         # Record the pressed key to the data file.
         controller.record_event(keys[0])
-        print('pressed {k} at {t} ms'.format(
-            k=keys[0], t=timer.getTime() * 1000))
+        print('pressed {k} at {t} ms'.format(k=keys[0],
+                                             t=timer.getTime() * 1000))
 
     marker.draw()
     win.flip()
@@ -109,8 +108,8 @@ while waitkey:
     elif len(keys) >= 1:
         # Record the pressed key to the data file.
         controller.record_event(keys[0])
-        print('pressed {k} at {t} ms'.format(
-            k=keys[0], t=timer.getTime() * 1000))
+        print('pressed {k} at {t} ms'.format(k=keys[0],
+                                             t=timer.getTime() * 1000))
 
     marker.draw()
     win.flip()

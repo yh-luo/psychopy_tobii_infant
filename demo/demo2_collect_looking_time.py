@@ -1,9 +1,7 @@
-#!/usr/bin/env python
-import numpy as np
 import os
 
-from psychopy import visual, event, core, prefs
-prefs.general['audioLib'] = ['sounddevice']
+import numpy as np
+from psychopy import core, event, visual
 
 from psychopy_tobii_infant import infant_tobii_controller
 
@@ -24,21 +22,22 @@ CALISTIMS = [
 ###############################################################################
 # Demo
 # create a Window to control the monitor
-win = visual.Window(
-    size=[1280, 1024],
-    units='pix',
-    fullscr=True,
-    allowGUI=False)
+win = visual.Window(size=[1280, 1024],
+                    units='pix',
+                    fullscr=True,
+                    allowGUI=False)
 
 # prepare the experiment stimuli
-tar_1 = visual.ImageStim(
-    win, 'stim/checkboard_big.png', size=[1280, 1024], units='pix', name='big')
-tar_2 = visual.ImageStim(
-    win,
-    'stim/checkboard_small.png',
-    size=[1280, 1024],
-    units='pix',
-    name='small')
+tar_1 = visual.ImageStim(win,
+                         'stim/checkboard_big.png',
+                         size=[1280, 1024],
+                         units='pix',
+                         name='big')
+tar_2 = visual.ImageStim(win,
+                         'stim/checkboard_small.png',
+                         size=[1280, 1024],
+                         units='pix',
+                         name='small')
 alltar = [tar_1, tar_2]
 
 # initialize tobii_controller to communicate with the eyetracker
