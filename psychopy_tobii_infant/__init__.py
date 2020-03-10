@@ -255,7 +255,6 @@ class tobii_controller:
             elif units == "cm":
                 return tuple(pix2cm(pos, self.win.monitor) for pos in p_pix)
             elif units == "deg":
-
                 return tuple(pix2deg(pos, self.win.monitor) for pos in p_pix)
             else:
                 return tuple(
@@ -276,32 +275,6 @@ class tobii_controller:
         """
         self.datafile.flush()  # internal buffer to RAM
         os.fsync(self.datafile.fileno())  # RAM file cache to disk
-
-    def _write_header(self):
-        """Write the header to the data file.
-
-        Args:
-            None
-
-        Returns:
-            None
-        """
-        self.datafile.write("\t".join([
-            "TimeStamp",
-            "GazePointXLeft",
-            "GazePointYLeft",
-            "ValidityLeft",
-            "GazePointXRight",
-            "GazePointYRight",
-            "ValidityRight",
-            "GazePointX",
-            "GazePointY",
-            "PupilSizeLeft",
-            "PupilValidityLeft",
-            "PupilSizeRight",
-            "PupilValidityRight",
-            "PupilSize"]) + "\n") # yapf: disable
-        self._flush_to_file()
 
     def _write_record(self, record):
         """Write the Tobii output to the data file.
@@ -378,10 +351,12 @@ class tobii_controller:
         """
         if not self.gaze_data:
             # do nothing when there's no data
+            print("No data were collected. Do nothing now...")
             return
 
         if self.recording:
             # do nothing while recording
+            print("Still recording. Do nothing now...")
             return
 
         self.datafile.write("Session Start\n")
