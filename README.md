@@ -129,6 +129,21 @@ Demo stimuli released under Creative Commons CC0, aka no copyright:
 
 ## Changelog
 
+### [0.6.1] 2020-3
+
+#### Improvements
+
++ Data precision was slightly improved.
++ Code readability was improved.
+
+#### Changed
+
++ `tobii_controller.get_current_pupil_size` now returns the average pupil size from both eyes instead of respective values.
+
+#### Removed
+
+- `tobii_controller._write_header` was no longer used. Will only affect users if it is used in the scripts.
+
 ### [0.6.0] 2019-10
 
 #### Improvements

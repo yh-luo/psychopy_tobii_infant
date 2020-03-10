@@ -8,7 +8,7 @@ from psychopy import core, event, visual
 from psychopy.tools.monitorunittools import (cm2pix, deg2cm, deg2pix, pix2cm,
                                              pix2deg)
 
-__version__ = "0.6.0"
+__version__ = "0.6.1"
 
 
 class tobii_controller:
