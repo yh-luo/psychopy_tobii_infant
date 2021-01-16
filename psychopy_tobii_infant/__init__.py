@@ -1,13 +1,12 @@
-from datetime import datetime
-import os
 import atexit
+import os
+from datetime import datetime
 
 import numpy as np
 import tobii_research as tr
 from PIL import Image, ImageDraw
 from psychopy import core, event, visual
-from psychopy.tools.monitorunittools import (cm2pix, deg2cm, deg2pix, pix2cm,
-                                             pix2deg)
+from psychopy.tools.monitorunittools import cm2pix, deg2pix, pix2cm, pix2deg
 
 __version__ = "0.6.1"
 
@@ -19,7 +18,8 @@ class tobii_controller:
 
     Args:
         win: psychopy.visual.Window object.
-        id: the id of eyetracker. Default is 0 (use the first found eye-tracker).
+        id: the id of eyetracker. Default is 0 (use the first found eye
+            tracker).
         filename: the name of the data file.
 
     Attributes:
@@ -107,7 +107,7 @@ class tobii_controller:
 
         try:
             self.eyetracker = eyetrackers[self.eyetracker_id]
-        except:
+        except IndexError:
             raise ValueError(
                 "Invalid eyetracker ID {}\n({} eyetrackers found)".format(
                     self.eyetracker_id, len(eyetrackers)))
@@ -222,7 +222,8 @@ class tobii_controller:
             p: Gaze position (x, y) in Tobii ADCS.
 
         Returns:
-            Gaze position in PsychoPy pixels coordinate system. For example: (0,0).
+            Gaze position in PsychoPy pixels coordinate system. For example:
+            (0, 0).
         """
         return (round(self.win.size[0] * (p[0] - 0.5)),
                 round(-self.win.size[1] * (p[1] - 0.5)))
@@ -288,7 +289,7 @@ class tobii_controller:
             None
         """
         self.datafile.write(
-            "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}\t{11}\t{12}\t{13}"
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}"
             .format(*record))
 
     def _convert_tobii_record(self, record):
@@ -340,7 +341,7 @@ class tobii_controller:
             int(record["left_pupil_validity"]),
             round(record["right_pupil_diameter"], 4),
             int(record["right_pupil_validity"]),
-            round(pup, 4)] # yapf: disable
+            round(pup, 4)]  # yapf: disable
 
     def _flush_data(self):
         """Wrapper for writing the header and data to the data file.
@@ -377,7 +378,7 @@ class tobii_controller:
             "PupilValidityLeft",
             "PupilSizeRight",
             "PupilValidityRight",
-            "PupilSize"]) + "\n") # yapf: disable
+            "PupilSize"]) + "\n")  # yapf: disable
         self._flush_to_file()
 
         for gaze_data in self.gaze_data:
@@ -386,8 +387,8 @@ class tobii_controller:
             self.datafile.write("\n")
         else:
             # write the events in the end of data
-            for event in self.event_data:
-                self.datafile.write("{0}\t{1}\n".format(*event))
+            for this_event in self.event_data:
+                self.datafile.write("{}\t{}\n".format(*this_event))
         self.datafile.write("Session End\n")
         self._flush_to_file()
 
@@ -460,7 +461,7 @@ class tobii_controller:
             self.eyetracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA,
                                              self._on_gaze_data)
             self.recording = False
-            # time correction for event datas
+            # time correction for event data
             self.event_data = [(round((x[0] - self.t0) / 1000.0, 1), x[1])
                                for x in self.event_data]
             self._flush_data()
@@ -504,8 +505,10 @@ class tobii_controller:
             None
 
         Returns:
-            A tuple of the newest pupil diameter reported by the eye-tracker.
-            For example: (4, 4).
+            The newest pupil diameter (mm) reported by the eye-tracker.
+            If both eyes are detected, return the average pupil size. If
+            either of the eyes is detected, it will be returned.
+            For example: 3.1542.
         """
         if not self.gaze_data:
             return np.nan
@@ -698,12 +701,13 @@ class tobii_controller:
             if len(self.calibration_result.calibration_points) == 0:
                 pass
             else:
-                for calibration_point in self.calibration_result.calibration_points:
-                    p = calibration_point.position_on_display_area
-                    for calibration_sample in calibration_point.calibration_samples:
-                        lp = calibration_sample.left_eye.position_on_display_area
-                        rp = calibration_sample.right_eye.position_on_display_area
-                        if (calibration_sample.left_eye.validity ==
+                # TODO: shorten variable names
+                for this_point in self.calibration_result.calibration_points:
+                    p = this_point.position_on_display_area
+                    for this_sample in this_point.calibration_samples:
+                        lp = this_sample.left_eye.position_on_display_area
+                        rp = this_sample.right_eye.position_on_display_area
+                        if (this_sample.left_eye.validity ==
                                 tr.VALIDITY_VALID_AND_USED):
                             img_draw.line(
                                 (
@@ -716,7 +720,7 @@ class tobii_controller:
                                 ),
                                 fill=(0, 255, 0, 255),
                             )
-                        if (calibration_sample.right_eye.validity ==
+                        if (this_sample.right_eye.validity ==
                                 tr.VALIDITY_VALID_AND_USED):
                             img_draw.line(
                                 (
@@ -912,9 +916,10 @@ class tobii_controller:
 
 
 class infant_tobii_controller(tobii_controller):
-    """Tobii controller for PsychoPy with children-friendly calibration procedure.
+    """Tobii controller with children-friendly calibration procedure.
 
-        This is a subclass of tobii_controller, with some modification for developmental research.
+        This is a subclass of tobii_controller, with some modification for
+        developmental research.
 
     Args:
         win: psychopy.visual.Window object.
@@ -937,7 +942,7 @@ class infant_tobii_controller(tobii_controller):
                                    exit_key="return"):
         """The calibration procedure designed for infants.
 
-            An implementation of run_calibration() in psychopy_tobii_controller.
+            An implementation of run_calibration().
 
         Args:
             collect_key: the key to start collecting samples. Default is space.
@@ -978,7 +983,7 @@ class infant_tobii_controller(tobii_controller):
                         if self._audio is not None:
                             self._audio.pause()
                 elif key == exit_key:
-                    # exit calibration when return is presssed
+                    # exit calibration when return is pressed
                     in_calibration = False
                     break
 
@@ -998,14 +1003,19 @@ class infant_tobii_controller(tobii_controller):
                         infant_stims,
                         audio=None,
                         decision_key="space"):
-        """Run calibration
+        """Run calibration.
 
             How to use:
-                - Use 1~9 to present calibration stimulus and 0 to hide the target.
+                - Press 1-9 to present calibration stimulus (press 0 to hide
+                  it).
                 - Press space to start collect calibration samples.
-                - Press return (Enter) to finish the calibration and show the result.
-                - Choose the points to recalibrate with 1~9.
-                - Press decision_key (default is space) to accept the calibration or recalibrate.
+                - Press Enter to finish the calibration and show the
+                  calibration result.
+                - Choose the points to recalibrate with 1-9. If no points are
+                  selected, the calibration result will be accepted and
+                  applied.
+                - Press decision_key (default is space) to accept the
+                  calibration result or recalibrate.
 
             The experimenter should manually show the stimulus and collect data
             when the subject is paying attention to the stimulus.
@@ -1042,7 +1052,8 @@ class infant_tobii_controller(tobii_controller):
         except:
             raise RuntimeError(
                 "Unable to load the calibration images.\n"
-                "Is the number of images equal to the number of calibration points?"
+                "Is the number of images equal to the number of calibration "
+                "points?"
             )
 
         self._audio = audio
@@ -1144,7 +1155,7 @@ class infant_tobii_controller(tobii_controller):
 
     # Collect looking time
     def collect_lt(self, max_time, min_away, blink_dur=1):
-        """Collect looking time data in runtime
+        """Collect looking time data in runtime.
 
             Collect and calculate looking time in runtime. Also end the trial
             automatically when the participant look away.
@@ -1174,13 +1185,11 @@ class infant_tobii_controller(tobii_controller):
                 # if the last sample is missing
                 if not looking:
                     away_dur = absence_timer.getTime()
-                    # if missing samples are larger than the threshold of termination
                     if away_dur >= min_away:
                         away_time.append(away_dur)
                         lt = trial_timer.getTime() - np.sum(away_time)
                         # stop the trial
                         return round(lt, 3)
-                    # if missing samples are larger than blink duration
                     elif away_dur >= blink_dur:
                         away_time.append(away_dur)
                     # if missing samples are tolerable
