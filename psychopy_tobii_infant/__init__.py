@@ -1,5 +1,6 @@
 from datetime import datetime
 import os
+import atexit
 
 import numpy as np
 import tobii_research as tr
@@ -114,6 +115,7 @@ class tobii_controller:
         self.calibration = tr.ScreenBasedCalibration(self.eyetracker)
         self.update_calibration = self._update_calibration_auto
         self.gaze_data = []
+        atexit.register(self.close)
 
     def _on_gaze_data(self, gaze_data):
         """Callback function used by Tobii SDK.
@@ -547,6 +549,10 @@ class tobii_controller:
         Returns:
             None
         """
+        # stop recording if not already
+        if self.recording:
+            self.stop_recording()
+
         self.datafile.close()
 
     def run_calibration(self, calibration_points, decision_key="space"):
