@@ -4,6 +4,7 @@ from datetime import datetime
 
 import numpy as np
 import tobii_research as tr
+from .tobii_research_addons import ScreenBasedCalibrationValidation, Point2
 from PIL import Image, ImageDraw
 from psychopy import core, event, visual
 from psychopy.tools.monitorunittools import cm2pix, deg2pix, pix2cm, pix2deg
@@ -89,6 +90,9 @@ class tobii_controller:
     calibration_disc_color = (-1, -1, 0)
     calibration_target_min = 0.2
     update_calibration = None
+    update_validation = None
+    recording = False
+    datafile = None
 
     def __init__(self, win, id=0, filename="gaze_TOBII_output.tsv"):
         self.eyetracker_id = id
@@ -114,6 +118,7 @@ class tobii_controller:
 
         self.calibration = tr.ScreenBasedCalibration(self.eyetracker)
         self.update_calibration = self._update_calibration_auto
+        self.update_validation = self._update_validation_auto
         self.gaze_data = []
         atexit.register(self.close)
 
@@ -289,8 +294,8 @@ class tobii_controller:
             None
         """
         self.datafile.write(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}"
-            .format(*record))
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
+                *record))
 
     def _convert_tobii_record(self, record):
         """Convert tobii coordinates to output style.
@@ -402,6 +407,13 @@ class tobii_controller:
             None
         """
         self.calibration.collect_data(*self._get_tobii_pos(p))
+
+    def _collect_validation_data(self, p):
+        """Callback function used by Tobii Pro SDK addons."""
+        self.validation.start_collecting_data(Point2(*self._get_tobii_pos(p)))
+        # wait a bit for data collection
+        while self.validation.is_collecting_data:
+            core.wait(0.5, 0.0)
 
     def _open_datafile(self):
         """Open a file for gaze data.
@@ -555,8 +567,8 @@ class tobii_controller:
         # stop recording if not already
         if self.recording:
             self.stop_recording()
-
-        self.datafile.close()
+        if self.datafile is not None:
+            self.datafile.close()
 
     def run_calibration(self, calibration_points, decision_key="space"):
         """Run calibration
@@ -612,10 +624,9 @@ class tobii_controller:
             pos=(0, -self.win.size[1] / 4),
             color="white",
             units="pix",
+            alignText="left",
             autoLog=False,
         )
-
-        self.calibration.enter_calibration_mode()
 
         self.original_calibration_points = calibration_points[:]
         # set all points
@@ -624,6 +635,8 @@ class tobii_controller:
 
         in_calibration_loop = True
         event.clearEvents()
+
+        self.calibration.enter_calibration_mode()
         while in_calibration_loop:
             self.calibration_points = [
                 self.original_calibration_points[x] for x in self.retry_points
@@ -688,6 +701,142 @@ class tobii_controller:
         self.calibration.leave_calibration_mode()
 
         return retval
+
+    # TODO: validation
+    def run_validation(self,
+                       validation_points=None,
+                       sample_count=30,
+                       timeout=1,
+                       decision_key="space",
+                       show_results=False,
+                       save_to_file=True):
+        """Run validation.
+
+        Args:
+            validation_points: list of position of the validation points. If
+                None, the calibration points are used. Default is None.
+            sample_count: The number of samples to collect. Default is 30,
+                minimum 10, maximum 3000.
+            timeout: Timeout in seconds. Default is 1, minimum 0.1, maximum 3.
+            decision_key: the key to leave the procedure. Default is space.
+            show_results: Whether to show the validation results. Default if
+                False.
+            save_to_file: Whether to save the validation results to the data
+                file. Default is True.
+
+        Returns:
+            tobii_research_addons.ScreenBasedCalibrationValidation.CalibrationValidationResult
+        """
+        # setup the procedure
+        self.validation = ScreenBasedCalibrationValidation(
+            self.eyetracker, sample_count, int(1000 * timeout))
+
+        if validation_points is not None:
+            self.validation_points = validation_points
+        else:
+            self.validation_points = self.original_calibration_points
+
+        # clear the display
+        self.win.flip()
+
+        self.validation.enter_validation_mode()
+        self.update_validation()
+        self.validation_result = self.validation.compute()
+        self.win.flip()
+        self.validation.leave_validation_mode()
+
+        if save_to_file or show_results:
+            result_buffer = "Validation time:\t{}\n".format(
+                datetime.now().strftime("%H:%M:%S"))
+            # accuracy
+            result_buffer += "Mean accuracy (in degrees):\t"
+            val = (round(this_eye, 3) for this_eye in (
+                self.validation_result.average_accuracy_left,
+                self.validation_result.average_accuracy_right))
+            result_buffer += "left={}\tright={}\n".format(*val)
+
+            result_buffer += "Mean accuracy (in pixels):\t"
+            val = (np.nan, np.nan)
+            try:
+                val = (deg2pix(self.validation_result.average_accuracy_left,
+                               self.win.monitor),
+                       deg2pix(self.validation_result.average_accuracy_right,
+                               self.win.monitor))
+            except ValueError:
+                pass
+            result_buffer += "left={}\tright={}\n".format(*val)
+            # RMS
+            result_buffer += "Mean precision (RMS error, in degrees):\t"
+            val = (round(this_eye, 3) for this_eye in (
+                self.validation_result.average_precision_rms_left,
+                self.validation_result.average_precision_rms_right))
+            result_buffer += "left={}\tright={}\n".format(*val)
+
+            result_buffer += "Mean precision (RMS error, in pixels):\t"
+            val = (np.nan, np.nan)
+            try:
+                val = (deg2pix(
+                    self.validation_result.average_precision_rms_left,
+                    self.win.monitor),
+                       deg2pix(
+                           self.validation_result.average_precision_rms_right,
+                           self.win.monitor))
+            except ValueError:
+                pass
+            result_buffer += "left={}\tright={}\n".format(*val)
+
+        if save_to_file:
+            self.datafile = open(self.filename, "w")
+            self.datafile.write(result_buffer)
+            self._flush_to_file()
+
+        if show_results:
+            result_msg = visual.TextStim(self.win,
+                                         pos=(0, -self.win.size[1] / 4),
+                                         color="white",
+                                         units="pix",
+                                         alignText="left",
+                                         wrapWidth=self.win.size[0] / 2,
+                                         autoLog=False)
+            result_msg.setText(result_buffer.replace("\t", " "))
+            result_msg.draw()
+            self.win.flip()
+            waitkey = True
+            while waitkey:
+                for key in event.getKeys():
+                    if key == decision_key:
+                        waitkey = False
+                        break
+
+        return self.validation_result
+
+    def _update_validation_auto(self):
+        """Automatic validation procedure."""
+        # start
+        event.clearEvents()
+        clock = core.Clock()
+        for current_validation_point in self.validation_points:
+            self.calibration_target_disc.setPos(current_validation_point)
+            self.calibration_target_dot.setPos(current_validation_point)
+            clock.reset()
+            while True:
+                t = clock.getTime() * self.shrink_speed
+                self.calibration_target_disc.setRadius([
+                    (np.sin(t)**2 + self.calibration_target_min) *
+                    self.calibration_disc_size
+                ])
+                self.calibration_target_dot.setRadius([
+                    (np.sin(t)**2 + self.calibration_target_min) *
+                    self.calibration_dot_size
+                ])
+                self.calibration_target_disc.draw()
+                self.calibration_target_dot.draw()
+                if clock.getTime() >= self._shrink_sec:
+                    core.wait(0.5, 0.0)
+                    self._collect_validation_data(current_validation_point)
+                    break
+
+                self.win.flip()
 
     def _show_calibration_result(self):
         img = Image.new("RGBA", tuple(self.win.size))
@@ -770,7 +919,7 @@ class tobii_controller:
                 self.calibration_target_disc.draw()
                 self.calibration_target_dot.draw()
                 if clock.getTime() >= self._shrink_sec:
-                    core.wait(0.5)
+                    core.wait(0.5, 0.0)
                     self._collect_calibration_data(
                         self.original_calibration_points[current_point_index])
                     break
@@ -1053,8 +1202,7 @@ class infant_tobii_controller(tobii_controller):
             raise RuntimeError(
                 "Unable to load the calibration images.\n"
                 "Is the number of images equal to the number of calibration "
-                "points?"
-            )
+                "points?")
 
         self._audio = audio
 
