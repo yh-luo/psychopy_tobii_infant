@@ -5,6 +5,7 @@
 /__pycache__
 # output files
 *.tsv
+*.egg-info/
 
 demo/infant
 demo/stim
