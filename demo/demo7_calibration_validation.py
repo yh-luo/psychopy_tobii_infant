@@ -34,15 +34,15 @@ controller.show_status()
 controller.run_calibration(CALIPOINTS)
 controller.run_validation(show_results=True)
 
+marker = visual.Rect(win, width=20, height=20, autoLog=False)
+
 # Start recording.
 # filename of the data file could be define in this method or when creating an
-# infant_tobii_controller instance
-
+# tobii_controller instance
 controller.start_recording('demo7-test.tsv')
-
-marker = visual.Rect(win, width=20, height=20, autoLog=False)
 waitkey = True
 timer = core.Clock()
+
 # Press space to leave
 while waitkey:
     # Get the latest gaze position data.

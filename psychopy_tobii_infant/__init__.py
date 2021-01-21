@@ -93,11 +93,13 @@ class tobii_controller:
     update_validation = None
     recording = False
     datafile = None
+    validation_result_buffers = None
 
     def __init__(self, win, id=0, filename="gaze_TOBII_output.tsv"):
         self.eyetracker_id = id
         self.win = win
         self.filename = filename
+        # FIXME: self.numkey_dict is not updated accordingly
         self.numkey_dict = self._default_numkey_dict
         self.calibration_dot_size = self._default_calibration_dot_size[
             self.win.units]
@@ -107,7 +109,7 @@ class tobii_controller:
         eyetrackers = tr.find_all_eyetrackers()
 
         if len(eyetrackers) == 0:
-            raise RuntimeError("No Tobii eyetrackers")
+            raise RuntimeError("No Tobii eyetrackers detected.")
 
         try:
             self.eyetracker = eyetrackers[self.eyetracker_id]
@@ -200,7 +202,7 @@ class tobii_controller:
                 p_pix = deg2pix(np.array(p),
                                 self.win.monitor,
                                 correctFlat=True)
-            p_pix = tuple(round(pos) for pos in p_pix)
+            p_pix = tuple(round(pos, 0) for pos in p_pix)
             return self._pix2tobii(p_pix)
         else:
             raise ValueError("unit ({}) is not supported".format(units))
@@ -230,8 +232,8 @@ class tobii_controller:
             Gaze position in PsychoPy pixels coordinate system. For example:
             (0, 0).
         """
-        return (round(self.win.size[0] * (p[0] - 0.5)),
-                round(-self.win.size[1] * (p[1] - 0.5)))
+        return (round(self.win.size[0] * (p[0] - 0.5),
+                      0), round(-self.win.size[1] * (p[1] - 0.5), 0))
 
     def _get_psychopy_pos_from_trackbox(self, p, units=None):
         """Convert Tobii TBCS coordinates to PsychoPy coordinates.
@@ -255,8 +257,8 @@ class tobii_controller:
                     -p[1] + 0.5)
         elif units in ["pix", "cm", "deg", "degFlat", "degFlatPos"]:
             p_pix = (
-                round((-p[0] + 0.5) * self.win.size[0]),
-                round((-p[1] + 0.5) * self.win.size[1]),
+                round((-p[0] + 0.5) * self.win.size[0], 0),
+                round((-p[1] + 0.5) * self.win.size[1], 0),
             )
             if units == "pix":
                 return p_pix
@@ -283,19 +285,6 @@ class tobii_controller:
         """
         self.datafile.flush()  # internal buffer to RAM
         os.fsync(self.datafile.fileno())  # RAM file cache to disk
-
-    def _write_record(self, record):
-        """Write the Tobii output to the data file.
-
-        Args:
-            record: reformed gaze data
-
-        Returns:
-            None
-        """
-        self.datafile.write(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
-                *record))
 
     def _convert_tobii_record(self, record):
         """Convert tobii coordinates to output style.
@@ -331,8 +320,7 @@ class tobii_controller:
         else:
             pup = (record["left_pupil_diameter"] +
                    record["right_pupil_diameter"]) / 2.0
-
-        return [
+        out = (
             round((record["system_time_stamp"] - self.t0) / 1000.0, 1),
             round(lp[0], 4),
             round(lp[1], 4),
@@ -346,7 +334,9 @@ class tobii_controller:
             int(record["left_pupil_validity"]),
             round(record["right_pupil_diameter"], 4),
             int(record["right_pupil_validity"]),
-            round(pup, 4)]  # yapf: disable
+            round(pup, 4)) # yapf: disable
+        out = (str(x) for x in out)
+        return out
 
     def _flush_data(self):
         """Wrapper for writing the header and data to the data file.
@@ -358,14 +348,13 @@ class tobii_controller:
             None
         """
         if not self.gaze_data:
-            # do nothing when there's no data
-            print("No data were collected. Do nothing now...")
-            return
+            raise RuntimeWarning("No data were collected.")
 
         if self.recording:
-            # do nothing while recording
-            print("Still recording. Do nothing now...")
-            return
+            raise RuntimeWarning(
+                "Still recording. Data are only saved to the disk after "
+                "stop_recording() is called to prevent large latency in the "
+                "eye-tracking data.")
 
         self.datafile.write("Session Start\n")
         # write header
@@ -388,7 +377,7 @@ class tobii_controller:
 
         for gaze_data in self.gaze_data:
             output = self._convert_tobii_record(gaze_data)
-            self._write_record(output)
+            self.datafile.write("\t".join(output))
             self.datafile.write("\n")
         else:
             # write the events in the end of data
@@ -425,13 +414,18 @@ class tobii_controller:
             None
         """
         self.datafile = open(self.filename, "w")
-        self.datafile.write("Recording date:\t{}\n".format(
-            datetime.now().strftime("%Y/%m/%d")))
-        self.datafile.write("Recording time:\t{}\n".format(
-            datetime.now().strftime("%H:%M:%S")))
-        self.datafile.write(
-            "Recording resolution:\t{} x {}\n".format(*self.win.size))
-        self.datafile.write("PsychoPy units:\t{}\n".format(self.win.units))
+        _write_buffer = "Recording date:\t{}\n".format(
+            datetime.now().strftime("%Y/%m/%d"))
+        _write_buffer += "Recording time:\t{}\n".format(
+            datetime.now().strftime("%H:%M:%S"))
+        _write_buffer += "Recording resolution:\t{} x {}\n".format(
+            *self.win.size)
+        _write_buffer += "PsychoPy units:\t{}\n".format(self.win.units)
+        if self.validation_result_buffers is not None:
+            _write_buffer += "\n".join(self.validation_result_buffers)
+            self.validation_result_buffers = None
+
+        self.datafile.write(_write_buffer)
         self._flush_to_file()
 
     def start_recording(self, filename=None, newfile=True):
@@ -456,7 +450,7 @@ class tobii_controller:
         self.eyetracker.subscribe_to(tr.EYETRACKER_GAZE_DATA,
                                      self._on_gaze_data,
                                      as_dictionary=True)
-        core.wait(0.5)  # wait a bit for the eye tracker to get ready
+        core.wait(1)  # wait a bit for the eye tracker to get ready
         self.recording = True
         self.t0 = tr.get_system_time_stamp()
 
@@ -469,16 +463,16 @@ class tobii_controller:
         Returns:
             None
         """
-        if self.recording:
-            self.eyetracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA,
-                                             self._on_gaze_data)
-            self.recording = False
-            # time correction for event data
-            self.event_data = [(round((x[0] - self.t0) / 1000.0, 1), x[1])
-                               for x in self.event_data]
-            self._flush_data()
-        else:
-            print("A recording has not been started. Do nothing now...")
+        if not self.recording:
+            raise RuntimeWarning("Not recoding now.")
+
+        self.eyetracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA,
+                                         self._on_gaze_data)
+        self.recording = False
+        # time correction for event data
+        self.event_data = [(round((x[0] - self.t0) / 1000.0, 1), x[1])
+                           for x in self.event_data]
+        self._flush_data()
 
     def get_current_gaze_position(self):
         """Get the newest gaze position.
@@ -551,7 +545,7 @@ class tobii_controller:
             None
         """
         if not self.recording:
-            return
+            raise RuntimeWarning("Not recoding now.")
 
         self.event_data.append([tr.get_system_time_stamp(), event])
 
@@ -567,24 +561,29 @@ class tobii_controller:
         # stop recording if not already
         if self.recording:
             self.stop_recording()
-        if self.datafile is not None:
-            self.datafile.close()
+        if self.datafile is None:
+            raise RuntimeWarning(
+                "Data file is not found. Use start_recording() to record and "
+                "save the data.")
+
+        self.datafile.close()
 
     def run_calibration(self, calibration_points, decision_key="space"):
         """Run calibration
 
         Args:
             calibration_points: list of position of the calibration points.
-            decision_key: the key to leave the procedure. Default is space.
+            decision_key: key to leave the procedure. Default is space.
 
         Returns:
             bool: The status of calibration. True for success, False otherwise.
         """
         if self.eyetracker is None:
-            raise RuntimeError("Eyetracker is not found.")
+            raise ValueError("Eyetracker is not found.")
 
         if not (2 <= len(calibration_points) <= 9):
-            raise ValueError("Calibration points must be 2~9")
+            raise ValueError(
+                "The number of calibration points must be between 2 and 9.")
 
         else:
             self.numkey_dict = {
@@ -702,7 +701,6 @@ class tobii_controller:
 
         return retval
 
-    # TODO: validation
     def run_validation(self,
                        validation_points=None,
                        sample_count=30,
@@ -718,7 +716,7 @@ class tobii_controller:
             sample_count: The number of samples to collect. Default is 30,
                 minimum 10, maximum 3000.
             timeout: Timeout in seconds. Default is 1, minimum 0.1, maximum 3.
-            decision_key: the key to leave the procedure. Default is space.
+            decision_key: key to leave the procedure. Default is space.
             show_results: Whether to show the validation results. Default if
                 False.
             save_to_file: Whether to save the validation results to the data
@@ -750,7 +748,7 @@ class tobii_controller:
                 datetime.now().strftime("%H:%M:%S"))
             # accuracy
             result_buffer += "Mean accuracy (in degrees):\t"
-            val = (round(this_eye, 3) for this_eye in (
+            val = (round(this_eye, 4) for this_eye in (
                 self.validation_result.average_accuracy_left,
                 self.validation_result.average_accuracy_right))
             result_buffer += "left={}\tright={}\n".format(*val)
@@ -762,12 +760,14 @@ class tobii_controller:
                                self.win.monitor),
                        deg2pix(self.validation_result.average_accuracy_right,
                                self.win.monitor))
+                val = (round(this_eye, 4) for this_eye in val)
             except ValueError:
                 pass
             result_buffer += "left={}\tright={}\n".format(*val)
+
             # RMS
             result_buffer += "Mean precision (RMS error, in degrees):\t"
-            val = (round(this_eye, 3) for this_eye in (
+            val = (round(this_eye, 4) for this_eye in (
                 self.validation_result.average_precision_rms_left,
                 self.validation_result.average_precision_rms_right))
             result_buffer += "left={}\tright={}\n".format(*val)
@@ -781,14 +781,15 @@ class tobii_controller:
                        deg2pix(
                            self.validation_result.average_precision_rms_right,
                            self.win.monitor))
+                val = (round(this_eye, 4) for this_eye in val)
             except ValueError:
                 pass
             result_buffer += "left={}\tright={}\n".format(*val)
 
         if save_to_file:
-            self.datafile = open(self.filename, "w")
-            self.datafile.write(result_buffer)
-            self._flush_to_file()
+            if self.validation_result_buffers is None:
+                self.validation_result_buffers = list()
+            self.validation_result_buffers.append(result_buffer)
 
         if show_results:
             result_msg = visual.TextStim(self.win,
@@ -796,7 +797,7 @@ class tobii_controller:
                                          color="white",
                                          units="pix",
                                          alignText="left",
-                                         wrapWidth=self.win.size[0] / 2,
+                                         wrapWidth=self.win.size[0] * 0.6,
                                          autoLog=False)
             result_msg.setText(result_buffer.replace("\t", " "))
             result_msg.draw()
@@ -850,7 +851,7 @@ class tobii_controller:
             if len(self.calibration_result.calibration_points) == 0:
                 pass
             else:
-                # TODO: shorten variable names
+
                 for this_point in self.calibration_result.calibration_points:
                     p = this_point.position_on_display_area
                     for this_sample in this_point.calibration_samples:
@@ -900,11 +901,10 @@ class tobii_controller:
         # start calibration
         event.clearEvents()
         clock = core.Clock()
-        for current_point_index in self.retry_points:
-            self.calibration_target_disc.setPos(
-                self.original_calibration_points[current_point_index])
-            self.calibration_target_dot.setPos(
-                self.original_calibration_points[current_point_index])
+        for point_idx in self.retry_points:
+            this_pos = self.original_calibration_points[point_idx]
+            self.calibration_target_disc.setPos(this_pos)
+            self.calibration_target_dot.setPos(this_pos)
             clock.reset()
             while True:
                 t = clock.getTime() * self.shrink_speed
@@ -920,90 +920,77 @@ class tobii_controller:
                 self.calibration_target_dot.draw()
                 if clock.getTime() >= self._shrink_sec:
                     core.wait(0.5, 0.0)
-                    self._collect_calibration_data(
-                        self.original_calibration_points[current_point_index])
+                    self._collect_calibration_data(this_pos)
                     break
 
                 self.win.flip()
 
-    def show_status(self):
+    def show_status(self, decision_key="space"):
         """Showing the participant's gaze position in track box.
 
         Args:
-            None
+            decision_key: key to leave the procedure. Default is space.
 
         Returns:
             None
         """
-        bgrect = visual.Rect(
-            self.win,
-            pos=(0, 0.4),
-            width=0.25,
-            height=0.2,
-            lineColor="white",
-            fillColor="black",
-            units="height",
-            autoLog=False,
-        )
+        bgrect = visual.Rect(self.win,
+                             pos=(0, 0.4),
+                             width=0.25,
+                             height=0.2,
+                             lineColor="white",
+                             fillColor="black",
+                             units="height",
+                             autoLog=False)
 
-        leye = visual.Circle(
-            self.win,
-            size=0.02,
-            units="height",
-            lineColor=None,
-            fillColor="green",
-            autoLog=False,
-        )
+        leye = visual.Circle(self.win,
+                             size=0.02,
+                             units="height",
+                             lineColor=None,
+                             fillColor="green",
+                             autoLog=False)
 
-        reye = visual.Circle(
-            self.win,
-            size=0.02,
-            units="height",
-            lineColor=None,
-            fillColor="red",
-            autoLog=False,
-        )
+        reye = visual.Circle(self.win,
+                             size=0.02,
+                             units="height",
+                             lineColor=None,
+                             fillColor="red",
+                             autoLog=False)
 
-        zbar = visual.Rect(
-            self.win,
-            pos=(0, 0.28),
-            width=0.25,
-            height=0.03,
-            lineColor="green",
-            fillColor="green",
-            units="height",
-            autoLog=False,
-        )
+        zbar = visual.Rect(self.win,
+                           pos=(0, 0.28),
+                           width=0.25,
+                           height=0.03,
+                           lineColor="green",
+                           fillColor="green",
+                           units="height",
+                           autoLog=False)
 
-        zc = visual.Rect(
-            self.win,
-            pos=(0, 0.28),
-            width=0.01,
-            height=0.03,
-            lineColor="white",
-            fillColor="white",
-            units="height",
-            autoLog=False,
-        )
+        zc = visual.Rect(self.win,
+                         pos=(0, 0.28),
+                         width=0.01,
+                         height=0.03,
+                         lineColor="white",
+                         fillColor="white",
+                         units="height",
+                         autoLog=False)
 
-        zpos = visual.Rect(
-            self.win,
-            pos=(0, 0.28),
-            width=0.005,
-            height=0.03,
-            lineColor="black",
-            fillColor="black",
-            units="height",
-            autoLog=False,
-        )
+        zpos = visual.Rect(self.win,
+                           pos=(0, 0.28),
+                           width=0.005,
+                           height=0.03,
+                           lineColor="black",
+                           fillColor="black",
+                           units="height",
+                           autoLog=False)
 
         if self.eyetracker is None:
-            raise RuntimeError("Eyetracker is not found.")
+            raise ValueError("Eyetracker is not found.")
 
         self.eyetracker.subscribe_to(tr.EYETRACKER_USER_POSITION_GUIDE,
                                      self._on_gaze_data,
                                      as_dictionary=True)
-        core.wait(0.5)  # wait a bit for the eye tracker to get ready
+        core.wait(1)  # wait a bit for the eye tracker to get ready
 
         b_show_status = True
 
@@ -1035,7 +1022,7 @@ class tobii_controller:
                 zpos.draw()
 
             for key in event.getKeys():
-                if key == "space":
+                if key == decision_key:
                     b_show_status = False
                     break
 
@@ -1094,8 +1081,8 @@ class infant_tobii_controller(tobii_controller):
             An implementation of run_calibration().
 
         Args:
-            collect_key: the key to start collecting samples. Default is space.
-            exit_key: the key to finish and leave the current calibration
+            collect_key: key to start collecting samples. Default is space.
+            exit_key: key to finish and leave the current calibration
                 procedure. It should not be confused with `decision_key`, which
                 is used to leave the whole calibration process. `exit_key` is
                 used to leave the current calibration, the user may recalibrate
@@ -1106,7 +1093,7 @@ class infant_tobii_controller(tobii_controller):
         """
         # start calibration
         event.clearEvents()
-        current_point_index = -1
+        point_idx = -1
         in_calibration = True
         clock = core.Clock()
         while in_calibration:
@@ -1114,20 +1101,20 @@ class infant_tobii_controller(tobii_controller):
             keys = event.getKeys()
             for key in keys:
                 if key in self.numkey_dict:
-                    current_point_index = self.numkey_dict[key]
+                    point_idx = self.numkey_dict[key]
+
                     # play the sound if it exists
                     if self._audio is not None:
-                        if current_point_index in self.retry_points:
+                        if point_idx in self.retry_points:
                             self._audio.play()
                 elif key == collect_key:
                     # allow the participant to focus
                     core.wait(0.5)
                     # collect samples when space is pressed
-                    if current_point_index in self.retry_points:
+                    if point_idx in self.retry_points:
                         self._collect_calibration_data(
-                            self.
-                            original_calibration_points[current_point_index])
-                        current_point_index = -1
+                            self.original_calibration_points[point_idx])
+                        point_idx = -1
                         # stop the sound
                         if self._audio is not None:
                             self._audio.pause()
@@ -1137,14 +1124,15 @@ class infant_tobii_controller(tobii_controller):
                     break
 
             # draw calibration target
-            if current_point_index in self.retry_points:
-                self.targets[current_point_index].setPos(
-                    self.original_calibration_points[current_point_index])
+            if point_idx in self.retry_points:
+                this_target = self.targets[point_idx % len(self.targets)]
+                this_pos = self.original_calibration_points[point_idx]
+                this_target.setPos(this_pos)
                 t = clock.getTime() * self.shrink_speed
                 newsize = [(np.sin(t)**2 + self.calibration_target_min) * e
                            for e in self.target_original_size]
-                self.targets[current_point_index].setSize(newsize)
-                self.targets[current_point_index].draw()
+                this_target.setSize(newsize)
+                this_target.draw()
             self.win.flip()
 
     def run_calibration(self,
@@ -1174,16 +1162,16 @@ class infant_tobii_controller(tobii_controller):
             infant_stims: list of images to attract the infant.
             audio: the psychopy.sound.Sound object to play during calibration.
                 If None, no sound will be played. Default is None.
-            decision_key: the key to leave the procedure. Default is space.
+            decision_key: key to leave the procedure. Default is space.
 
         Returns:
             bool: The status of calibration. True for success, False otherwise.
         """
         if self.eyetracker is None:
-            raise RuntimeError("Eyetracker is not found.")
+            raise ValueError("Eyetracker is not found.")
 
         if not (2 <= len(calibration_points) <= 9):
-            raise ValueError("Calibration points must be 2~9")
+            raise ValueError("Calibration points must be between2 and 9")
 
         else:
             self.numkey_dict = {
@@ -1193,16 +1181,10 @@ class infant_tobii_controller(tobii_controller):
             }
 
         # prepare calibration stimuli
-        try:
-            self.targets = [
-                visual.ImageStim(self.win, image=v, autoLog=False)
-                for v in infant_stims
-            ]
-        except:
-            raise RuntimeError(
-                "Unable to load the calibration images.\n"
-                "Is the number of images equal to the number of calibration "
-                "points?")
+        self.targets = [
+            visual.ImageStim(self.win, image=v, autoLog=False)
+            for v in infant_stims
+        ]
 
         self._audio = audio
 
