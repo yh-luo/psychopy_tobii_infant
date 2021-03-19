@@ -1,20 +1,27 @@
-import inspect
-import pytest
-from psychopy import visual, monitors
+from psychopy import monitors, visual
 from psychopy_tobii_infant import tobii_controller
+
+
+class dummy_controller(tobii_controller):
+    def __init__(self, win):
+        self.win = win
 
 
 class TestCoord:
     def setup(self):
-        self.mon = monitors.Monitor('dummy',
+        self.mon = monitors.Monitor("dummy",
                                     width=12.8,
                                     distance=65,
                                     autoLog=False)
-        self.win = visual.Window([128, 128],
+        self.win = visual.Window(size=[128, 128],
+                                 units="pix",
                                  monitor=self.mon,
+                                 fullscr=False,
                                  allowGUI=False,
                                  autoLog=False)
-        self.controller = tobii_controller(self.win)
+
+        self.controller = dummy_controller(self.win)
+
         self.tobii_points = [(0, 0), (1, 0), (1, 1), (0, 1), (0.5, 0.5)]
         self.psy_points = {
             "norm": [(-1, 1), (1, 1), (1, -1), (-1, -1), (0, 0)],
@@ -80,7 +87,3 @@ class TestCoord:
         for trans_point, psy_point in zip(trans_points, psy_points):
             trans_point = tuple(round(pos, 0) for pos in trans_point)
             assert trans_point == psy_point
-
-
-if __name__ == "__main__":
-    pytest.main(['-v'])

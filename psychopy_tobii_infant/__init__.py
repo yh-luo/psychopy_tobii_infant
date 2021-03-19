@@ -4,10 +4,16 @@ from datetime import datetime
 
 import numpy as np
 import tobii_research as tr
-from .tobii_research_addons import ScreenBasedCalibrationValidation, Point2
 from PIL import Image, ImageDraw
 from psychopy import core, event, visual
 from psychopy.tools.monitorunittools import cm2pix, deg2pix, pix2cm, pix2deg
+
+try:
+    from .tobii_research_addons import (
+        ScreenBasedCalibrationValidation, Point2)
+    _has_addons = True
+except ModuleNotFoundError:
+    _has_addons = False
 
 __version__ = "0.6.1"
 
@@ -120,7 +126,8 @@ class tobii_controller:
 
         self.calibration = tr.ScreenBasedCalibration(self.eyetracker)
         self.update_calibration = self._update_calibration_auto
-        self.update_validation = self._update_validation_auto
+        if _has_addons:
+            self.update_validation = self._update_validation_auto
         self.gaze_data = []
         atexit.register(self.close)
 
@@ -334,7 +341,7 @@ class tobii_controller:
             int(record["left_pupil_validity"]),
             round(record["right_pupil_diameter"], 4),
             int(record["right_pupil_validity"]),
-            round(pup, 4)) # yapf: disable
+            round(pup, 4))  # yapf: disable
         out = (str(x) for x in out)
         return out
 
@@ -710,6 +717,8 @@ class tobii_controller:
                        save_to_file=True):
         """Run validation.
 
+        tobii_research_addons is required for running validation.
+
         Args:
             validation_points: list of position of the validation points. If
                 None, the calibration points are used. Default is None.
@@ -725,6 +734,9 @@ class tobii_controller:
         Returns:
             tobii_research_addons.ScreenBasedCalibrationValidation.CalibrationValidationResult
         """
+        if self.update_validation is None:
+            raise ModuleNotFoundError("tobii_research_addons is not found.")
+
         # setup the procedure
         self.validation = ScreenBasedCalibrationValidation(
             self.eyetracker, sample_count, int(1000 * timeout))
@@ -1171,7 +1183,7 @@ class infant_tobii_controller(tobii_controller):
             raise ValueError("Eyetracker is not found.")
 
         if not (2 <= len(calibration_points) <= 9):
-            raise ValueError("Calibration points must be between2 and 9")
+            raise ValueError("Calibration points must be between 2 and 9")
 
         else:
             self.numkey_dict = {
