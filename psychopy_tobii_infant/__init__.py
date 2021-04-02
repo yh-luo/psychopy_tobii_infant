@@ -575,11 +575,14 @@ class tobii_controller:
 
         self.datafile.close()
 
-    def run_calibration(self, calibration_points, decision_key="space"):
+    def run_calibration(self, calibration_points,
+                        focus_time=0.5, decision_key="space"):
         """Run calibration
 
         Args:
             calibration_points: list of position of the calibration points.
+            focus_time: the duration allowing the subject to focus in seconds.
+                        Default is 0.5.
             decision_key: key to leave the procedure. Default is space.
 
         Returns:
@@ -650,7 +653,7 @@ class tobii_controller:
 
             # clear the display
             self.win.flip()
-            self.update_calibration()
+            self.update_calibration(_focus_time=focus_time)
             self.calibration_result = self.calibration.compute_and_apply()
             self.win.flip()
 
@@ -712,6 +715,7 @@ class tobii_controller:
                        validation_points=None,
                        sample_count=30,
                        timeout=1,
+                       focus_time=0.5,
                        decision_key="space",
                        show_results=False,
                        save_to_file=True):
@@ -725,6 +729,8 @@ class tobii_controller:
             sample_count: The number of samples to collect. Default is 30,
                 minimum 10, maximum 3000.
             timeout: Timeout in seconds. Default is 1, minimum 0.1, maximum 3.
+            focus_time: the duration allowing the subject to focus in seconds.
+                        Default is 0.5.
             decision_key: key to leave the procedure. Default is space.
             show_results: Whether to show the validation results. Default if
                 False.
@@ -750,7 +756,7 @@ class tobii_controller:
         self.win.flip()
 
         self.validation.enter_validation_mode()
-        self.update_validation()
+        self.update_validation(_focus_time=focus_time)
         self.validation_result = self.validation.compute()
         self.win.flip()
         self.validation.leave_validation_mode()
@@ -823,7 +829,7 @@ class tobii_controller:
 
         return self.validation_result
 
-    def _update_validation_auto(self):
+    def _update_validation_auto(self, _focus_time=0.5):
         """Automatic validation procedure."""
         # start
         event.clearEvents()
@@ -845,7 +851,7 @@ class tobii_controller:
                 self.calibration_target_disc.draw()
                 self.calibration_target_dot.draw()
                 if clock.getTime() >= self._shrink_sec:
-                    core.wait(0.5, 0.0)
+                    core.wait(_focus_time, 0.0)
                     self._collect_validation_data(current_validation_point)
                     break
 
@@ -908,7 +914,7 @@ class tobii_controller:
         result_img.setImage(img)
         return result_img
 
-    def _update_calibration_auto(self):
+    def _update_calibration_auto(self, _focus_time=0.5):
         """Automatic calibration procedure."""
         # start calibration
         event.clearEvents()
@@ -931,7 +937,7 @@ class tobii_controller:
                 self.calibration_target_disc.draw()
                 self.calibration_target_dot.draw()
                 if clock.getTime() >= self._shrink_sec:
-                    core.wait(0.5, 0.0)
+                    core.wait(_focus_time, 0.0)
                     self._collect_calibration_data(this_pos)
                     break
 
@@ -1086,6 +1092,7 @@ class infant_tobii_controller(tobii_controller):
         self.shrink_speed = 1
 
     def _update_calibration_infant(self,
+                                   _focus_time=0.5,
                                    collect_key="space",
                                    exit_key="return"):
         """The calibration procedure designed for infants.
@@ -1093,6 +1100,8 @@ class infant_tobii_controller(tobii_controller):
             An implementation of run_calibration().
 
         Args:
+            focus_time: the duration allowing the subject to focus in seconds.
+                            Default is 0.5.
             collect_key: key to start collecting samples. Default is space.
             exit_key: key to finish and leave the current calibration
                 procedure. It should not be confused with `decision_key`, which
@@ -1121,7 +1130,7 @@ class infant_tobii_controller(tobii_controller):
                             self._audio.play()
                 elif key == collect_key:
                     # allow the participant to focus
-                    core.wait(0.5)
+                    core.wait(_focus_time, 0.0)
                     # collect samples when space is pressed
                     if point_idx in self.retry_points:
                         self._collect_calibration_data(
@@ -1151,6 +1160,7 @@ class infant_tobii_controller(tobii_controller):
                         calibration_points,
                         infant_stims,
                         audio=None,
+                        focus_time=0.5,
                         decision_key="space"):
         """Run calibration.
 
@@ -1174,6 +1184,8 @@ class infant_tobii_controller(tobii_controller):
             infant_stims: list of images to attract the infant.
             audio: the psychopy.sound.Sound object to play during calibration.
                 If None, no sound will be played. Default is None.
+            focus_time: the duration allowing the subject to focus in seconds.
+                        Default is 0.5.
             decision_key: key to leave the procedure. Default is space.
 
         Returns:
@@ -1237,7 +1249,7 @@ class infant_tobii_controller(tobii_controller):
 
             # clear the display
             self.win.flip()
-            self.update_calibration()
+            self.update_calibration(_focus_time=focus_time)
             self.calibration_result = self.calibration.compute_and_apply()
             self.win.flip()
 
