@@ -8,12 +8,17 @@ from PIL import Image, ImageDraw
 from psychopy import core, event, visual
 from psychopy.tools.monitorunittools import cm2pix, deg2pix, pix2cm, pix2deg
 
+_has_addons = True
 try:
-    from .tobii_research_addons import (
+    from tobii_research_addons import (
         ScreenBasedCalibrationValidation, Point2)
-    _has_addons = True
 except ModuleNotFoundError:
-    _has_addons = False
+    try:
+        from .tobii_research_addons import (
+            ScreenBasedCalibrationValidation, Point2)
+    except ModuleNotFoundError:
+        _has_addons = False
+
 
 __version__ = "0.6.1"
 
