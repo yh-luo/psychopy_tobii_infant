@@ -90,7 +90,8 @@ Currently tested on Python 3.5.7 and Python 3.6.9
 
 - [prosdk-addons-python](https://github.com/tobiipro/prosdk-addons-python)
 
-If you wish to run calibration validation, you need to install or put [Tobii Pro SDK](https://www.tobiipro.com/product-listing/tobii-pro-sdk/) addons **inside** the source folder:
+If you wish to run calibration validation, you need to install or put the add-ons **inside** the source folder:
+The add-ons are Apache-2.0 licensed.
 
 ```
 psychopy_tobii_infant
@@ -151,6 +152,13 @@ Demo stimuli released under Creative Commons CC0, aka no copyright:
 
 ## Changelog
 
+### [0.7.0] 2021-4
+
+#### Improvements
+
++ Calibration validation provided by Tobii Pro SDK add-ons. 
++ `focus_time` in `tobii_controller.run_calibration` allows the adjustment of duration allowing the subject to focus.
+
 ### [0.6.1] 2020-3
 
 #### Improvements
@@ -194,6 +202,7 @@ This package is built upon/inspired by the following packages, for which credit 
 
 - [PsychoPy](http://www.psychopy.org/)
 - [Tobii Pro SDK](https://www.tobiipro.com/product-listing/tobii-pro-sdk/)
+- [Tobii Pro SDK add-ons](https://github.com/tobiipro/prosdk-addons-python), Apache-2.0 licensed
 - [psychopy_tobii_controller](https://github.com/hsogo/psychopy_tobii_controller) by [Hiroyuki Sogo](https://github.com/hsogo)
 - [PyGaze](http://www.pygaze.org/) by [Edwin S. Dalmaijer](https://github.com/esdalmaijer)
 
