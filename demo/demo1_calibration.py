@@ -3,7 +3,7 @@ import os
 import numpy as np
 from psychopy import core, event, visual
 
-from psychopy_tobii_infant import infant_tobii_controller
+from psychopy_tobii_infant import TobiiInfantController
 
 ###############################################################################
 # Constants
@@ -28,8 +28,8 @@ win = visual.Window(size=[1280, 1024],
                     fullscr=True,
                     allowGUI=False)
 
-# initialize tobii_controller to communicate with the eyetracker
-controller = infant_tobii_controller(win)
+# initialize TobiiInfantController to communicate with the eyetracker
+controller = TobiiInfantController(win)
 
 # setup the attention grabber during adjusting the participant's position
 grabber = visual.MovieStim3(win, "infant/seal-clip.mp4")
@@ -49,7 +49,8 @@ grabber.stop()
 # - Press space to start collect calibration samples.
 # - Press return (Enter) to finish the calibration and show the result.
 # - Choose the points to recalibrate with 1~9.
-# - Press decision_key (default is space) to accept the calibration or recalibrate.
+# - Press decision_key (default is space) to accept the calibration or
+# recalibrate.
 success = controller.run_calibration(CALIPOINTS, CALISTIMS)
 if not success:
     core.quit()
@@ -58,7 +59,7 @@ marker = visual.Rect(win, width=20, height=20, autoLog=False)
 
 # Start recording.
 # filename of the data file could be define in this method or when creating an
-# infant_tobii_controller instance
+# TobiiInfantController instance
 controller.start_recording('demo1-test.tsv')
 waitkey = True
 timer = core.Clock()

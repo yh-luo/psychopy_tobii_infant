@@ -4,7 +4,7 @@ import types
 import numpy as np
 from psychopy import core, event, sound, visual
 
-from psychopy_tobii_infant import infant_tobii_controller
+from psychopy_tobii_infant import TobiiInfantController
 
 ###############################################################################
 # Constants
@@ -87,8 +87,8 @@ def customized_update_calibration(self,
         self.win.flip()
 
 
-# initialize tobii_controller to communicate with the eyetracker
-controller = infant_tobii_controller(win)
+# initialize TobiiInfantController to communicate with the eyetracker
+controller = TobiiInfantController(win)
 # use the customized calibration
 controller.update_calibration = types.MethodType(customized_update_calibration,
                                                  controller)
@@ -110,7 +110,8 @@ grabber.stop()
 # - Press space to start collect calibration samples.
 # - Press return (Enter) to finish the calibration and show the result.
 # - Choose the points to recalibrate with 1~9.
-# - Press decision_key (default is space) to accept the calibration or recalibrate.
+# - Press decision_key (default is space) to accept the calibration or
+# recalibrate.
 success = controller.run_calibration(CALIPOINTS, CALISTIMS)
 if not success:
     core.quit()
@@ -119,7 +120,7 @@ marker = visual.Rect(win, width=20, height=20, autoLog=False)
 
 # Start recording.
 # filename of the data file could be define in this method or when creating an
-# infant_tobii_controller instance
+# TobiiInfantController instance
 controller.start_recording('demo5-test.tsv')
 waitkey = True
 timer = core.Clock()

@@ -2,7 +2,7 @@ import os
 import numpy as np
 from psychopy import core, visual, event
 
-from psychopy_tobii_infant import tobii_controller
+from psychopy_tobii_infant import TobiiController
 
 ###############################################################################
 # Constants
@@ -23,8 +23,8 @@ win = visual.Window(size=[1280, 1024],
                     fullscr=True,
                     allowGUI=False)
 
-# initialize tobii_controller to communicate with the eyetracker
-controller = tobii_controller(win)
+# initialize TobiiController to communicate with the eyetracker
+controller = TobiiController(win)
 
 # show the relative position of the subject to the eyetracker
 # stimuli in show_status are in 'height' units.
@@ -38,7 +38,7 @@ marker = visual.Rect(win, width=20, height=20, autoLog=False)
 
 # Start recording.
 # filename of the data file could be define in this method or when creating an
-# tobii_controller instance
+# TobiiController instance
 controller.start_recording('demo7-test.tsv')
 waitkey = True
 timer = core.Clock()

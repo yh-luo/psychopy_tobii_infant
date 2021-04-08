@@ -3,7 +3,7 @@ import os
 import numpy as np
 from psychopy import core, event, visual
 
-from psychopy_tobii_infant import tobii_controller
+from psychopy_tobii_infant import TobiiController
 
 ###############################################################################
 # Constants
@@ -22,17 +22,17 @@ win = visual.Window(size=[1280, 1024],
                     fullscr=True,
                     allowGUI=False)
 
-# initialize tobii_controller to communicate with the eyetracker
-controller = tobii_controller(win)
+# initialize TobiiController to communicate with the eyetracker
+controller = TobiiController(win)
 # adjust properties
 controller.calibration_dot_color = (0, 0, 0)
 controller.calibration_disc_color = (-1, -1, -1)
 controller.calibration_target_min = 0.1
 controller.shrink_speed = 2
 # change the keys used for 5-points calibration
+# -1 for select/deselect all calibration points to retry in calibration results
 controller.numkey_dict = {
-    "q":
-    -1,  # -1 for select/deselect all calibration points to retry in calibration results
+    "q": -1,
     "w": 0,
     "e": 1,
     "r": 2,
@@ -46,8 +46,10 @@ controller.numkey_dict = {
 controller.show_status()
 
 # After automatic calibration:
-# - Choose the points to recalibrate with numkey_dict (default is 1-9, qwerty in this demo)
-# - Press decision_key (default is space) to accept the calibration or recalibrate.
+# - Choose the points to recalibrate with numkey_dict
+# (default is 1-9, qwerty in this demo)
+# - Press decision_key (default is space) to accept the calibration or
+# recalibrate.
 success = controller.run_calibration(CALIPOINTS)
 if not success:
     core.quit()
@@ -56,7 +58,7 @@ marker = visual.Rect(win, width=20, height=20, autoLog=False)
 
 # Start recording.
 # filename of the data file could be define in this method or when creating an
-# tobii_controller instance
+# TobiiController instance
 controller.start_recording('demo4-test.tsv')
 waitkey = True
 timer = core.Clock()

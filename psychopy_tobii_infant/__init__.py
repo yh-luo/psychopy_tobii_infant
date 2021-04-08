@@ -23,7 +23,7 @@ except ModuleNotFoundError:
 __version__ = "0.7.0"
 
 
-class tobii_controller:
+class TobiiController:
     """Tobii controller for PsychoPy.
 
         tobii_research are required for this module.
@@ -1074,10 +1074,10 @@ class tobii_controller:
         self._shrink_sec = value
 
 
-class infant_tobii_controller(tobii_controller):
+class TobiiInfantController(TobiiController):
     """Tobii controller with children-friendly calibration procedure.
 
-        This is a subclass of tobii_controller, with some modification for
+        This is a subclass of TobiiController, with some modification for
         developmental research.
 
     Args:
@@ -1372,3 +1372,8 @@ class infant_tobii_controller(tobii_controller):
         else:
             lt = max_time - np.sum(away_time)
             return round(lt, 3)
+
+
+# backward compatible
+tobii_controller = TobiiController
+tobii_infant_controller = TobiiInfantController
