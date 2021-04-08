@@ -1,13 +1,14 @@
 from psychopy import monitors, visual
-from psychopy_tobii_infant import tobii_controller
+from psychopy_tobii_infant import TobiiController
 
 
-class dummy_controller(tobii_controller):
+class DummyController(TobiiController):
     def __init__(self, win):
         self.win = win
 
 
 class TestCoord:
+    """Test the transformation of coordinates."""
     def setup(self):
         self.mon = monitors.Monitor("dummy",
                                     width=12.8,
@@ -20,7 +21,7 @@ class TestCoord:
                                  allowGUI=False,
                                  autoLog=False)
 
-        self.controller = dummy_controller(self.win)
+        self.controller = DummyController(self.win)
 
         self.tobii_points = [(0, 0), (1, 0), (1, 1), (0, 1), (0.5, 0.5)]
         self.psy_points = {

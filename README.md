@@ -4,7 +4,7 @@ Create infant-friendly eyetracking experiments with PsychoPy and Tobii eyetracke
 
 ## What it's for
 
-This package was based on [psychopy_tobii_controller](https://github.com/hsogo/psychopy_tobii_controller), with some some modifications for developmental research.
+This package was based on [psychopy_tobii_controller](https://github.com/hsogo/psychopy_tobii_controller), with some some improvements and modifications for developmental research.
 
 ## Cautions
 
@@ -27,7 +27,7 @@ Yu-Han Luo
 import os
 from psychopy import visual, core
 
-from psychopy_tobii_infant import infant_tobii_controller
+from psychopy_tobii_infant import TobiiInfantController
 
 # create a Window to control the monitor
 win = visual.Window(
@@ -35,8 +35,8 @@ win = visual.Window(
     units='norm',
     fullscr=True,
     allowGUI=False)
-# initialize tobii_controller to communicate with the eyetracker
-controller = infant_tobii_controller(win)
+# initialize TobiiInfantController to communicate with the eyetracker
+controller = TobiiInfantController(win)
 
 # show the relative position of the subject to the eyetracker
 # Press space to exit
@@ -151,6 +151,15 @@ Demo stimuli released under Creative Commons CC0, aka no copyright:
 3. Run calibration validation automatically and show the results
 
 ## Changelog
+
+### [0.7.1] 2021-4
+
+#### Changed
+
+Codes conform to PEP8 now. Class names are backward-compatible so old scripts should run as expected.
+
++ `tobii_controller` -> `TobiiController`
++ `tobii_infant_controller` -> `TobiiInfantController`
 
 ### [0.7.0] 2021-4
 
