@@ -17,7 +17,7 @@ CALIPOINTS = [(x * DISPSIZE[0], y * DISPSIZE[1]) for x, y in CALINORMP]
 # The number of stimuli must be the same or larger than the calibration points.
 CALISTIMS = [
     'infant/{}'.format(x) for x in os.listdir(os.path.join(DIR, 'infant'))
-    if '.png' in x
+    if x.endswith('.png') and not x.startswith('.')
 ]
 
 ###############################################################################
