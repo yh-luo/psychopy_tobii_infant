@@ -18,7 +18,7 @@ CALIPOINTS = [(x * DISPSIZE[0], y * DISPSIZE[1]) for x, y in CALINORMP]
 # The number of stimuli must be the same or larger than the calibration points.
 CALISTIMS = [
     'infant/{}'.format(x) for x in os.listdir(os.path.join(DIR, 'infant'))
-    if '.png' in x
+    if x.endswith('.png') and not x.startswith('.')
 ]
 SOUNDSTIM = 'infant/wawa.wav'
 
@@ -40,6 +40,7 @@ grabber = visual.MovieStim3(win, "infant/seal-clip.mp4")
 # create a customized calibration procedure with sound
 # code snippets copied from _update_calibration_infant()
 def customized_update_calibration(self,
+                                  _focus_time=0.5,
                                   collect_key='space',
                                   exit_key='return'):
     # start calibration
@@ -60,7 +61,7 @@ def customized_update_calibration(self,
                 # -- Modification end --
             elif key == collect_key:
                 # allow the participant to focus
-                core.wait(0.5)
+                core.wait(_focus_time)
                 # collect samples when space is pressed
                 if current_point_index in self.retry_points:
                     self._collect_calibration_data(

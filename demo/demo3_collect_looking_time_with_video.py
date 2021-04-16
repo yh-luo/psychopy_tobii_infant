@@ -16,7 +16,7 @@ CALIPOINTS = [(x * DISPSIZE[0], y * DISPSIZE[1]) for x, y in CALINORMP]
 # correct path for calibration stimuli
 CALISTIMS = [
     'infant/{}'.format(x) for x in os.listdir(os.path.join(DIR, 'infant'))
-    if '.png' in x
+    if x.endswith('.png') and not x.startswith('.')
 ]
 
 ###############################################################################
