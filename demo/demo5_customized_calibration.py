@@ -34,7 +34,7 @@ win = visual.Window(size=[1280, 1024],
 audio_grabber = sound.Sound(SOUNDSTIM)
 
 # setup the attention grabber during adjusting the participant's position
-grabber = visual.MovieStim3(win, "infant/seal-clip.mp4")
+grabber = visual.MovieStim3(win, "infant/Sea.mp4")
 
 
 # create a customized calibration procedure with sound

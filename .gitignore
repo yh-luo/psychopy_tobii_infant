@@ -7,8 +7,5 @@
 *.tsv
 *.egg-info/
 
-demo/infant
-demo/stim
-
 # addons
 tobii_research_addons/

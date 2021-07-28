@@ -32,7 +32,7 @@ win = visual.Window(
 controller = TobiiInfantController(win)
 
 # setup the attention grabber during adjusting the participant's position
-grabber = visual.MovieStim3(win, "infant/seal-clip.mp4")
+grabber = visual.MovieStim3(win, "infant/Sea.mp4")
 grabber.setAutoDraw(True)
 grabber.play()
 # show the relative position of the subject to the eyetracker
@@ -58,11 +58,11 @@ if not success:
 # prepare the video
 movie = visual.MovieStim3(
     win,
-    'infant/seal-clip.mp4',
+    'infant/Sea.mp4',
     size=[600, 600],
     units='pix',
     loop=True,
-    name='infant/seal-clip.mp4')
+    name='infant/Sea.mp4')
 
 # Start recording.
 # filename of the data file could be define in this method or when creating an

@@ -33,7 +33,7 @@ win = visual.Window(size=[1280, 1024],
 controller = TobiiInfantController(win)
 
 # setup the attention grabber during adjusting the participant's position
-grabber = visual.MovieStim3(win, "infant/seal-clip.mp4")
+grabber = visual.MovieStim3(win, "infant/Sea.mp4")
 # prepare the audio stimuli used in calibration
 calibration_sound = sound.Sound(SOUNDSTIM)
 
