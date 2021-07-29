@@ -50,8 +50,6 @@ class TobiiController:
         calibration_target_min: the minimum size of the calibration target.
             Default is 0.2.
         numkey_dict: keys used for calibration. Default is the number pad.
-            If it is changed, the keys in calibration results will not
-            update accordingly (my bad), be cautious!
         update_calibration: the presentation of calibration target.
             Default is auto calibration.
     """
@@ -110,7 +108,6 @@ class TobiiController:
         self.eyetracker_id = id
         self.win = win
         self.filename = filename
-        # FIXME: self.numkey_dict is not updated accordingly
         self.numkey_dict = self._default_numkey_dict
         self.calibration_dot_size = self._default_calibration_dot_size[
             self.win.units]
@@ -737,7 +734,7 @@ class TobiiController:
             focus_time: the duration allowing the subject to focus in seconds.
                         Default is 0.5.
             decision_key: key to leave the procedure. Default is space.
-            show_results: Whether to show the validation results. Default if
+            show_results: Whether to show the validation results. Default is
                 False.
             save_to_file: Whether to save the validation results to the data
                 file. Default is True.
