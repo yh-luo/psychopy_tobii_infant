@@ -590,6 +590,8 @@ class TobiiController:
             focus_time: the duration allowing the subject to focus in seconds.
                         Default is 0.5.
             decision_key: key to leave the procedure. Default is space.
+            result_msg_color: Color to be used for calibration result text.
+                Accepts any PsychoPy color specification. Default is white.
 
         Returns:
             bool: The status of calibration. True for success, False otherwise.
@@ -739,10 +741,12 @@ class TobiiController:
             focus_time: the duration allowing the subject to focus in seconds.
                         Default is 0.5.
             decision_key: key to leave the procedure. Default is space.
-            show_results: Whether to show the validation results. Default if
+            show_results: Whether to show the validation results. Default is
                 False.
             save_to_file: Whether to save the validation results to the data
                 file. Default is True.
+            result_msg_color: Color to be used for calibration result text.
+                Accepts any PsychoPy color specification. Default is white.
 
         Returns:
             tobii_research_addons.ScreenBasedCalibrationValidation.CalibrationValidationResult
@@ -1195,6 +1199,8 @@ class TobiiInfantController(TobiiController):
             focus_time: the duration allowing the subject to focus in seconds.
                         Default is 0.5.
             decision_key: key to leave the procedure. Default is space.
+            result_msg_color: Color to be used for calibration result text.
+                Accepts any PsychoPy color specification. Default is white.
 
         Returns:
             bool: The status of calibration. True for success, False otherwise.
