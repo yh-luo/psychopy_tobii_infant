@@ -1,7 +1,7 @@
 from psychopy.experiment.components import BaseComponent, Param
 
 
-class EyetrackerRecComponent(BaseComponent):
+class PTIRecComponent(BaseComponent):
     """Collect eye-tracking data in a routine."""
     categories = ["Eyetracking"]
     targets = ["PsychoPy"]
@@ -9,19 +9,21 @@ class EyetrackerRecComponent(BaseComponent):
     def __init__(self,
                  exp,
                  parentName,
-                 name="eyetacker_rec",
-                 file_suffix="_TOBII.tsv",
+                 name="pti_rec",
+                 tobii_filename="u'data/%s_%s_%s_TOBII.tsv'"
+                 "% (expInfo['participant'], expName, expInfo['date'])",
                  newfile=True):
         super().__init__(exp, parentName, name)
-        self.type = "EyetrackerRec"
+        self.type = "PTIRec"
         self.url = "https://github.com/yh-luo/psychopy_tobii_infant"
 
-        self.params["file_suffix"] = Param(file_suffix,
-                                           valType="str",
-                                           updates="constant",
-                                           label="Suffix of the data file")
+        self.params["tobii_filename"] = Param(
+            tobii_filename,
+            valType="code",
+            updates="constant",
+            label="Filename of the Tobii output")
         msg = ("Whether to write the data to a new file."
-               "file_suffix has no effects if newfile=False")
+               "tobii_filename has no effects if newfile=False")
         self.params["newfile"] = Param(newfile,
                                        valType="bool",
                                        updates="constant",
@@ -29,16 +31,18 @@ class EyetrackerRecComponent(BaseComponent):
                                        label="Open a new file",
                                        categ="Advanced")
 
+        # trim some params:
+        for p in ('startType', 'startVal', 'startEstim', 'stopVal', 'stopType',
+                  'durationEstim', 'saveStartStop', 'syncScreenRefresh'):
+            if p in self.params:
+                del self.params[p]
+
     def writeRoutineStartCode(self, buff):
         if self.params["newfile"].val:
-            code = ("tobii_controller.start_recording(filename="
-                    "filename + %(file_suffix)s)\n")
+            code = "tobii_controller.start_recording(%(tobii_filename)s)\n"
         else:
             code = "tobii_controller.start_recording(newfile=False)\n"
         buff.writeIndented(code % self.params)
-
-    def writeFrameCode(self, buff):
-        pass
 
     def writeRoutineEndCode(self, buff):
         code = "tobii_controller.stop_recording()\n"

@@ -1,7 +1,7 @@
 from psychopy.experiment.components import BaseComponent, Param
 
 
-class EyetrackerCalibComponent(BaseComponent):
+class PTICalibComponent(BaseComponent):
     """Run calibration."""
     categories = ["Eyetracking"]
     targets = ["PsychoPy"]
@@ -9,7 +9,7 @@ class EyetrackerCalibComponent(BaseComponent):
     def __init__(self,
                  exp,
                  parentName,
-                 name="eyetracker_calib",
+                 name="pti_calib",
                  show_status=True,
                  calibration_points=[(-0.4, 0.4), (-0.4, -0.4), (0.0, 0.0),
                                      (0.4, 0.4), (0.4, -0.4)],
@@ -21,7 +21,7 @@ class EyetrackerCalibComponent(BaseComponent):
                  focus_time=0.5,
                  decision_key="space"):
         super().__init__(exp, parentName, name)
-        self.type = "EyetrackerCalib"
+        self.type = "PTICalib"
         self.url = "https://github.com/yh-luo/psychopy_tobii_infant"
 
         self.params["show_status"] = Param(
@@ -61,6 +61,12 @@ class EyetrackerCalibComponent(BaseComponent):
                                             hint="key to leave the procedure",
                                             label="Decision key",
                                             categ="Advanced")
+        # trim some params:
+        for p in ('startType', 'startVal', 'startEstim', 'stopVal',
+                  'stopType', 'durationEstim',
+                  'saveStartStop', 'syncScreenRefresh'):
+            if p in self.params:
+                del self.params[p]
 
     def writeRoutineStartCode(self, buff):
         if self.params["show_status"].val:
@@ -79,9 +85,3 @@ class EyetrackerCalibComponent(BaseComponent):
         buff.setIndentLevel(-1, relative=True)
         code = ")\n"
         buff.writeIndented(code)
-
-    def writeFrameCode(self, buff):
-        pass
-
-    def writeRoutineEndCode(self, buff):
-        pass

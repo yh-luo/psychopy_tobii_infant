@@ -1,7 +1,7 @@
 from psychopy.experiment.components import BaseComponent, Param
 
 
-class EyetrackerValidComponent(BaseComponent):
+class PTIValidComponent(BaseComponent):
     """Run validation."""
     categories = ["Eyetracking"]
     targets = ["PsychoPy"]
@@ -9,7 +9,7 @@ class EyetrackerValidComponent(BaseComponent):
     def __init__(self,
                  exp,
                  parentName,
-                 name="eyetracker_valid",
+                 name="pti_valid",
                  validation_points=None,
                  sample_count=30,
                  timeout=1,
@@ -18,7 +18,7 @@ class EyetrackerValidComponent(BaseComponent):
                  show_results=False,
                  save_to_file=True):
         super().__init__(exp, parentName, name)
-        self.type = "EyetrackerValid"
+        self.type = "PTIValid"
         self.url = "https://github.com/yh-luo/psychopy_tobii_infant"
 
         self.params["validation_points"] = Param(
@@ -64,27 +64,25 @@ class EyetrackerValidComponent(BaseComponent):
             label="Save validation results to the file",
             categ="Advanced")
 
-    def writeRoutineStartCode(self, buff):
+        # trim some params:
+        for p in ('startType', 'startVal', 'startEstim', 'stopVal',
+                  'stopType', 'durationEstim',
+                  'saveStartStop', 'syncScreenRefresh'):
+            if p in self.params:
+                del self.params[p]
 
+    def writeRoutineStartCode(self, buff):
         code = "tobii_controller.run_validation(\n"
         buff.writeIndented(code % self.params)
         buff.setIndentLevel(1, relative=True)
-        code = (
-            "validation_points=%(validation_points)s,\n"
-            "sample_count=%(sample_count)s,\n"
-            "timeout=%(timeout)s,\n"
-            "focus_time=%(focus_time)s,\n"
-            "decision_key=%(decision_key)s,\n"
-            "show_results=%(show_results)s,\n"
-            "save_to_file=%(save_to_file)s"
-        )
+        code = ("validation_points=%(validation_points)s,\n"
+                "sample_count=%(sample_count)s,\n"
+                "timeout=%(timeout)s,\n"
+                "focus_time=%(focus_time)s,\n"
+                "decision_key=%(decision_key)s,\n"
+                "show_results=%(show_results)s,\n"
+                "save_to_file=%(save_to_file)s")
         buff.writeIndentedLines(code % self.params)
         buff.setIndentLevel(-1, relative=True)
         code = ")\n"
         buff.writeIndented(code % self.params)
-
-    def writeFrameCode(self, buff):
-        pass
-
-    def writeRoutineEndCode(self, buff):
-        pass
