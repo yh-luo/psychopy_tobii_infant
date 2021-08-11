@@ -581,7 +581,8 @@ class TobiiController:
         self.datafile.close()
 
     def run_calibration(self, calibration_points,
-                        focus_time=0.5, decision_key="space"):
+                        focus_time=0.5, decision_key="space",
+                        result_msg_color="white"):
         """Run calibration
 
         Args:
@@ -589,6 +590,8 @@ class TobiiController:
             focus_time: the duration allowing the subject to focus in seconds.
                         Default is 0.5.
             decision_key: key to leave the procedure. Default is space.
+            result_msg_color: Color to be used for calibration result text.
+                Accepts any PsychoPy color specification. Default is white.
 
         Returns:
             bool: The status of calibration. True for success, False otherwise.
@@ -636,7 +639,7 @@ class TobiiController:
         result_msg = visual.TextStim(
             self.win,
             pos=(0, -self.win.size[1] / 4),
-            color="white",
+            color=result_msg_color,
             units="pix",
             alignText="left",
             autoLog=False,
@@ -723,7 +726,8 @@ class TobiiController:
                        focus_time=0.5,
                        decision_key="space",
                        show_results=False,
-                       save_to_file=True):
+                       save_to_file=True,
+                       result_msg_color="white"):
         """Run validation.
 
         tobii_research_addons is required for running validation.
@@ -737,10 +741,12 @@ class TobiiController:
             focus_time: the duration allowing the subject to focus in seconds.
                         Default is 0.5.
             decision_key: key to leave the procedure. Default is space.
-            show_results: Whether to show the validation results. Default if
+            show_results: Whether to show the validation results. Default is
                 False.
             save_to_file: Whether to save the validation results to the data
                 file. Default is True.
+            result_msg_color: Color to be used for calibration result text.
+                Accepts any PsychoPy color specification. Default is white.
 
         Returns:
             tobii_research_addons.ScreenBasedCalibrationValidation.CalibrationValidationResult
@@ -817,7 +823,7 @@ class TobiiController:
         if show_results:
             result_msg = visual.TextStim(self.win,
                                          pos=(0, -self.win.size[1] / 4),
-                                         color="white",
+                                         color=result_msg_color,
                                          units="pix",
                                          alignText="left",
                                          wrapWidth=self.win.size[0] * 0.6,
@@ -1166,7 +1172,8 @@ class TobiiInfantController(TobiiController):
                         infant_stims,
                         audio=None,
                         focus_time=0.5,
-                        decision_key="space"):
+                        decision_key="space",
+                        result_msg_color="white"):
         """Run calibration.
 
             How to use:
@@ -1192,6 +1199,8 @@ class TobiiInfantController(TobiiController):
             focus_time: the duration allowing the subject to focus in seconds.
                         Default is 0.5.
             decision_key: key to leave the procedure. Default is space.
+            result_msg_color: Color to be used for calibration result text.
+                Accepts any PsychoPy color specification. Default is white.
 
         Returns:
             bool: The status of calibration. True for success, False otherwise.
@@ -1231,7 +1240,7 @@ class TobiiInfantController(TobiiController):
         result_msg = visual.TextStim(
             self.win,
             pos=(0, -self.win.size[1] / 4),
-            color="white",
+            color=result_msg_color,
             units="pix",
             autoLog=False,
         )
