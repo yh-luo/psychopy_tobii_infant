@@ -1,7 +1,7 @@
 from psychopy.experiment.components import BaseComponent, Param
 
 
-class PTIValidComponent(BaseComponent):
+class PTIValidationComponent(BaseComponent):
     """Run validation."""
     categories = ["Eyetracking"]
     targets = ["PsychoPy"]
@@ -18,7 +18,7 @@ class PTIValidComponent(BaseComponent):
                  show_results=False,
                  save_to_file=True):
         super().__init__(exp, parentName, name)
-        self.type = "PTIValid"
+        self.type = "PTIValidation"
         self.url = "https://github.com/yh-luo/psychopy_tobii_infant"
 
         self.params["validation_points"] = Param(
@@ -65,9 +65,8 @@ class PTIValidComponent(BaseComponent):
             categ="Advanced")
 
         # trim some params:
-        for p in ('startType', 'startVal', 'startEstim', 'stopVal',
-                  'stopType', 'durationEstim',
-                  'saveStartStop', 'syncScreenRefresh'):
+        for p in ("startType", "startVal", "startEstim", "stopVal", "stopType",
+                  "durationEstim", "saveStartStop", "syncScreenRefresh"):
             if p in self.params:
                 del self.params[p]
 

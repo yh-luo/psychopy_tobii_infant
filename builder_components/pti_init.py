@@ -1,14 +1,14 @@
 from psychopy.experiment.components import BaseComponent, Param
 
 
-class PTIInitComponent(BaseComponent):
+class PTIInitiationComponent(BaseComponent):
     """Initialize the controller instance."""
     categories = ["Eyetracking"]
     targets = ["PsychoPy"]
 
     def __init__(self, exp, parentName, name="pti_init", id=0, infant=True):
         super().__init__(exp, parentName, name)
-        self.type = "PTIInit"
+        self.type = "PTIInitiation"
         self.url = "https://github.com/yh-luo/psychopy_tobii_infant"
 
         self.order = ["name", "id", "infant"]
@@ -26,8 +26,8 @@ class PTIInitComponent(BaseComponent):
             label="Infant-friendly calibration")
 
         # trim some params:
-        for p in ('startType', 'startVal', 'startEstim', 'stopVal', 'stopType',
-                  'durationEstim', 'saveStartStop', 'syncScreenRefresh'):
+        for p in ("startType", "startVal", "startEstim", "stopVal", "stopType",
+                  "durationEstim", "saveStartStop", "syncScreenRefresh"):
             if p in self.params:
                 del self.params[p]
 
@@ -35,11 +35,13 @@ class PTIInitComponent(BaseComponent):
         if self.params["infant"].val:
             code = (
                 "from psychopy_tobii_infant import TobiiInfantController\n"
-                "tobii_controller = TobiiInfantController(win, id=%(id)s)\n")
+                "tobii_controller = TobiiInfantController(win, id=%(id)s)\n"
+                "controller_infant_mode = True\n")
         else:
             code = ("from psychopy_tobii_infant import TobiiController\n"
-                    "tobii_controller = TobiiController(win, id=%(id)s)\n")
-        buff.writeIndented(code % self.params)
+                    "tobii_controller = TobiiController(win, id=%(id)s)\n"
+                    "controller_infant_mode = False\n")
+        buff.writeIndentedLines(code % self.params)
 
     def writeExperimentEndCode(self, buff):
         buff.writeIndented("tobii_controller.close()\n")

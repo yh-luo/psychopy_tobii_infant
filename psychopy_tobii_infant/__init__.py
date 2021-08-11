@@ -1312,6 +1312,211 @@ class TobiiInfantController(TobiiController):
 
         return retval
 
+    def run_validation(self,
+                       validation_points=None,
+                       infant_stims=None,
+                       audio=None,
+                       sample_count=30,
+                       timeout=1,
+                       focus_time=0.5,
+                       decision_key="space",
+                       show_results=False,
+                       save_to_file=True):
+        """Run validation.
+
+        tobii_research_addons is required for running validation. Validation
+        procedure is only available after a successful calibration or an error
+        will be raised.
+
+        Args:
+            validation_points: list of position of the validation points. If
+                None, the calibration points are used. Default is None.
+            infant_stims:  list of images to attract the infant. If None, use
+                the same images as calibration.
+            audio: the psychopy.sound.Sound object to play during collecting
+                samples. If False, no sound will be played. If None, behaves
+                the same as in calibration. Default is None.
+            sample_count: The number of samples to collect. Default is 30,
+                minimum 10, maximum 3000.
+            timeout: Timeout in seconds. Default is 1, minimum 0.1, maximum 3.
+            focus_time: the duration allowing the subject to focus in seconds.
+                        Default is 0.5.
+            decision_key: key to leave the procedure. Default is space.
+            show_results: Whether to show the validation results. Default if
+                False.
+            save_to_file: Whether to save the validation results to the data
+                file. Default is True.
+
+        Returns:
+            tobii_research_addons.ScreenBasedCalibrationValidation.CalibrationValidationResult
+        """
+        if self.update_validation is None:
+            raise ModuleNotFoundError("tobii_research_addons is not found.")
+        if not self._calibrated:
+            raise RuntimeError("Validation procedure is only available after a"
+                               "successful calibration procedure.")
+
+        # prepare stimuli
+        if infant_stims is not None:
+            self.targets = [
+                visual.ImageStim(self.win, image=v, autoLog=False)
+                for v in infant_stims
+            ]
+        if audio is False:
+            self._audio = None
+        elif audio is not None:
+            self._audio = audio
+
+        # setup the procedure
+        self.validation = ScreenBasedCalibrationValidation(
+            self.eyetracker, sample_count, int(1000 * timeout))
+
+        if validation_points is not None:
+            self.validation_points = validation_points
+        else:
+            self.validation_points = self.original_calibration_points
+        self.retry_points = list(range(len(self.original_calibration_points)))
+
+        # clear the display
+        self.win.flip()
+
+        self.validation.enter_validation_mode()
+        self.update_validation(infant_stims, audio, focus_time)
+        self.validation_result = self.validation.compute()
+        self.win.flip()
+        self.validation.leave_validation_mode()
+
+        if save_to_file or show_results:
+            result_buffer = "Validation time:\t{}\n".format(
+                datetime.now().strftime("%H:%M:%S"))
+            # accuracy
+            result_buffer += "Mean accuracy (in degrees):\t"
+            val = (round(this_eye, 4) for this_eye in (
+                self.validation_result.average_accuracy_left,
+                self.validation_result.average_accuracy_right))
+            result_buffer += "left={}\tright={}\n".format(*val)
+
+            result_buffer += "Mean accuracy (in pixels):\t"
+            val = (np.nan, np.nan)
+            try:
+                val = (deg2pix(self.validation_result.average_accuracy_left,
+                               self.win.monitor),
+                       deg2pix(self.validation_result.average_accuracy_right,
+                               self.win.monitor))
+                val = (round(this_eye, 4) for this_eye in val)
+            except ValueError:
+                pass
+            result_buffer += "left={}\tright={}\n".format(*val)
+
+            # RMS
+            result_buffer += "Mean precision (RMS error, in degrees):\t"
+            val = (round(this_eye, 4) for this_eye in (
+                self.validation_result.average_precision_rms_left,
+                self.validation_result.average_precision_rms_right))
+            result_buffer += "left={}\tright={}\n".format(*val)
+
+            result_buffer += "Mean precision (RMS error, in pixels):\t"
+            val = (np.nan, np.nan)
+            try:
+                val = (deg2pix(
+                    self.validation_result.average_precision_rms_left,
+                    self.win.monitor),
+                       deg2pix(
+                           self.validation_result.average_precision_rms_right,
+                           self.win.monitor))
+                val = (round(this_eye, 4) for this_eye in val)
+            except ValueError:
+                pass
+            result_buffer += "left={}\tright={}\n".format(*val)
+
+        if save_to_file:
+            if self.validation_result_buffers is None:
+                self.validation_result_buffers = list()
+            self.validation_result_buffers.append(result_buffer)
+
+        if show_results:
+            result_msg = visual.TextStim(self.win,
+                                         pos=(0, -self.win.size[1] / 4),
+                                         color="white",
+                                         units="pix",
+                                         alignText="left",
+                                         wrapWidth=self.win.size[0] * 0.6,
+                                         autoLog=False)
+            result_msg.setText(result_buffer.replace("\t", " "))
+            result_msg.draw()
+            self.win.flip()
+            waitkey = True
+            while waitkey:
+                for key in event.getKeys():
+                    if key == decision_key:
+                        waitkey = False
+                        break
+
+        return self.validation_result
+
+    def _update_validation_infant(self,
+                                  _focus_time=0.5,
+                                  collect_key="space",
+                                  exit_key="return"):
+        """The validation procedure designed for infants.
+
+        Args:
+            focus_time: the duration allowing the subject to focus in seconds.
+                            Default is 0.5.
+            collect_key: key to start collecting samples. Default is space.
+            exit_key: key to finish and leave the current calibration
+                procedure. It should not be confused with `decision_key`, which
+                is used to leave the whole calibration process. `exit_key` is
+                used to leave the current calibration, the user may recalibrate
+                or accept the results afterwards. Default is return (Enter)
+
+        Returns:
+            None
+        """
+        # start
+        event.clearEvents()
+        point_idx = -1
+        clock = core.Clock()
+        in_validation = True
+        while in_validation:
+            # get keys
+            keys = event.getKeys()
+            for key in keys:
+                if key in self.numkey_dict:
+                    point_idx = self.numkey_dict[key]
+
+                    # play the sound if it exists
+                    if self._audio is not None:
+                        if point_idx in self.retry_points:
+                            self._audio.play()
+                elif key == collect_key:
+                    # allow the participant to focus
+                    core.wait(_focus_time, 0.0)
+                    # collect samples when space is pressed
+                    if point_idx in self.retry_points:
+                        self._collect_validation_data(
+                            self.validation_points[point_idx])
+                        point_idx = -1
+                        # stop the sound
+                        if self._audio is not None:
+                            self._audio.pause()
+                elif key == exit_key:
+                    # exit when return is pressed
+                    in_validation = False
+                    break
+
+            # draw calibration target
+            if point_idx in self.retry_points:
+                this_target = self.targets[point_idx % len(self.targets)]
+                this_pos = self.validation_points[point_idx]
+                this_target.setPos(this_pos)
+                t = clock.getTime() * self.shrink_speed
+                newsize = [(np.sin(t)**2 + self.calibration_target_min) * e
+                           for e in self.target_original_size]
+                this_target.setSize(newsize)
+                this_target.draw()
+            self.win.flip()
+
     # Collect looking time
     def collect_lt(self, max_time, min_away, blink_dur=1):
         """Collect looking time data in runtime.
