@@ -9,6 +9,7 @@ from psychopy import core, event, visual
 from psychopy.tools.monitorunittools import cm2pix, deg2pix, pix2cm, pix2deg
 
 _has_addons = True
+# yapf: disable
 try:
     from tobii_research_addons import (
         ScreenBasedCalibrationValidation, Point2)
@@ -18,8 +19,7 @@ except ModuleNotFoundError:
             ScreenBasedCalibrationValidation, Point2)
     except ModuleNotFoundError:
         _has_addons = False
-
-
+# yapf: enable
 __version__ = "0.7.0"
 
 
@@ -580,8 +580,10 @@ class TobiiController:
 
         self.datafile.close()
 
-    def run_calibration(self, calibration_points,
-                        focus_time=0.5, decision_key="space",
+    def run_calibration(self,
+                        calibration_points,
+                        focus_time=0.5,
+                        decision_key="space",
                         result_msg_color="white"):
         """Run calibration
 
@@ -758,63 +760,23 @@ class TobiiController:
         self.validation = ScreenBasedCalibrationValidation(
             self.eyetracker, sample_count, int(1000 * timeout))
 
-        if validation_points is not None:
-            self.validation_points = validation_points
-        else:
-            self.validation_points = self.original_calibration_points
+        if validation_points is None:
+            validation_points = self.original_calibration_points
 
         # clear the display
         self.win.flip()
 
         self.validation.enter_validation_mode()
-        self.update_validation(_focus_time=focus_time)
-        self.validation_result = self.validation.compute()
-        self.win.flip()
+        self.update_validation(validation_points=validation_points,
+                               _focus_time=focus_time)
+        validation_result = self.validation.compute()
         self.validation.leave_validation_mode()
+        self.win.flip()
 
-        if save_to_file or show_results:
-            result_buffer = "Validation time:\t{}\n".format(
-                datetime.now().strftime("%H:%M:%S"))
-            # accuracy
-            result_buffer += "Mean accuracy (in degrees):\t"
-            val = (round(this_eye, 4) for this_eye in (
-                self.validation_result.average_accuracy_left,
-                self.validation_result.average_accuracy_right))
-            result_buffer += "left={}\tright={}\n".format(*val)
+        if not (save_to_file or show_results):
+            return validation_result
 
-            result_buffer += "Mean accuracy (in pixels):\t"
-            val = (np.nan, np.nan)
-            try:
-                val = (deg2pix(self.validation_result.average_accuracy_left,
-                               self.win.monitor),
-                       deg2pix(self.validation_result.average_accuracy_right,
-                               self.win.monitor))
-                val = (round(this_eye, 4) for this_eye in val)
-            except ValueError:
-                pass
-            result_buffer += "left={}\tright={}\n".format(*val)
-
-            # RMS
-            result_buffer += "Mean precision (RMS error, in degrees):\t"
-            val = (round(this_eye, 4) for this_eye in (
-                self.validation_result.average_precision_rms_left,
-                self.validation_result.average_precision_rms_right))
-            result_buffer += "left={}\tright={}\n".format(*val)
-
-            result_buffer += "Mean precision (RMS error, in pixels):\t"
-            val = (np.nan, np.nan)
-            try:
-                val = (deg2pix(
-                    self.validation_result.average_precision_rms_left,
-                    self.win.monitor),
-                       deg2pix(
-                           self.validation_result.average_precision_rms_right,
-                           self.win.monitor))
-                val = (round(this_eye, 4) for this_eye in val)
-            except ValueError:
-                pass
-            result_buffer += "left={}\tright={}\n".format(*val)
-
+        result_buffer = self._process_validation_result(validation_result)
         if save_to_file:
             if self.validation_result_buffers is None:
                 self.validation_result_buffers = list()
@@ -831,6 +793,7 @@ class TobiiController:
             result_msg.setText(result_buffer.replace("\t", " "))
             result_msg.draw()
             self.win.flip()
+
             waitkey = True
             while waitkey:
                 for key in event.getKeys():
@@ -838,14 +801,58 @@ class TobiiController:
                         waitkey = False
                         break
 
-        return self.validation_result
+        return validation_result
 
-    def _update_validation_auto(self, _focus_time=0.5):
+    def _process_validation_result(self, validation_result):
+        """Process validation result"""
+        result_buffer = "Validation time:\t{}\n".format(
+            datetime.now().strftime("%H:%M:%S"))
+        # accuracy
+        result_buffer += "Mean accuracy (in degrees):\t"
+        val = (round(this_eye, 4)
+               for this_eye in (validation_result.average_accuracy_left,
+                                validation_result.average_accuracy_right))
+        result_buffer += "left={}\tright={}\n".format(*val)
+
+        result_buffer += "Mean accuracy (in pixels):\t"
+        val = (np.nan, np.nan)
+        try:
+            val = (deg2pix(validation_result.average_accuracy_left,
+                           self.win.monitor),
+                   deg2pix(validation_result.average_accuracy_right,
+                           self.win.monitor))
+            val = (round(this_eye, 4) for this_eye in val)
+        except ValueError:
+            pass
+        result_buffer += "left={}\tright={}\n".format(*val)
+
+        # RMS
+        result_buffer += "Mean precision (RMS error, in degrees):\t"
+        val = (round(this_eye, 4)
+               for this_eye in (validation_result.average_precision_rms_left,
+                                validation_result.average_precision_rms_right))
+        result_buffer += "left={}\tright={}\n".format(*val)
+
+        result_buffer += "Mean precision (RMS error, in pixels):\t"
+        val = (np.nan, np.nan)
+        try:
+            val = (deg2pix(validation_result.average_precision_rms_left,
+                           self.win.monitor),
+                   deg2pix(validation_result.average_precision_rms_right,
+                           self.win.monitor))
+            val = (round(this_eye, 4) for this_eye in val)
+        except ValueError:
+            pass
+        result_buffer += "left={}\tright={}\n".format(*val)
+
+        return result_buffer
+
+    def _update_validation_auto(self, validation_points, _focus_time=0.5):
         """Automatic validation procedure."""
         # start
         event.clearEvents()
         clock = core.Clock()
-        for current_validation_point in self.validation_points:
+        for current_validation_point in validation_points:
             self.calibration_target_disc.setPos(current_validation_point)
             self.calibration_target_dot.setPos(current_validation_point)
             clock.reset()
