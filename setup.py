@@ -2,7 +2,7 @@ from setuptools import setup
 
 import psychopy_tobii_infant
 
-with open("README.md", "r") as fh:
+with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
