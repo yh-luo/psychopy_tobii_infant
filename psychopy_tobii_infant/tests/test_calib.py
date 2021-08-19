@@ -2,7 +2,8 @@ import types
 from pathlib import Path
 
 from psychopy import monitors, visual
-from psychopy_tobii_infant import TobiiController, TobiiInfantController
+from psychopy_tobii_infant import (InfantStimuli, TobiiController,
+                                   TobiiInfantController)
 from tobii_research_addons import CalibrationValidationResult
 
 cal_points = [(-0.4, 0.4), (-0.4, -0.4), (0.0, 0.0), (0.4, 0.4), (0.4, -0.4)]
@@ -172,8 +173,8 @@ class TestCalibInfant:
                                         result_msg_color="black")
 
         def _test_run_validation(self,
-                                 infant_stims,
                                  validation_points=None,
+                                 infant_stims=None,
                                  focus_time=0.5,
                                  decision_key="space",
                                  show_result=False,
@@ -189,11 +190,9 @@ class TestCalibInfant:
             if validation_points is None:
                 validation_points = self.original_calibration_points
 
-            # prepare calibration stimuli
-            self.targets = [
-                visual.ImageStim(self.win, image=v, autoLog=False)
-                for v in infant_stims
-            ]
+            if infant_stims is not None:
+                self.targets = InfantStimuli(self.win, infant_stims)
+
             # clear the display
             self.win.flip()
 
@@ -216,6 +215,10 @@ class TestCalibInfant:
 
         self.controller.run_validation = types.MethodType(
             _test_run_validation, self.controller)
+        self.controller.run_validation(validation_points=cal_points,
+                                       infant_stims=None,
+                                       show_result=True,
+                                       save_to_file=False)
         self.controller.run_validation(validation_points=cal_points,
                                        infant_stims=val_stims,
                                        show_result=True,

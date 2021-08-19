@@ -25,6 +25,56 @@ except ModuleNotFoundError:
 __version__ = "0.7.0"
 
 
+# TODO: use a class to handle the stimuli
+class InfantStimuli:
+    """Stimuli for infant-friendly calibration and validation.
+
+    Args:
+        win: psychopy.visual.Window object.
+        infant_stims: list of image files.
+        shuffle: whether to shuffle the presentation order of the stimuli.
+            Default is True.
+        *kwargs: other arguments to pass into psychopy.visual.ImageStim.
+
+    Attributes:
+        present_order: the presentation order of the stimuli.
+    """
+    def __init__(self, win, infant_stims, shuffle=True, *kwargs):
+        self.win = win
+        self.stims = dict((i, visual.ImageStim(self.win, image=stim, *kwargs))
+                          for i, stim in enumerate(infant_stims))
+        self.stim_size = dict(
+            (i, image_stim.size) for i, image_stim in self.stims.items())
+        self.present_order = [*self.stims]
+        if shuffle:
+            np.random.shuffle(self.present_order)
+
+    def get_stim(self, idx):
+        """Get the stimulus by presentation order.
+
+        Args:
+        idx: index of the presentation order. If it is larger than the number
+            of provided image files, it will re-iterate.
+
+        Returns:
+            psychopy.visual.ImageStim
+        """
+        return self.stims[self.present_order[idx % len(self.present_order)]]
+
+    def get_stim_original_size(self, idx):
+        """Get the original size of the stimulus by presentation order.
+
+        Args:
+        idx: index of the presentation order. If it is larger than the number
+            of provided image files, it will re-iterate.
+
+        Returns:
+            The size (width, height) of the stimulus in the stimulus units.
+        """
+        return self.stim_size[self.present_order[idx %
+                                                 len(self.present_order)]]
+
+
 class TobiiController:
     """Tobii controller for PsychoPy.
 
@@ -780,9 +830,8 @@ class TobiiController:
             return validation_result
 
         result_buffer = self._process_validation_result(validation_result)
-        self._show_validation_result(result_buffer, show_result,
-                                      save_to_file, decision_key,
-                                      result_msg_color)
+        self._show_validation_result(result_buffer, show_result, save_to_file,
+                                     decision_key, result_msg_color)
 
         return validation_result
 
@@ -830,8 +879,8 @@ class TobiiController:
 
         return result_buffer
 
-    def _show_validation_result(self, result_buffer, show_result,
-                                 save_to_file, decision_key, result_msg_color):
+    def _show_validation_result(self, result_buffer, show_result, save_to_file,
+                                decision_key, result_msg_color):
         if save_to_file:
             if self.validation_result_buffers is None:
                 self.validation_result_buffers = list()
@@ -1174,12 +1223,14 @@ class TobiiInfantController(TobiiController):
 
             # draw calibration target
             if point_idx in self.retry_points:
-                this_target = self.targets[point_idx % len(self.targets)]
+                this_target = self.targets.get_stim(point_idx)
                 this_pos = self.original_calibration_points[point_idx]
                 this_target.setPos(this_pos)
                 t = clock.getTime() * self.shrink_speed
-                newsize = [(np.sin(t)**2 + self.calibration_target_min) * e
-                           for e in self.target_original_size]
+                newsize = [
+                    (np.sin(t)**2 + self.calibration_target_min) * e
+                    for e in self.targets.get_stim_original_size(point_idx)
+                ]
                 this_target.setSize(newsize)
                 this_target.draw()
             self.win.flip()
@@ -1189,20 +1240,20 @@ class TobiiInfantController(TobiiController):
                                   _focus_time=0.5,
                                   collect_key="space"):
         """Semi-automatic validation procedure for infants."""
-        for current_validation_point in validation_points:
+        for idx, current_validation_point in enumerate(validation_points):
             event.clearEvents()
             deg = 0
-            # TODO: select target from infant_stims
-            self.target = self.targets[0]
-            self.target.setSize(
-                (self.calibration_disc_size, self.calibration_disc_size *
-                 (self.target.size[0] / self.target.size[1])))
-            self.target.setPos(current_validation_point)
+            this_target = self.targets.get_stim(idx)
+            orig_size = self.targets.get_stim_original_size(idx)
+            this_target.setSize(
+                (self.calibration_disc_size,
+                 self.calibration_disc_size * (orig_size[0] / orig_size[1])))
+            this_target.setPos(current_validation_point)
             in_validation = True
             while in_validation:
                 deg += 0.5
-                self.target.setOri(ceil(deg))
-                self.target.draw()
+                this_target.setOri(ceil(deg))
+                this_target.draw()
                 self.win.flip()
 
                 keys = event.getKeys()
@@ -1265,14 +1316,9 @@ class TobiiInfantController(TobiiController):
             }
 
         # prepare calibration stimuli
-        self.targets = [
-            visual.ImageStim(self.win, image=v, autoLog=False)
-            for v in infant_stims
-        ]
-
+        self.targets = InfantStimuli(self.win, infant_stims)
         self._audio = audio
 
-        self.target_original_size = self.targets[0].size
         self.retry_marker = visual.Circle(
             self.win,
             radius=self.calibration_dot_size,
@@ -1301,8 +1347,6 @@ class TobiiInfantController(TobiiController):
         in_calibration_loop = True
         event.clearEvents()
         while in_calibration_loop:
-            # randomization of calibration targets
-            np.random.shuffle(self.targets)
             self.calibration_points = [
                 self.original_calibration_points[x] for x in self.retry_points
             ]
@@ -1383,7 +1427,9 @@ class TobiiInfantController(TobiiController):
         Args:
             validation_points: list of position of the validation points. If
                 None, the calibration points are used. Default is None.
-            infant_stims: list of images to attract the infant.
+            infant_stims: list of images to attract the infant. If None,
+                stimuli used in the latest calibration procedure are used.
+                Default is None.
             sample_count: The number of samples to collect. Default is 30,
                 minimum 10, maximum 3000.
             timeout: Timeout in seconds. Default is 1, minimum 0.1, maximum 3.
@@ -1410,11 +1456,9 @@ class TobiiInfantController(TobiiController):
         if validation_points is None:
             validation_points = self.original_calibration_points
 
-        # prepare calibration stimuli
-        self.targets = [
-            visual.ImageStim(self.win, image=v, autoLog=False)
-            for v in infant_stims
-        ]
+        if infant_stims is not None:
+            self.targets = InfantStimuli(self.win, infant_stims)
+
         # clear the display
         self.win.flip()
 
@@ -1429,9 +1473,8 @@ class TobiiInfantController(TobiiController):
             return validation_result
 
         result_buffer = self._process_validation_result(validation_result)
-        self._show_validation_result(result_buffer, show_result,
-                                      save_to_file, decision_key,
-                                      result_msg_color)
+        self._show_validation_result(result_buffer, show_result, save_to_file,
+                                     decision_key, result_msg_color)
 
         return validation_result
 
