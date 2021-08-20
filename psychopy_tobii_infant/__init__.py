@@ -25,7 +25,6 @@ except ModuleNotFoundError:
 __version__ = "0.7.0"
 
 
-# TODO: use a class to handle the stimuli
 class InfantStimuli:
     """Stimuli for infant-friendly calibration and validation.
 
@@ -1267,6 +1266,7 @@ class TobiiInfantController(TobiiController):
     def run_calibration(self,
                         calibration_points,
                         infant_stims,
+                        shuffle=True,
                         audio=None,
                         focus_time=0.5,
                         decision_key="space",
@@ -1290,7 +1290,12 @@ class TobiiInfantController(TobiiController):
 
         Args:
             calibration_points: list of position of the calibration points.
-            infant_stims: list of images to attract the infant.
+            infant_stims: list of images to attract the infant. If the number
+                of images is equal to or larger than the number of calibration
+                points, the images will be used in order. If not, the images
+                will be repeated.
+            shuffle: whether to shuffle the presentation order of the stimuli.
+                Default is True.
             audio: the psychopy.sound.Sound object to play during calibration.
                 If None, no sound will be played. Default is None.
             focus_time: the duration allowing the subject to focus in seconds.
@@ -1316,7 +1321,7 @@ class TobiiInfantController(TobiiController):
             }
 
         # prepare calibration stimuli
-        self.targets = InfantStimuli(self.win, infant_stims)
+        self.targets = InfantStimuli(self.win, infant_stims, shuffle=shuffle)
         self._audio = audio
 
         self.retry_marker = visual.Circle(
@@ -1414,6 +1419,7 @@ class TobiiInfantController(TobiiController):
     def run_validation(self,
                        validation_points=None,
                        infant_stims=None,
+                       shuffle=True,
                        sample_count=30,
                        timeout=1,
                        focus_time=0.5,
@@ -1430,6 +1436,8 @@ class TobiiInfantController(TobiiController):
             infant_stims: list of images to attract the infant. If None,
                 stimuli used in the latest calibration procedure are used.
                 Default is None.
+            shuffle: whether to shuffle the presentation order of the stimuli.
+                Default is True. Has no effects if infant_stims is set to None.
             sample_count: The number of samples to collect. Default is 30,
                 minimum 10, maximum 3000.
             timeout: Timeout in seconds. Default is 1, minimum 0.1, maximum 3.
@@ -1457,7 +1465,9 @@ class TobiiInfantController(TobiiController):
             validation_points = self.original_calibration_points
 
         if infant_stims is not None:
-            self.targets = InfantStimuli(self.win, infant_stims)
+            self.targets = InfantStimuli(self.win,
+                                         infant_stims,
+                                         shuffle=shuffle)
 
         # clear the display
         self.win.flip()

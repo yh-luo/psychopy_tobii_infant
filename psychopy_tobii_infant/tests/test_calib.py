@@ -90,7 +90,7 @@ class DummyInfantController(TobiiInfantController):
 
 
 class TestCalib:
-    """Test the presentation of presentation of stimuli."""
+    """Test the presentation of stimuli."""
     def setup(self):
         self.mon = monitors.Monitor("dummy",
                                     width=12.8,
