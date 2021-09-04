@@ -168,7 +168,7 @@ Users might get stuck in `show_status()` or other procedures that require keyboa
 #### Changed
 
 + A large part of codes had been refactored. If you used a modified version of this package, please be aware of that before upgrading!
-+ New class `InfantStimuli` are used to handle the images for infant-friendly calibration/validation.
++ New class `InfantStimuli` is used to handle the images for infant-friendly calibration/validation.
 Users now can use additional arguments of `psychopy.visual.ImageStim` for the calibration stimuli.
 
 ### [0.7.1] 2021-4
