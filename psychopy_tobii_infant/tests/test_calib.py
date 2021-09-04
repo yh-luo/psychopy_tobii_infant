@@ -114,7 +114,7 @@ class TestCalib:
                                  validation_points=None,
                                  focus_time=0.5,
                                  decision_key="space",
-                                 show_result=False,
+                                 show_results=False,
                                  save_to_file=True,
                                  result_msg_color="white"):
 
@@ -134,11 +134,11 @@ class TestCalib:
             self.validation.leave_validation_mode()
             self.win.flip()
 
-            if not (save_to_file or show_result):
+            if not (save_to_file or show_results):
                 return validation_result
 
             result_buffer = self._process_validation_result(validation_result)
-            self._show_validation_result(result_buffer, show_result,
+            self._show_validation_result(result_buffer, show_results,
                                          save_to_file, decision_key,
                                          result_msg_color)
             return validation_result
@@ -146,7 +146,7 @@ class TestCalib:
         self.controller.run_validation = types.MethodType(
             _test_run_validation, self.controller)
         self.controller.run_validation(cal_points,
-                                       show_result=True,
+                                       show_results=True,
                                        save_to_file=False)
 
 
@@ -177,7 +177,7 @@ class TestCalibInfant:
                                  infant_stims=None,
                                  focus_time=0.5,
                                  decision_key="space",
-                                 show_result=False,
+                                 show_results=False,
                                  save_to_file=True,
                                  result_msg_color="white"):
             if self.update_validation is None:
@@ -203,11 +203,11 @@ class TestCalibInfant:
             self.validation.leave_validation_mode()
             self.win.flip()
 
-            if not (save_to_file or show_result):
+            if not (save_to_file or show_results):
                 return validation_result
 
             result_buffer = self._process_validation_result(validation_result)
-            self._show_validation_result(result_buffer, show_result,
+            self._show_validation_result(result_buffer, show_results,
                                          save_to_file, decision_key,
                                          result_msg_color)
 
@@ -217,9 +217,9 @@ class TestCalibInfant:
             _test_run_validation, self.controller)
         self.controller.run_validation(validation_points=cal_points,
                                        infant_stims=None,
-                                       show_result=True,
+                                       show_results=True,
                                        save_to_file=False)
         self.controller.run_validation(validation_points=cal_points,
                                        infant_stims=val_stims,
-                                       show_result=True,
+                                       show_results=True,
                                        save_to_file=False)

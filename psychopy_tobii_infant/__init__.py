@@ -778,7 +778,7 @@ class TobiiController:
                        timeout=1,
                        focus_time=0.5,
                        decision_key="space",
-                       show_result=False,
+                       show_results=False,
                        save_to_file=True,
                        result_msg_color="white"):
         """Run validation.
@@ -795,7 +795,7 @@ class TobiiController:
             focus_time: the duration allowing the subject to focus in seconds.
                         Default is 0.5.
             decision_key: key to leave the procedure. Default is space.
-            show_result: Whether to show the validation result. Default is
+            show_results: Whether to show the validation result. Default is
                 False.
             save_to_file: Whether to save the validation result to the data
                 file. Default is True.
@@ -825,11 +825,11 @@ class TobiiController:
         self.validation.leave_validation_mode()
         self.win.flip()
 
-        if not (save_to_file or show_result):
+        if not (save_to_file or show_results):
             return validation_result
 
         result_buffer = self._process_validation_result(validation_result)
-        self._show_validation_result(result_buffer, show_result, save_to_file,
+        self._show_validation_result(result_buffer, show_results, save_to_file,
                                      decision_key, result_msg_color)
 
         return validation_result
@@ -878,14 +878,14 @@ class TobiiController:
 
         return result_buffer
 
-    def _show_validation_result(self, result_buffer, show_result, save_to_file,
+    def _show_validation_result(self, result_buffer, show_results, save_to_file,
                                 decision_key, result_msg_color):
         if save_to_file:
             if self.validation_result_buffers is None:
                 self.validation_result_buffers = list()
             self.validation_result_buffers.append(result_buffer)
 
-        if show_result:
+        if show_results:
             result_msg = visual.TextStim(self.win,
                                          pos=(0, -self.win.size[1] / 4),
                                          color=result_msg_color,
@@ -1424,7 +1424,7 @@ class TobiiInfantController(TobiiController):
                        timeout=1,
                        focus_time=0.5,
                        decision_key="space",
-                       show_result=False,
+                       show_results=False,
                        save_to_file=True,
                        result_msg_color="white"):
         """Run validation.
@@ -1444,7 +1444,7 @@ class TobiiInfantController(TobiiController):
             focus_time: the duration allowing the subject to focus in seconds.
                         Default is 0.5.
             decision_key: key to leave the procedure. Default is space.
-            show_result: Whether to show the validation result. Default is
+            show_results: Whether to show the validation result. Default is
                 False.
             save_to_file: Whether to save the validation result to the data
                 file. Default is True.
@@ -1479,11 +1479,11 @@ class TobiiInfantController(TobiiController):
         self.validation.leave_validation_mode()
         self.win.flip()
 
-        if not (save_to_file or show_result):
+        if not (save_to_file or show_results):
             return validation_result
 
         result_buffer = self._process_validation_result(validation_result)
-        self._show_validation_result(result_buffer, show_result, save_to_file,
+        self._show_validation_result(result_buffer, show_results, save_to_file,
                                      decision_key, result_msg_color)
 
         return validation_result
