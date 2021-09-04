@@ -13,14 +13,65 @@ _has_addons = True
 try:
     from tobii_research_addons import (
         ScreenBasedCalibrationValidation, Point2)
+    from math import ceil
 except ModuleNotFoundError:
     try:
         from .tobii_research_addons import (
             ScreenBasedCalibrationValidation, Point2)
+        from math import ceil
     except ModuleNotFoundError:
         _has_addons = False
 # yapf: enable
-__version__ = "0.7.0"
+__version__ = "0.8.0"
+
+
+class InfantStimuli:
+    """Stimuli for infant-friendly calibration and validation.
+
+    Args:
+        win: psychopy.visual.Window object.
+        infant_stims: list of image files.
+        shuffle: whether to shuffle the presentation order of the stimuli.
+            Default is True.
+        *kwargs: other arguments to pass into psychopy.visual.ImageStim.
+
+    Attributes:
+        present_order: the presentation order of the stimuli.
+    """
+    def __init__(self, win, infant_stims, shuffle=True, *kwargs):
+        self.win = win
+        self.stims = dict((i, visual.ImageStim(self.win, image=stim, *kwargs))
+                          for i, stim in enumerate(infant_stims))
+        self.stim_size = dict(
+            (i, image_stim.size) for i, image_stim in self.stims.items())
+        self.present_order = [*self.stims]
+        if shuffle:
+            np.random.shuffle(self.present_order)
+
+    def get_stim(self, idx):
+        """Get the stimulus by presentation order.
+
+        Args:
+        idx: index of the presentation order. If it is larger than the number
+            of provided image files, it will re-iterate.
+
+        Returns:
+            psychopy.visual.ImageStim
+        """
+        return self.stims[self.present_order[idx % len(self.present_order)]]
+
+    def get_stim_original_size(self, idx):
+        """Get the original size of the stimulus by presentation order.
+
+        Args:
+        idx: index of the presentation order. If it is larger than the number
+            of provided image files, it will re-iterate.
+
+        Returns:
+            The size (width, height) of the stimulus in the stimulus units.
+        """
+        return self.stim_size[self.present_order[idx %
+                                                 len(self.present_order)]]
 
 
 class TobiiController:
@@ -50,7 +101,7 @@ class TobiiController:
         calibration_target_min: the minimum size of the calibration target.
             Default is 0.2.
         numkey_dict: keys used for calibration. Default is the number pad.
-            If it is changed, the keys in calibration results will not
+            If it is changed, the keys in calibration result will not
             update accordingly (my bad), be cautious!
         update_calibration: the presentation of calibration target.
             Default is auto calibration.
@@ -732,8 +783,9 @@ class TobiiController:
                        result_msg_color="white"):
         """Run validation.
 
-        tobii_research_addons is required for running validation.
-
+        tobii_research_addons is required for running validation. Validation
+        procedure is only available after a successful calibration or an error
+        will be raised.
         Args:
             validation_points: list of position of the validation points. If
                 None, the calibration points are used. Default is None.
@@ -743,9 +795,9 @@ class TobiiController:
             focus_time: the duration allowing the subject to focus in seconds.
                         Default is 0.5.
             decision_key: key to leave the procedure. Default is space.
-            show_results: Whether to show the validation results. Default is
+            show_results: Whether to show the validation result. Default is
                 False.
-            save_to_file: Whether to save the validation results to the data
+            save_to_file: Whether to save the validation result to the data
                 file. Default is True.
             result_msg_color: Color to be used for calibration result text.
                 Accepts any PsychoPy color specification. Default is white.
@@ -777,29 +829,8 @@ class TobiiController:
             return validation_result
 
         result_buffer = self._process_validation_result(validation_result)
-        if save_to_file:
-            if self.validation_result_buffers is None:
-                self.validation_result_buffers = list()
-            self.validation_result_buffers.append(result_buffer)
-
-        if show_results:
-            result_msg = visual.TextStim(self.win,
-                                         pos=(0, -self.win.size[1] / 4),
-                                         color=result_msg_color,
-                                         units="pix",
-                                         alignText="left",
-                                         wrapWidth=self.win.size[0] * 0.6,
-                                         autoLog=False)
-            result_msg.setText(result_buffer.replace("\t", " "))
-            result_msg.draw()
-            self.win.flip()
-
-            waitkey = True
-            while waitkey:
-                for key in event.getKeys():
-                    if key == decision_key:
-                        waitkey = False
-                        break
+        self._show_validation_result(result_buffer, show_results, save_to_file,
+                                     decision_key, result_msg_color)
 
         return validation_result
 
@@ -847,10 +878,35 @@ class TobiiController:
 
         return result_buffer
 
+    def _show_validation_result(self, result_buffer, show_results,
+                                save_to_file, decision_key, result_msg_color):
+        if save_to_file:
+            if self.validation_result_buffers is None:
+                self.validation_result_buffers = list()
+            self.validation_result_buffers.append(result_buffer)
+
+        if show_results:
+            result_msg = visual.TextStim(self.win,
+                                         pos=(0, -self.win.size[1] / 4),
+                                         color=result_msg_color,
+                                         units="pix",
+                                         alignText="left",
+                                         wrapWidth=self.win.size[0] * 0.6,
+                                         autoLog=False)
+            result_msg.setText(result_buffer.replace("\t", " "))
+            result_msg.draw()
+            self.win.flip()
+
+            waitkey = True
+            while waitkey:
+                for key in event.getKeys():
+                    if key == decision_key:
+                        waitkey = False
+                        break
+
     def _update_validation_auto(self, validation_points, _focus_time=0.5):
         """Automatic validation procedure."""
         # start
-        event.clearEvents()
         clock = core.Clock()
         for current_validation_point in validation_points:
             self.calibration_target_disc.setPos(current_validation_point)
@@ -1108,6 +1164,8 @@ class TobiiInfantController(TobiiController):
         self.update_calibration = self._update_calibration_infant
         # slower for infants
         self.shrink_speed = 1
+        if _has_addons:
+            self.update_validation = self._update_validation_infant
 
     def _update_calibration_infant(self,
                                    _focus_time=0.5,
@@ -1125,7 +1183,7 @@ class TobiiInfantController(TobiiController):
                 procedure. It should not be confused with `decision_key`, which
                 is used to leave the whole calibration process. `exit_key` is
                 used to leave the current calibration, the user may recalibrate
-                or accept the results afterwards. Default is return (Enter)
+                or accept the result afterwards. Default is return (Enter)
 
         Returns:
             None
@@ -1164,23 +1222,56 @@ class TobiiInfantController(TobiiController):
 
             # draw calibration target
             if point_idx in self.retry_points:
-                this_target = self.targets[point_idx % len(self.targets)]
+                this_target = self.targets.get_stim(point_idx)
                 this_pos = self.original_calibration_points[point_idx]
                 this_target.setPos(this_pos)
                 t = clock.getTime() * self.shrink_speed
-                newsize = [(np.sin(t)**2 + self.calibration_target_min) * e
-                           for e in self.target_original_size]
+                newsize = [
+                    (np.sin(t)**2 + self.calibration_target_min) * e
+                    for e in self.targets.get_stim_original_size(point_idx)
+                ]
                 this_target.setSize(newsize)
                 this_target.draw()
             self.win.flip()
 
+    def _update_validation_infant(self,
+                                  validation_points,
+                                  _focus_time=0.5,
+                                  collect_key="space"):
+        """Semi-automatic validation procedure for infants."""
+        for idx, current_validation_point in enumerate(validation_points):
+            event.clearEvents()
+            deg = 0
+            this_target = self.targets.get_stim(idx)
+            orig_size = self.targets.get_stim_original_size(idx)
+            this_target.setSize(
+                (self.calibration_disc_size,
+                 self.calibration_disc_size * (orig_size[0] / orig_size[1])))
+            this_target.setPos(current_validation_point)
+            in_validation = True
+            while in_validation:
+                deg += 0.5
+                this_target.setOri(ceil(deg))
+                this_target.draw()
+                self.win.flip()
+
+                keys = event.getKeys()
+                for key in keys:
+                    if key == collect_key:
+                        core.wait(_focus_time, 0.0)
+                        self._collect_validation_data(current_validation_point)
+                        in_validation = False
+                        break
+
     def run_calibration(self,
                         calibration_points,
                         infant_stims,
+                        shuffle=True,
                         audio=None,
                         focus_time=0.5,
                         decision_key="space",
-                        result_msg_color="white"):
+                        result_msg_color="white",
+                        *kwargs):
         """Run calibration.
 
             How to use:
@@ -1200,7 +1291,12 @@ class TobiiInfantController(TobiiController):
 
         Args:
             calibration_points: list of position of the calibration points.
-            infant_stims: list of images to attract the infant.
+            infant_stims: list of images to attract the infant. If the number
+                of images is equal to or larger than the number of calibration
+                points, the images will be used in order. If not, the images
+                will be repeated.
+            shuffle: whether to shuffle the presentation order of the stimuli.
+                Default is True.
             audio: the psychopy.sound.Sound object to play during calibration.
                 If None, no sound will be played. Default is None.
             focus_time: the duration allowing the subject to focus in seconds.
@@ -1208,7 +1304,7 @@ class TobiiInfantController(TobiiController):
             decision_key: key to leave the procedure. Default is space.
             result_msg_color: Color to be used for calibration result text.
                 Accepts any PsychoPy color specification. Default is white.
-
+            *kwargs: other arguments to pass into psychopy.visual.ImageStim.
         Returns:
             bool: The status of calibration. True for success, False otherwise.
         """
@@ -1226,14 +1322,12 @@ class TobiiInfantController(TobiiController):
             }
 
         # prepare calibration stimuli
-        self.targets = [
-            visual.ImageStim(self.win, image=v, autoLog=False)
-            for v in infant_stims
-        ]
-
+        self.targets = InfantStimuli(self.win,
+                                     infant_stims,
+                                     shuffle=shuffle,
+                                     *kwargs)
         self._audio = audio
 
-        self.target_original_size = self.targets[0].size
         self.retry_marker = visual.Circle(
             self.win,
             radius=self.calibration_dot_size,
@@ -1262,8 +1356,6 @@ class TobiiInfantController(TobiiController):
         in_calibration_loop = True
         event.clearEvents()
         while in_calibration_loop:
-            # randomization of calibration targets
-            np.random.shuffle(self.targets)
             self.calibration_points = [
                 self.original_calibration_points[x] for x in self.retry_points
             ]
@@ -1327,6 +1419,81 @@ class TobiiInfantController(TobiiController):
         self.calibration.leave_calibration_mode()
 
         return retval
+
+    def run_validation(self,
+                       validation_points=None,
+                       infant_stims=None,
+                       shuffle=True,
+                       sample_count=30,
+                       timeout=1,
+                       focus_time=0.5,
+                       decision_key="space",
+                       show_results=False,
+                       save_to_file=True,
+                       result_msg_color="white",
+                       *kwargs):
+        """Run validation.
+        Press space to start collect valdiation samples.
+
+        Args:
+            validation_points: list of position of the validation points. If
+                None, the calibration points are used. Default is None.
+            infant_stims: list of images to attract the infant. If None,
+                stimuli used in the latest calibration procedure are used.
+                Default is None.
+            shuffle: whether to shuffle the presentation order of the stimuli.
+                Default is True. Has no effects if infant_stims is set to None.
+            sample_count: The number of samples to collect. Default is 30,
+                minimum 10, maximum 3000.
+            timeout: Timeout in seconds. Default is 1, minimum 0.1, maximum 3.
+            focus_time: the duration allowing the subject to focus in seconds.
+                        Default is 0.5.
+            decision_key: key to leave the procedure. Default is space.
+            show_results: Whether to show the validation result. Default is
+                False.
+            save_to_file: Whether to save the validation result to the data
+                file. Default is True.
+            result_msg_color: Color to be used for calibration result text.
+                Accepts any PsychoPy color specification. Default is white.
+            *kwargs: other arguments to pass into psychopy.visual.ImageStim.
+                Has no effects if infant_stims is set to None.
+        Returns:
+            tobii_research_addons.ScreenBasedCalibrationValidation.CalibrationValidationResult
+        """
+        if self.update_validation is None:
+            raise ModuleNotFoundError("tobii_research_addons is not found.")
+
+        # setup the procedure
+        self.validation = ScreenBasedCalibrationValidation(
+            self.eyetracker, sample_count, int(1000 * timeout))
+
+        if validation_points is None:
+            validation_points = self.original_calibration_points
+
+        if infant_stims is not None:
+            self.targets = InfantStimuli(self.win,
+                                         infant_stims,
+                                         shuffle=shuffle,
+                                         *kwargs)
+
+        # clear the display
+        self.win.flip()
+
+        self.validation.enter_validation_mode()
+        self.update_validation(validation_points=validation_points,
+                               _focus_time=focus_time)
+        validation_result = self.validation.compute()
+        self.validation.leave_validation_mode()
+        self.win.flip()
+
+        if not (save_to_file or show_results):
+            return validation_result
+
+        result_buffer = self._process_validation_result(validation_result)
+        self._show_validation_result(result_buffer, show_results, save_to_file,
+                                     decision_key, result_msg_color)
+
+        return validation_result
 
     # Collect looking time
     def collect_lt(self, max_time, min_away, blink_dur=1):
