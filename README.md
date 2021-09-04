@@ -158,6 +158,19 @@ Users might get stuck in `show_status()` or other procedures that require keyboa
 
 ## Changelog
 
+### [0.8.0] 2021-9
+
+#### Improvements
+
++ Validation procedure for `TobiiInfantController`.
++ New `shuffle` argument (default is `True`) for `TobiiInfantController.run_calibration` to control the randomization of calibration stimuli.
+
+#### Changed
+
++ A large part of codes had been refactored. If you used a modified version of this package, please be aware of that before upgrading!
++ New class `InfantStimuli` are used to handle the images for infant-friendly calibration/validation.
+Users now can use additional arguments of `psychopy.visual.ImageStim` for the calibration stimuli.
+
 ### [0.7.1] 2021-4
 
 #### Changed

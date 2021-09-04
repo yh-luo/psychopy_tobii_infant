@@ -22,7 +22,7 @@ except ModuleNotFoundError:
     except ModuleNotFoundError:
         _has_addons = False
 # yapf: enable
-__version__ = "0.7.0"
+__version__ = "0.8.0"
 
 
 class InfantStimuli:
@@ -878,8 +878,8 @@ class TobiiController:
 
         return result_buffer
 
-    def _show_validation_result(self, result_buffer, show_results, save_to_file,
-                                decision_key, result_msg_color):
+    def _show_validation_result(self, result_buffer, show_results,
+                                save_to_file, decision_key, result_msg_color):
         if save_to_file:
             if self.validation_result_buffers is None:
                 self.validation_result_buffers = list()
@@ -1270,7 +1270,8 @@ class TobiiInfantController(TobiiController):
                         audio=None,
                         focus_time=0.5,
                         decision_key="space",
-                        result_msg_color="white"):
+                        result_msg_color="white",
+                        *kwargs):
         """Run calibration.
 
             How to use:
@@ -1303,7 +1304,7 @@ class TobiiInfantController(TobiiController):
             decision_key: key to leave the procedure. Default is space.
             result_msg_color: Color to be used for calibration result text.
                 Accepts any PsychoPy color specification. Default is white.
-
+            *kwargs: other arguments to pass into psychopy.visual.ImageStim.
         Returns:
             bool: The status of calibration. True for success, False otherwise.
         """
@@ -1321,7 +1322,10 @@ class TobiiInfantController(TobiiController):
             }
 
         # prepare calibration stimuli
-        self.targets = InfantStimuli(self.win, infant_stims, shuffle=shuffle)
+        self.targets = InfantStimuli(self.win,
+                                     infant_stims,
+                                     shuffle=shuffle,
+                                     *kwargs)
         self._audio = audio
 
         self.retry_marker = visual.Circle(
@@ -1426,7 +1430,8 @@ class TobiiInfantController(TobiiController):
                        decision_key="space",
                        show_results=False,
                        save_to_file=True,
-                       result_msg_color="white"):
+                       result_msg_color="white",
+                       *kwargs):
         """Run validation.
         Press space to start collect valdiation samples.
 
@@ -1450,7 +1455,8 @@ class TobiiInfantController(TobiiController):
                 file. Default is True.
             result_msg_color: Color to be used for calibration result text.
                 Accepts any PsychoPy color specification. Default is white.
-
+            *kwargs: other arguments to pass into psychopy.visual.ImageStim.
+                Has no effects if infant_stims is set to None.
         Returns:
             tobii_research_addons.ScreenBasedCalibrationValidation.CalibrationValidationResult
         """
@@ -1467,7 +1473,8 @@ class TobiiInfantController(TobiiController):
         if infant_stims is not None:
             self.targets = InfantStimuli(self.win,
                                          infant_stims,
-                                         shuffle=shuffle)
+                                         shuffle=shuffle,
+                                         *kwargs)
 
         # clear the display
         self.win.flip()
