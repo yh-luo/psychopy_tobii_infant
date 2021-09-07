@@ -45,7 +45,7 @@ def customized_update_calibration(self,
                                   exit_key='return'):
     # start calibration
     event.clearEvents()
-    current_point_index = -1
+    point_idx = -1
     in_calibration = True
     clock = core.Clock()
     while in_calibration:
@@ -53,20 +53,20 @@ def customized_update_calibration(self,
         keys = event.getKeys()
         for key in keys:
             if key in self.numkey_dict:
-                current_point_index = self.numkey_dict[key]
+                point_idx = self.numkey_dict[key]
                 # -- Modification begin --
                 # play the sound
-                if current_point_index in self.retry_points:
+                if point_idx in self.retry_points:
                     audio_grabber.play()
                 # -- Modification end --
             elif key == collect_key:
                 # allow the participant to focus
-                core.wait(_focus_time)
+                core.wait(_focus_time, 0.0)
                 # collect samples when space is pressed
-                if current_point_index in self.retry_points:
+                if point_idx in self.retry_points:
                     self._collect_calibration_data(
-                        self.original_calibration_points[current_point_index])
-                    current_point_index = -1
+                        self.original_calibration_points[point_idx])
+                    point_idx = -1
                     # -- Modification begin --
                     # stop the sound after collection of calibration data
                     audio_grabber.stop()
@@ -77,14 +77,17 @@ def customized_update_calibration(self,
                 break
 
         # draw calibration target
-        if current_point_index in self.retry_points:
-            self.targets[current_point_index].setPos(
-                self.original_calibration_points[current_point_index])
+        if point_idx in self.retry_points:
+            this_target = self.targets.get_stim(point_idx)
+            this_pos = self.original_calibration_points[point_idx]
+            this_target.setPos(this_pos)
             t = clock.getTime() * self.shrink_speed
-            newsize = [(np.sin(t)**2 + self.calibration_target_min) * e
-                       for e in self.target_original_size]
-            self.targets[current_point_index].setSize(newsize)
-            self.targets[current_point_index].draw()
+            newsize = [
+                (np.sin(t)**2 + self.calibration_target_min) * e
+                for e in self.targets.get_stim_original_size(point_idx)
+            ]
+            this_target.setSize(newsize)
+            this_target.draw()
         self.win.flip()
 
 
