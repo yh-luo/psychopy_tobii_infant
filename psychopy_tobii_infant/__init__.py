@@ -126,7 +126,7 @@ class TobiiController:
         "8": 7,
         "num_8": 7,
         "9": 8,
-        "num_9": 8,
+        "num_9": 8
     }
     _default_calibration_dot_size = {
         "norm": 0.02,
@@ -135,7 +135,7 @@ class TobiiController:
         "degFlatPos": 0.25,
         "deg": 0.25,
         "degFlat": 0.25,
-        "cm": 0.25,
+        "cm": 0.25
     }
     _default_calibration_disc_size = {
         "norm": 0.08,
@@ -144,7 +144,7 @@ class TobiiController:
         "degFlatPos": 1.0,
         "deg": 1.0,
         "degFlat": 1.0,
-        "cm": 1.0,
+        "cm": 1.0
     }
     _shrink_speed = 1.5
     _shrink_sec = 3 / _shrink_speed
@@ -667,20 +667,20 @@ class TobiiController:
             self.win,
             radius=self.calibration_dot_size,
             fillColor=self.calibration_dot_color,
-            lineColor=self.calibration_dot_color,
+            lineColor=self.calibration_dot_color
         )
         self.calibration_target_disc = visual.Circle(
             self.win,
             radius=self.calibration_disc_size,
             fillColor=self.calibration_disc_color,
-            lineColor=self.calibration_disc_color,
+            lineColor=self.calibration_disc_color
         )
         self.retry_marker = visual.Circle(
             self.win,
             radius=self.calibration_dot_size,
             fillColor=self.calibration_dot_color,
             lineColor=self.calibration_disc_color,
-            autoLog=False,
+            autoLog=False
         )
         if self.win.units == "norm":  # fix oval
             self.calibration_target_dot.setSize(
@@ -695,7 +695,7 @@ class TobiiController:
             color=result_msg_color,
             units="pix",
             alignText="left",
-            autoLog=False,
+            autoLog=False
         )
 
         self.original_calibration_points = calibration_points[:]
@@ -960,7 +960,7 @@ class TobiiController:
                                         lp[1] * self.win.size[1],
                                     ),
                                 ),
-                                fill=(0, 255, 0, 255),
+                                fill=(0, 255, 0, 255)
                             )
                         if (this_sample.right_eye.validity ==
                                 tr.VALIDITY_VALID_AND_USED):
@@ -973,7 +973,7 @@ class TobiiController:
                                         rp[1] * self.win.size[1],
                                     ),
                                 ),
-                                fill=(255, 0, 0, 255),
+                                fill=(255, 0, 0, 255)
                             )
                     img_draw.ellipse(
                         (
@@ -982,7 +982,7 @@ class TobiiController:
                             (p[0] * self.win.size[0] + 3,
                              p[1] * self.win.size[1] + 3),
                         ),
-                        outline=(0, 0, 0, 255),
+                        outline=(0, 0, 0, 255)
                     )
 
         result_img.setImage(img)
@@ -1109,7 +1109,7 @@ class TobiiController:
                 zpos.setPos((
                     round((((lz * int(lv) + rz * int(rv)) /
                             (int(lv) + int(rv))) - 0.5) * 0.125, 4),
-                    0.28,
+                    0.28
                 ))
                 zpos.draw()
 
@@ -1333,7 +1333,7 @@ class TobiiInfantController(TobiiController):
             radius=self.calibration_dot_size,
             fillColor=self.calibration_dot_color,
             lineColor=self.calibration_disc_color,
-            autoLog=False,
+            autoLog=False
         )
         if self.win.units == "norm":  # fix oval
             self.retry_marker.setSize(
@@ -1343,7 +1343,7 @@ class TobiiInfantController(TobiiController):
             pos=(0, -self.win.size[1] / 4),
             color=result_msg_color,
             units="pix",
-            autoLog=False,
+            autoLog=False
         )
 
         self.calibration.enter_calibration_mode()
